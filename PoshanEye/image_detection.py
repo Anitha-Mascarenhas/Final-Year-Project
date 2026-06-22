@@ -494,7 +494,7 @@
 # ==========================================
 # Face + Pose + Hands Detection
 # ==========================================
-
+print("Script started")
 import cv2
 import json
 import pandas as pd
@@ -510,7 +510,7 @@ from hand_landmarks import HandLandmarkExtractor
 # Image Path
 # ----------------------------------
 
-IMAGE_PATH = "data/sample_images/child2.jpg"
+IMAGE_PATH = "D:\Final-Year-Project\PoshanEye\sample.jpg"
 
 # ----------------------------------
 # Initialize Extractors
@@ -529,15 +529,15 @@ hand_extractor = HandLandmarkExtractor()
 face_landmarks = face_extractor.extract_from_image(
     IMAGE_PATH
 )
-
+print("Face done")
 pose_landmarks = pose_extractor.extract_from_image(
     IMAGE_PATH
 )
-
+print("pose done")
 hand_landmarks = hand_extractor.extract_from_image(
     IMAGE_PATH
 )
-
+print("hand done")
 # ----------------------------------
 # Metadata
 # ----------------------------------
@@ -696,15 +696,15 @@ cv2.imwrite(
 # ----------------------------------
 # Display Visualization
 # ----------------------------------
+print("Visualization ready")
+# cv2.imshow(
+#     "PoshanEye Detection",
+#     image
+# )
 
-cv2.imshow(
-    "PoshanEye Detection",
-    image
-)
+# cv2.waitKey(0)
 
-cv2.waitKey(0)
-
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()
 
 # ----------------------------------
 # Save JSON
