@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+venv311/
+**/venv/
+**/venv311/
+
+# Large datasets
+dataset/
+**/dataset/
+
+
+# Temporary folders
+temp_mediapipe_download*/
+**/temp_mediapipe_download*/
+
+# IDE
+.vscode/
+.idea/
