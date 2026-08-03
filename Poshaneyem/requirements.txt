@@ -1,0 +1,11 @@
+numpy
+pandas
+scikit-learn
+tensorflow
+opencv-python
+joblib
+matplotlib
+xgboost
+lightgbm
+mediapipe==0.10.13
+# Note: Classic MediaPipe Solutions API (mp.solutions) is best supported on Python 3.11 or earlier.
