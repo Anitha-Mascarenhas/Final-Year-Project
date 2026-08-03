@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+venv311/
+
+# Dataset
+dataset/
+
+# Trained models
+models/
+outputs/
+logs/
+
+# TensorFlow / ML
+*.h5
+*.keras
+*.tflite
+*.joblib
+*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary folders
+temp_mediapipe_download*/
