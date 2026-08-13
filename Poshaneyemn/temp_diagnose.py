@@ -1,0 +1,62 @@
+import pandas as pd
+from src.data_loader import DatasetLoader
+from src.preprocessing import DataPreprocessor
+
+print('Loading raw AnthroVision CSV...')
+anthro = pd.read_csv('dataset/ANTHROVISION/anthrovision_labels.csv')
+print('Anthro shape', anthro.shape)
+print('Anthro target cols present', 'multiclass_label' in anthro.columns, 'label' in anthro.columns)
+print('Anthro missing multiclass_label', anthro['multiclass_label'].isna().sum())
+print('Anthro sample target values:', pd.Series(anthro['multiclass_label'].dropna().unique()).head(20).tolist())
+
+print('\nLoading raw ARAN CSV...')
+aran = pd.read_csv('dataset/aran/labels.csv')
+print('ARAN shape', aran.shape)
+print('ARAN cols', list(aran.columns))
+print('ARAN sample\n', aran.head(5).to_string(index=False))
+print('ARAN missing target columns? multiclass_label present:', 'multiclass_label' in aran.columns)
+
+loader = DatasetLoader()
+pre = DataPreprocessor()
+
+print('\nLoading AnthroVision via DatasetLoader...')
+anthro_df = loader.load_anthrovision()
+print('anthro_df shape', anthro_df.shape)
+print('anthro_df columns', anthro_df.columns.tolist()[:20])
+print('first image path', anthro_df['image_path'].head(5).tolist())
+print('missing image_path', anthro_df['image_path'].isna().sum())
+print('missing multiclass_label', anthro_df['multiclass_label'].isna().sum())
+
+anthro_df = pre.clean_anthrovision(anthro_df)
+print('\nafter clean_anthrovision shape', anthro_df.shape)
+print('missing multiclass_label', anthro_df['multiclass_label'].isna().sum())
+print('any missing measurements', anthro_df[pre.target_column].isna().sum())
+anthro_df = pre.encode_labels(anthro_df)
+print('after encode labels shape', anthro_df.shape)
+print('label nan count', anthro_df['label'].isna().sum())
+print('label distribution', anthro_df['label'].value_counts(dropna=False).to_dict())
+print('head\n', anthro_df.head(5).to_string(index=False))
+
+print('\nLoading ARAN via DatasetLoader...')
+aran_df = loader.load_aran()
+print('aran_df shape', aran_df.shape)
+print('aran_df columns', aran_df.columns.tolist())
+print('aran_df head\n', aran_df.head(5).to_string(index=False))
+aran_df = pre.clean_aran(aran_df)
+print('after clean_aran shape', aran_df.shape)
+print('after clean_aran columns', aran_df.columns.tolist())
+print('arain_df missing image path', aran_df['image_path'].isna().sum())
+print('arain_df has target', 'multiclass_label' in aran_df.columns)
+
+merged = pd.concat([anthro_df, aran_df], ignore_index=True, sort=False)
+print('\nMerged shape', merged.shape)
+print('Merged cols sample', merged.columns.tolist()[:30])
+print('Merged label nan count', merged['label'].isna().sum())
+print('Merged target present', 'multiclass_label' in merged.columns)
+print('Merged rows with NaN labels\n', merged[merged['label'].isna()].head(20).to_string(index=False))
+print('Merged missing image_path', merged['image_path'].isna().sum())
+print('Merged duplicate sample count', merged.duplicated(subset=['image_path']).sum())
+
+print('\n=== NaN rows by subset ===')
+print(merged[merged['label'].isna()].isna().sum())
+print('=== End diagnostics ===')
