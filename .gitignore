@@ -20,3 +20,5 @@ temp_mediapipe_download*/
 # IDE
 .vscode/
 .idea/
+# Training logs
+**/outputs/logs/
