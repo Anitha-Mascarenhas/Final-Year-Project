@@ -1,193 +1,332 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/child_profile.dart';
+import '../models/meal_item.dart';
 import '../theme/app_theme.dart';
 
-class NutritionPlanScreen extends StatelessWidget {
-  const NutritionPlanScreen({super.key});
+class NutritionPlanScreen extends StatefulWidget {
+  final ChildProfile child;
+
+  const NutritionPlanScreen({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  State<NutritionPlanScreen> createState() => _NutritionPlanScreenState();
+}
+
+class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
+  late List<MealItem> _meals;
+  String? _swappingId;
+
+  @override
+  void initState() {
+    super.initState();
+    _meals = _getInitialMeals();
+  }
+
+  List<MealItem> _getInitialMeals() {
+    return [
+      MealItem(
+        id: 'm1',
+        mealType: 'Breakfast',
+        time: '8:00 AM',
+        title: 'Oatmeal with mashed bananas',
+        icon: Icons.wb_sunny_outlined,
+        tags: [
+          MealTag(label: 'Fiber', icon: Icons.grain, bgClass: AppTheme.accentMint, textClass: AppTheme.accentSage),
+          MealTag(label: 'Energy', icon: Icons.bolt, bgClass: AppTheme.accentMint, textClass: AppTheme.accentSage),
+        ],
+      ),
+      MealItem(
+        id: 'm2',
+        mealType: 'Lunch',
+        time: '12:30 PM',
+        title: 'Soft lentil soup (Dal) with mashed rice',
+        icon: Icons.restaurant_outlined,
+        tags: [
+          MealTag(label: 'Protein', icon: Icons.fitness_center, bgClass: const Color(0xFFB0CDBB), textClass: const Color(0xFF324C3E)),
+          MealTag(label: 'Iron', icon: Icons.local_fire_department, bgClass: const Color(0xFFB0CDBB), textClass: const Color(0xFF324C3E)),
+        ],
+      ),
+      MealItem(
+        id: 'm3',
+        mealType: 'Afternoon Snack',
+        time: '3:30 PM',
+        title: 'Thinly sliced apples or pureed fruit',
+        icon: Icons.apple,
+        tags: [
+          MealTag(label: 'Vitamins', icon: Icons.auto_awesome, bgClass: const Color(0xFFBFC9BF), textClass: const Color(0xFF404941)),
+        ],
+      ),
+      MealItem(
+        id: 'm4',
+        mealType: 'Dinner',
+        time: '7:00 PM',
+        title: 'Steamed vegetables and quinoa porridge',
+        icon: Icons.nightlight_round,
+        tags: [
+          MealTag(label: 'Digestion', icon: Icons.eco, bgClass: AppTheme.accentMint, textClass: AppTheme.accentSage),
+          MealTag(label: 'Sleep Aid', icon: Icons.bedtime, bgClass: AppTheme.accentMint, textClass: AppTheme.accentSage),
+        ],
+      ),
+    ];
+  }
+
+  void _handleSwapMeal(String mealId) {
+    setState(() => _swappingId = mealId);
+
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        setState(() {
+          _meals = _meals.map((m) {
+            if (m.id != mealId) return m;
+            if (m.mealType == 'Breakfast') {
+              return m.copyWith(title: 'Warm ragi porridge with grated apples & almonds');
+            } else if (m.mealType == 'Lunch') {
+              return m.copyWith(title: 'Mashed khichdi with ghee and steamed carrots');
+            } else if (m.mealType == 'Afternoon Snack') {
+              return m.copyWith(title: 'Steamed sweet potato sticks with curd dip');
+            } else {
+              return m.copyWith(title: 'Soft pumpkin soup with whole wheat mini roti');
+            }
+          }).toList();
+          _swappingId = null;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 20),
-        _buildRecapCards(),
-        const SizedBox(height: 28),
-        Text("Today's Regimen",
-            style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w700,
-                color: AppTheme.onSurface, letterSpacing: -0.5)),
-        const SizedBox(height: 20),
-        _buildMealTimeline(),
-        const SizedBox(height: 28),
-        _buildWhyCard(),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Nutrition Protocol',
-                  style: GoogleFonts.montserrat(fontSize: 26, fontWeight: FontWeight.w800,
-                      color: AppTheme.primary, letterSpacing: -0.5)),
-              const SizedBox(height: 4),
-              Text('Personalized clinical recommendations',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-            ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "${widget.child.name}'s Nutrition Plan",
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primary,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        ElevatedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.refresh, size: 18),
-          label: Text('Generate New', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          const SizedBox(height: 6),
+          Text(
+            'Here is a gentle, nourishing meal guide for today. Feel free to swap items based on what ${widget.child.name} is in the mood for.',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+              height: 1.5,
+            ),
           ),
-        ),
-      ],
-    );
-  }
+          const SizedBox(height: 28),
 
-  Widget _buildRecapCards() {
-    final cards = [
-      ('Patient Age', '24 Months', AppTheme.primary),
-      ('Risk Level', 'Moderate', AppTheme.error),
-      ('Plan Goal', 'Fortification', AppTheme.secondary),
-      ('Daily Kcal', '1,250', Colors.teal),
-    ];
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 2.2,
-      children: cards.map((c) => _RecapCard(label: c.$1, value: c.$2, borderColor: c.$3)).toList(),
+          // Meal Timeline
+          _buildMealTimeline(),
+          const SizedBox(height: 24),
+
+          // Quick Tip Card
+          _buildQuickTipCard(),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
   Widget _buildMealTimeline() {
-    final meals = [
-      _MealData(time: '08:00 AM', type: 'Breakfast', title: 'Fortified Porridge with Banana',
-          tags: ['Iron High', '280 kcal', 'Fiber 4g'], icon: Icons.wb_sunny_outlined),
-      _MealData(time: '01:00 PM', type: 'Lunch', title: 'Lentil Stew with Steamed Spinach',
-          tags: ['Protein 12g', '420 kcal', 'Vit A High'], icon: Icons.restaurant_outlined),
-      _MealData(time: '04:30 PM', type: 'Afternoon Snack', title: 'Greek Yogurt with Crushed Walnuts',
-          tags: ['Calcium 15%', '150 kcal', 'Omega 3'], icon: Icons.cookie_outlined),
-      _MealData(time: '07:30 PM', type: 'Dinner', title: 'Mashed Sweet Potato & Grilled Fish',
-          tags: ['DHA + EPA', '340 kcal', 'Zinc 2mg'], icon: Icons.bedtime_outlined),
-    ];
-
     return Column(
-      children: meals.asMap().entries.map((entry) {
-        final i = entry.key;
-        final m = entry.value;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+      children: List.generate(_meals.length, (index) {
+        final meal = _meals[index];
+        final isLast = index == _meals.length - 1;
+
+        return IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Timeline dot + line
+              // Timeline Dot + Connecting Line
               Column(
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceContainerHigh,
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.accentMint,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.surfaceContainerLowest, width: 2),
                     ),
-                    child: Icon(m.icon, size: 18, color: AppTheme.primary),
+                    child: Icon(meal.icon, color: AppTheme.accentSage, size: 20),
                   ),
-                  if (i < meals.length - 1)
-                    Container(
-                      width: 2,
-                      height: 80,
-                      color: AppTheme.outlineVariant.withOpacity(0.4),
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        color: const Color(0xFFBFC9BF),
+                      ),
                     ),
                 ],
               ),
               const SizedBox(width: 14),
-              Expanded(child: _MealCard(meal: m)),
+
+              // Meal Card Content
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.borderColor),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            meal.mealType,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.cardBg,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              meal.time,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        meal.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Tags + Swap Action
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Wrap(
+                            spacing: 6,
+                            children: meal.tags.map((t) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: t.bgClass,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(t.icon, size: 12, color: t.textClass),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      t.label,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: t.textClass,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          // Swap Option Button
+                          GestureDetector(
+                            onTap: _swappingId == meal.id ? null : () => _handleSwapMeal(meal.id),
+                            child: Row(
+                              children: [
+                                _swappingId == meal.id
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
+                                      )
+                                    : const Icon(Icons.refresh, size: 14, color: AppTheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _swappingId == meal.id ? 'Swapping...' : 'Swap Option',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         );
-      }).toList(),
+      }),
     );
   }
 
-  Widget _buildWhyCard() {
+  Widget _buildQuickTipCard() {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.primaryFixed.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(24),
+        color: AppTheme.cardBgAlt,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.borderColor),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.description_outlined, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Why this plan?',
-                      style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w800,
-                          color: AppTheme.primary)),
-                  Text('Clinical Rationale & Evidence',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: AppTheme.primaryFixed),
-          const SizedBox(height: 16),
-          _WhySection(
-            title: 'Cognitive Development',
-            desc: 'The inclusion of DHA-rich fish and walnuts supports the rapid neural myelination occurring during the 24-month developmental window.',
-          ),
-          const SizedBox(height: 16),
-          _WhySection(
-            title: 'Anemia Prevention',
-            desc: 'Combining lentils (non-heme iron) with spinach (vitamin C) optimizes absorption rates, specifically addressing the identified moderate risk level.',
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
+          const Icon(Icons.lightbulb_outline, color: AppTheme.primary, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: AppTheme.secondary, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'This protocol is based on WHO Pediatric Nutrition Guidelines for stunted growth prevention in high-risk demographic clusters.',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic, height: 1.5),
+                Text(
+                  'A quick tip',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Remember to keep portions small and introduce one new food at a time to monitor for any sensitivities.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
                   ),
                 ),
               ],
@@ -195,115 +334,6 @@ class NutritionPlanScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MealData {
-  final String time;
-  final String type;
-  final String title;
-  final List<String> tags;
-  final IconData icon;
-  const _MealData({required this.time, required this.type, required this.title,
-    required this.tags, required this.icon});
-}
-
-class _RecapCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color borderColor;
-  const _RecapCard({required this.label, required this.value, required this.borderColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: borderColor, width: 4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label.toUpperCase(),
-              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700,
-                  color: AppTheme.onSurfaceVariant, letterSpacing: 1)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700,
-                  color: AppTheme.onSurface)),
-        ],
-      ),
-    );
-  }
-}
-
-class _MealCard extends StatelessWidget {
-  final _MealData meal;
-  const _MealCard({required this.meal});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(meal.type,
-                  style: GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.primary)),
-              Text(meal.time,
-                  style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(meal.title,
-              style: GoogleFonts.montserrat(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.onSurface)),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: meal.tags.map((tag) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerHigh.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(tag,
-                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
-                      color: AppTheme.onSurfaceVariant)),
-            )).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WhySection extends StatelessWidget {
-  final String title;
-  final String desc;
-  const _WhySection({required this.title, required this.desc});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.onSurface)),
-        const SizedBox(height: 4),
-        Text(desc, style: GoogleFonts.inter(fontSize: 13, color: AppTheme.onSurfaceVariant, height: 1.55)),
-      ],
     );
   }
 }

@@ -1,377 +1,532 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/child_profile.dart';
+import '../models/vital_record.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bird_mascot.dart';
 
 class ScanScreen extends StatefulWidget {
-  final VoidCallback onComplete;
-  const ScanScreen({super.key, required this.onComplete});
+  final ChildProfile child;
+  final VitalRecord vitals;
+  final ValueChanged<int> onNavigateTab;
+
+  const ScanScreen({
+    super.key,
+    required this.child,
+    required this.vitals,
+    required this.onNavigateTab,
+  });
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateMixin {
-  bool _distractionMode = true;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnim;
+class _ScanScreenState extends State<ScanScreen> {
+  String _scanMode = 'camera'; // 'camera', 'distraction', 'result'
+  bool _distractionSoundsOn = false;
+  bool _isCapturing = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 1))
-      ..repeat(reverse: true);
-    _pulseAnim = Tween(begin: 0.6, end: 1.0).animate(_pulseController);
+  void _playSoothingChime() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('♪ Chime sound played for child!'),
+        duration: Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
+  void _handleCapture() {
+    setState(() => _isCapturing = true);
+    if (_distractionSoundsOn) _playSoothingChime();
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        setState(() {
+          _isCapturing = false;
+          _scanMode = 'result';
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDistractionMode(),
-        const SizedBox(height: 24),
-        _buildCameraInterface(),
-        const SizedBox(height: 20),
-        _buildSafetyTips(),
-      ],
+    // Wrap entire ScanScreen in a opaque background container to ensure camera preview is 100% clear
+    return Container(
+      color: AppTheme.background,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildCurrentMode(),
+        ),
+      ),
     );
   }
 
-  Widget _buildDistractionMode() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Row(
+  Widget _buildCurrentMode() {
+    switch (_scanMode) {
+      case 'distraction':
+        return _buildDistractionMode();
+      case 'result':
+        return _buildResultMode();
+      case 'camera':
+      default:
+        return _buildCameraMode();
+    }
+  }
+
+  // 1. CAMERA SCAN FRAME MODE
+  Widget _buildCameraMode() {
+    return Column(
+      key: const ValueKey('camera'),
+      children: [
+        Text(
+          "Let's check in on their growth",
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Position ${widget.child.name} inside the gentle frame below.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+
+        // Clear Camera Preview Box with Silhouette & Corner Brackets
+        Container(
+          width: double.infinity,
+          height: 380,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFEEEA),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: AppTheme.borderAccent, width: 2),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const Icon(Icons.child_care, color: AppTheme.secondary, size: 24),
-              const SizedBox(width: 8),
-              Text('Distraction Mode',
-                  style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => setState(() => _distractionMode = !_distractionMode),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 48,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: _distractionMode ? AppTheme.secondary : AppTheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    alignment: _distractionMode ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    ),
+              // Simulated Camera Feed Background
+              ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  child: const Center(
+                    child: Icon(Icons.camera_alt_outlined, size: 48, color: AppTheme.textMuted),
                   ),
                 ),
+              ),
+
+              // Child Silhouette Outline
+              CustomPaint(
+                size: const Size(200, 320),
+                painter: _SilhouettePainter(),
+              ),
+
+              // Corner Brackets
+              const Positioned(
+                top: 16,
+                left: 16,
+                child: _CornerBracket(top: true, left: true),
+              ),
+              const Positioned(
+                top: 16,
+                right: 16,
+                child: _CornerBracket(top: true, left: false),
+              ),
+              const Positioned(
+                bottom: 16,
+                left: 16,
+                child: _CornerBracket(top: false, left: true),
+              ),
+              const Positioned(
+                bottom: 16,
+                right: 16,
+                child: _CornerBracket(top: false, left: false),
               ),
             ],
           ),
-          if (_distractionMode) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Stack(
-                children: [
-                  Image.network(
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuD9_CY5K_dXo_Hf4KuRXp6b3bxjPlTKhMUFUdc5SVyIU_1icgNIt4MnPWqBV8U7bUlGX6DeiJHmOA9lhrRCQHSc5sCeS5qJV8zN9QV91_VuZDhxoXgMJmgHW7nJuD87TOEklmLjONq9yP0D2CooEPLW-jbSawynwNw2uBiYWI2J1q4OVlCYU21XDAiOtz4Z14dy-rUg6Ypjx9BQa5UaoLyWZ0Lq2LMebbeCFvr9yPYk_2bdYCAixJIm18yrriMEJXMwQl3EyDzWdsQk',
-                    width: double.infinity,
-                    height: 160,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 160,
-                      color: AppTheme.surfaceContainerHigh,
-                      child: const Icon(Icons.play_circle_outline, size: 48, color: AppTheme.outlineVariant),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black26,
-                      child: const Center(
-                        child: Icon(Icons.play_circle_fill, color: Colors.white, size: 52),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('Keeping child engaged...',
-                          style: GoogleFonts.inter(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(height: 24),
 
-  Widget _buildCameraInterface() {
-    return AspectRatio(
-      aspectRatio: 3 / 4,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: Stack(
-          fit: StackFit.expand,
+        // Mode Controls
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuA4NzpMQ41xVnCqc2Y3KRJP3UkFf-TPBGXTMRTLwszmYY-KpqoTyFJ8ThdmIZn5jiWgBruKERLt5QCpTxYSa0q6RhnmW_UqhPCWyftJtbuMfmTpzUCw49u_ntYeqkFdkVFnyL0rm8vIEFd80XhkHe1NbZjsY47WgwTcKHg4ToXNHDa3wd_OGqG1gxS608Ako7f1rEp81WwAvQczcpT1vdFsHeAkR7sAd0zy2qccillIf3fGtmEw6sF_AmOcl7tJzJlMIeifgYfL0Jp9',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.black87),
-            ),
-            Container(color: Colors.black.withOpacity(0.2)),
-
-            // Top detecting badge
-            Positioned(
-              top: 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _pulseAnim,
-                        builder: (_, __) => Opacity(
-                          opacity: _pulseAnim.value,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.secondaryFixed,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('DETECTING...',
-                          style: GoogleFonts.montserrat(
-                              fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 2)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Target overlay
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white.withOpacity(0.6), width: 2, style: BorderStyle.solid),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Position upper arm\nwithin this area',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                            fontSize: 10, color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.05),
-                    ),
-                    child: const Icon(Icons.my_location, color: Colors.white, size: 32),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Place a coin next to the arm\nfor scale calibration',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                        fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white,
-                        shadows: [const Shadow(blurRadius: 8)]),
-                  ),
-                ],
-              ),
-            ),
-
-            // Bottom controls
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+            // Sound Distraction Switch
+            GestureDetector(
+              onTap: () {
+                setState(() => _distractionSoundsOn = !_distractionSoundsOn);
+                if (_distractionSoundsOn) _playSoothingChime();
+              },
               child: Container(
-                padding: const EdgeInsets.fromLTRB(28, 40, 28, 28),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black87],
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9E8E4),
+                  borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _CamButton(icon: Icons.photo_library_outlined, onTap: () {}),
-                    GestureDetector(
-                      onTap: widget.onComplete,
-                      child: Container(
-                        width: 76,
-                        height: 76,
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        padding: const EdgeInsets.all(4),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppTheme.primary, width: 3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Container(
-                            margin: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
-                          ),
-                        ),
-                      ),
+                    const Icon(Icons.volume_up, size: 18, color: AppTheme.accentSage),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Distract with sounds',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
                     ),
-                    _CamButton(icon: Icons.flip_camera_ios_outlined, onTap: () {}),
+                    const SizedBox(width: 8),
+                    Switch.adaptive(
+                      value: _distractionSoundsOn,
+                      onChanged: (val) {
+                        setState(() => _distractionSoundsOn = val);
+                        if (val) _playSoothingChime();
+                      },
+                      activeTrackColor: AppTheme.primary,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(width: 10),
+
+            // Mascot Mode Button
+            ElevatedButton(
+              onPressed: () => setState(() => _scanMode = 'distraction'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accentMint,
+                foregroundColor: AppTheme.darkGreenText,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                elevation: 0,
+              ),
+              child: Text(
+                'Mascot Mode',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 24),
+
+        // Shutter Button
+        GestureDetector(
+          onTap: _isCapturing ? null : _handleCapture,
+          child: Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: AppTheme.primary.withValues(alpha: 0.2), blurRadius: 16, spreadRadius: 4),
+              ],
+            ),
+            padding: const EdgeInsets.all(6),
+            child: Container(
+              decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+              child: _isCapturing
+                  ? const Center(
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      ),
+                    )
+                  : const Icon(Icons.camera_alt, color: Colors.white, size: 32),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSafetyTips() {
+  // 2. CHILD DISTRACTION MODE
+  Widget _buildDistractionMode() {
     return Column(
+      key: const ValueKey('distraction'),
+      children: [
+        Text(
+          'DISTRACTION MODE ON',
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.primary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Look here, ${widget.child.name}!',
+          style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textSecondary),
+        ),
+        const SizedBox(height: 28),
+
+        // Interactive Animated Bird Mascot
+        BirdMascot(
+          onTap: _playSoothingChime,
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          'Tap the bird for a cheerful chime!',
+          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+        ),
+        const SizedBox(height: 28),
+
+        // Exit Distraction Button
+        ElevatedButton.icon(
+          onPressed: () => setState(() => _scanMode = 'camera'),
+          icon: const Icon(Icons.close, size: 18),
+          label: Text('Exit Distraction Mode', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFE9E8E4),
+            foregroundColor: AppTheme.textSecondary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            elevation: 0,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 3. SCAN RESULT MODE
+  Widget _buildResultMode() {
+    return Column(
+      key: const ValueKey('result'),
       children: [
         Container(
-          padding: const EdgeInsets.all(18),
+          width: 72,
+          height: 72,
+          decoration: const BoxDecoration(
+            color: AppTheme.accentMint,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_circle_outline, color: AppTheme.darkGreenText, size: 40),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          '${widget.child.name} is growing normally',
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Last checked today at 10:42 AM',
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+        ),
+        const SizedBox(height: 24),
+
+        // Measurements Card
+        Container(
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(20),
+            color: AppTheme.cardBgAlt,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('SAFETY CHECK',
-                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
-                      color: AppTheme.primary, letterSpacing: 1)),
-              const SizedBox(height: 6),
               Text(
-                'Ensure the area is well-lit and the child is calm. High-contrast backgrounds work best for AI accuracy.',
-                style: GoogleFonts.inter(fontSize: 13, color: AppTheme.onSurfaceVariant, height: 1.5),
+                'LATEST MEASUREMENTS',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textMuted,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildResultRow('Weight', '${widget.vitals.weight}', 'kg'),
+              const Divider(height: 20, color: AppTheme.borderColor),
+              _buildResultRow('Height', '${widget.vitals.height}', 'cm'),
+              const Divider(height: 20, color: AppTheme.borderColor),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('MUAC', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary)),
+                      RichText(
+                        text: TextSpan(
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                          children: [
+                            TextSpan(text: '${widget.vitals.muac}', style: const TextStyle(fontSize: 22)),
+                            const TextSpan(text: ' cm', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentMint,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: AppTheme.accentSage, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Healthy',
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentSage),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        Row(
+        const SizedBox(height: 24),
+
+        // What This Means
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _TipCard(
-                icon: Icons.wb_sunny_outlined,
-                label: 'BRIGHT LIGHT',
-                color: AppTheme.secondaryContainer,
-                textColor: AppTheme.onSecondaryContainer,
+            Text(
+              'WHAT THIS MEANS',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textMuted,
+                letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _TipCard(
-                icon: Icons.straighten,
-                label: 'REFERENCE OBJECT',
-                color: AppTheme.primaryFixed,
-                textColor: AppTheme.primary,
+            const SizedBox(height: 8),
+            Text(
+              '${widget.child.name} is right on track. His weight and height are perfectly balanced, and his arm circumference shows he is getting plenty of the right nutrients. Keep doing what you\'re doing!',
+              style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textPrimary, height: 1.5),
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+
+        // Action Buttons
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: () => widget.onNavigateTab(3), // View Nutrition Plan
+            icon: const Icon(Icons.restaurant_outlined, size: 20),
+            label: Text('View nutrition plan', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              shape: const StadiumBorder(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton(
+            onPressed: () => setState(() => _scanMode = 'camera'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.primary,
+              side: const BorderSide(color: AppTheme.primary, width: 2),
+              shape: const StadiumBorder(),
+            ),
+            child: Text('Scan again', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultRow(String label, String val, String unit) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary)),
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                children: [
+                  TextSpan(text: val, style: const TextStyle(fontSize: 22)),
+                  TextSpan(text: ' $unit', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400)),
+                ],
               ),
             ),
           ],
         ),
+        const Icon(Icons.show_chart, color: AppTheme.accentSage, size: 28),
       ],
     );
   }
 }
 
-class _CamButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CamButton({required this.icon, required this.onTap});
+class _CornerBracket extends StatelessWidget {
+  final bool top;
+  final bool left;
+  const _CornerBracket({required this.top, required this.left});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        border: Border(
+          top: top ? const BorderSide(color: AppTheme.primary, width: 3) : BorderSide.none,
+          bottom: !top ? const BorderSide(color: AppTheme.primary, width: 3) : BorderSide.none,
+          left: left ? const BorderSide(color: AppTheme.primary, width: 3) : BorderSide.none,
+          right: !left ? const BorderSide(color: AppTheme.primary, width: 3) : BorderSide.none,
         ),
-        child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
   }
 }
 
-class _TipCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color textColor;
-  const _TipCard({required this.icon, required this.label, required this.color, required this.textColor});
+class _SilhouettePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppTheme.primaryContainer.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path()
+      ..addOval(Rect.fromCenter(center: Offset(size.width * 0.5, 60), width: 70, height: 80))
+      ..moveTo(size.width * 0.5, 100)
+      ..lineTo(size.width * 0.5, 220)
+      ..moveTo(size.width * 0.5, 130)
+      ..lineTo(size.width * 0.2, 180)
+      ..moveTo(size.width * 0.5, 130)
+      ..lineTo(size.width * 0.8, 180)
+      ..moveTo(size.width * 0.5, 220)
+      ..lineTo(size.width * 0.3, 300)
+      ..moveTo(size.width * 0.5, 220)
+      ..lineTo(size.width * 0.7, 300);
+
+    canvas.drawPath(path, paint);
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: textColor, size: 30),
-          const SizedBox(height: 8),
-          Text(label,
-              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: textColor, letterSpacing: 0.5),
-              textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

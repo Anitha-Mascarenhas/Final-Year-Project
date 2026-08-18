@@ -1,396 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:math';
+import '../models/child_profile.dart';
+import '../models/vital_record.dart';
 import '../theme/app_theme.dart';
 
 class BMICalculatorScreen extends StatefulWidget {
-  const BMICalculatorScreen({super.key});
+  final ChildProfile child;
+  final VitalRecord vitals;
+  final ValueChanged<VitalRecord> onAddRecord;
+
+  const BMICalculatorScreen({
+    super.key,
+    required this.child,
+    required this.vitals,
+    required this.onAddRecord,
+  });
 
   @override
   State<BMICalculatorScreen> createState() => _BMICalculatorScreenState();
 }
 
 class _BMICalculatorScreenState extends State<BMICalculatorScreen> {
-  String _gender = 'boy';
-  int _age = 7;
-  double _height = 122;
-  double _weight = 24.5;
+  int _activeSubTab = 0; // 0 = Trends, 1 = Calculator
 
-  double get bmi {
-    final h = _height / 100;
-    return _weight / (h * h);
+  // Form State
+  late String _gender;
+  late int _ageYears;
+  late int _ageMonths;
+  late TextEditingController _weightController;
+  late TextEditingController _heightController;
+
+  bool _isCalculating = false;
+  Map<String, String>? _calcResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _gender = widget.child.gender;
+    _ageYears = widget.child.ageYears;
+    _ageMonths = widget.child.ageMonths;
+    _weightController = TextEditingController(text: '${widget.vitals.weight}');
+    _heightController = TextEditingController(text: '${widget.vitals.height}');
   }
 
-  String get bmiCategory {
-    final b = bmi;
-    if (b < 13) return 'Underweight';
-    if (b < 18) return 'Normal';
-    if (b < 22) return 'Overweight';
-    return 'Obese';
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _heightController.dispose();
+    super.dispose();
   }
 
-  Color get bmiColor {
-    final b = bmi;
-    if (b < 13) return Colors.blue;
-    if (b < 18) return AppTheme.secondary;
-    if (b < 22) return Colors.orange;
-    return AppTheme.error;
+  void _handleCalculate() {
+    setState(() {
+      _isCalculating = true;
+      _calcResult = null;
+    });
+
+    Future.delayed(const Duration(milliseconds: 600), () {
+      final w = double.tryParse(_weightController.text) ?? widget.vitals.weight;
+      final h = double.tryParse(_heightController.text) ?? widget.vitals.height;
+      final hMeters = h / 100;
+      final bmiVal = w / (hMeters * hMeters);
+
+      final newRecord = VitalRecord(
+        weight: w,
+        height: h,
+        muac: widget.vitals.muac,
+        date: 'Today',
+        bmi: double.parse(bmiVal.toStringAsFixed(1)),
+        percentile: '75th',
+      );
+
+      widget.onAddRecord(newRecord);
+
+      if (mounted) {
+        setState(() {
+          _isCalculating = false;
+          _calcResult = {
+            'bmi': bmiVal.toStringAsFixed(1),
+            'percentile': '75th',
+            'status': 'On Track',
+            'advice': '${widget.child.name} is tracking beautifully in the healthy range according to WHO growth curves.',
+          };
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 24),
-        _buildGenderSelector(),
-        const SizedBox(height: 20),
-        _buildAgeStepper(),
-        const SizedBox(height: 20),
-        _buildSlider(
-          label: 'Height (cm)',
-          value: _height,
-          min: 50,
-          max: 220,
-          onChanged: (v) => setState(() => _height = v),
-          displayValue: '${_height.toStringAsFixed(0)} cm',
-          marks: ['50cm', '135cm', '220cm'],
-        ),
-        const SizedBox(height: 20),
-        _buildSlider(
-          label: 'Weight (kg)',
-          value: _weight,
-          min: 5,
-          max: 150,
-          onChanged: (v) => setState(() => _weight = v),
-          displayValue: '${_weight.toStringAsFixed(1)} kg',
-          marks: ['5kg', '77kg', '150kg'],
-        ),
-        const SizedBox(height: 28),
-        _buildBMIResult(),
-        const SizedBox(height: 20),
-        _buildCategoryBar(),
-        const SizedBox(height: 20),
-        _buildInsightCard(),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {},
-            child: Text('Save to Growth Journal',
-                style: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 16)),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              backgroundColor: AppTheme.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-        _buildHealthPillars(),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          decoration: BoxDecoration(
-            color: AppTheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text('Clinical Analysis',
-              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
-                  color: AppTheme.onSecondaryContainer, letterSpacing: 0.5)),
-        ),
-        const SizedBox(height: 10),
-        RichText(
-          text: TextSpan(
-            style: GoogleFonts.montserrat(fontSize: 34, fontWeight: FontWeight.w800,
-                color: AppTheme.onSurface, letterSpacing: -1),
-            children: [
-              const TextSpan(text: 'Growth '),
-              TextSpan(
-                text: 'Precision.',
-                style: GoogleFonts.montserrat(color: AppTheme.primary, fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "Track your child's BMI accurately with our clinical-grade calculator designed for pediatric development cycles.",
-          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.onSurfaceVariant, height: 1.5),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGenderSelector() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SELECT GENDER',
-              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700,
-                  color: AppTheme.onSurfaceVariant, letterSpacing: 1.5)),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                _GenderButton(label: 'Boy', selected: _gender == 'boy',
-                    onTap: () => setState(() => _gender = 'boy')),
-                _GenderButton(label: 'Girl', selected: _gender == 'girl',
-                    onTap: () => setState(() => _gender = 'girl')),
-              ],
-            ),
-          ),
+          // Sub-tab Switcher
+          _buildSubTabSwitcher(),
+          const SizedBox(height: 24),
+
+          if (_activeSubTab == 0) _buildTrendsView() else _buildCalculatorView(),
         ],
       ),
     );
   }
 
-  Widget _buildAgeStepper() {
+  Widget _buildSubTabSwitcher() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
+        color: const Color(0xFFE3E2DF),
+        borderRadius: BorderRadius.circular(30),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('AGE (YEARS)',
-                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700,
-                      color: AppTheme.onSurfaceVariant, letterSpacing: 1.5)),
-              Text('$_age',
-                  style: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.primary)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _StepButton(
-                icon: Icons.remove,
-                onTap: () => setState(() => _age = max(0, _age - 1)),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: _age / 20,
-                      minHeight: 8,
-                      backgroundColor: AppTheme.surfaceContainerHigh,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _activeSubTab = 0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: _activeSubTab == 0 ? AppTheme.background : Colors.transparent,
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: _activeSubTab == 0
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    'Growth Trends',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
                     ),
                   ),
                 ),
               ),
-              _StepButton(
-                icon: Icons.add,
-                onTap: () => setState(() => _age = min(20, _age + 1)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSlider({
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-    required String displayValue,
-    required List<String> marks,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label.toUpperCase(),
-                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700,
-                      color: AppTheme.onSurfaceVariant, letterSpacing: 1)),
-              Text(displayValue,
-                  style: GoogleFonts.montserrat(fontSize: 26, fontWeight: FontWeight.w900, color: AppTheme.primary)),
-            ],
-          ),
-          Slider(
-            value: value,
-            min: min,
-            max: max,
-            activeColor: AppTheme.primary,
-            inactiveColor: AppTheme.surfaceContainerHigh,
-            onChanged: onChanged,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: marks.map((m) => Text(m,
-                style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700,
-                    color: AppTheme.outline, letterSpacing: 0.5))).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBMIResult() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primary, AppTheme.primaryContainer],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text("Your Child's BMI",
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700,
-                  color: Colors.white.withOpacity(0.8), letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(bmi.toStringAsFixed(1),
-                  style: GoogleFonts.montserrat(fontSize: 72, fontWeight: FontWeight.w900,
-                      color: Colors.white, letterSpacing: -2, height: 1)),
-              const SizedBox(width: 8),
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(bmiCategory.toUpperCase(),
-                    style: GoogleFonts.montserrat(fontSize: 11, fontWeight: FontWeight.w800,
-                        color: AppTheme.onSecondaryContainer)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Healthier than 68% of children the same age.',
-            style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.7), height: 1.4),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryBar() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('DEVELOPMENT CATEGORY',
-              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700,
-                  color: AppTheme.onSurfaceVariant, letterSpacing: 1)),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Expanded(flex: 15, child: Container(height: 14, color: Colors.blue[300])),
-                Expanded(flex: 45, child: Container(height: 14, color: AppTheme.secondaryContainer)),
-                Expanded(flex: 20, child: Container(height: 14, color: Colors.orange[300])),
-                Expanded(flex: 20, child: Container(height: 14, color: AppTheme.errorContainer)),
-              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ['Underweight', 'Healthy', 'Overweight', 'Obese'].map((l) =>
-                Text(l, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700,
-                    color: AppTheme.onSurfaceVariant))).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.lightbulb, color: AppTheme.secondary, size: 22),
-          ),
-          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Growth Insight',
-                    style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  'A BMI of ${bmi.toStringAsFixed(1)} is optimal for a $_age-year-old ${_gender}. Continue focusing on diverse whole foods and active play.',
-                  style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant, height: 1.5),
+            child: GestureDetector(
+              onTap: () => setState(() => _activeSubTab = 1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: _activeSubTab == 1 ? AppTheme.background : Colors.transparent,
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: _activeSubTab == 1
+                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)]
+                      : null,
                 ),
-              ],
+                child: Center(
+                  child: Text(
+                    'Log & Calculate',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -398,126 +170,606 @@ class _BMICalculatorScreenState extends State<BMICalculatorScreen> {
     );
   }
 
-  Widget _buildHealthPillars() {
+  Widget _buildTrendsView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Health Pillars',
-            style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w800,
-                color: AppTheme.onSurface, letterSpacing: -0.5)),
-        const SizedBox(height: 14),
+        // Overview Banner Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.borderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${widget.child.name} is thriving!',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Following a healthy growth path compared to WHO standards.',
+                style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Icon(Icons.check_circle, color: AppTheme.primary, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    'On Track',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Key Metrics Row
         Row(
           children: [
-            Expanded(child: _PillarCard(icon: Icons.restaurant, title: 'Balanced Diet',
-                desc: 'Optimal micronutrients for bone density.',
-                color: AppTheme.surfaceContainerLow, textColor: AppTheme.primary)),
-            const SizedBox(width: 10),
-            Expanded(child: _PillarCard(icon: Icons.directions_run, title: 'Active Play',
-                desc: '60 mins of daily vigorous movement.',
-                color: AppTheme.secondaryContainer, textColor: AppTheme.onSecondaryContainer)),
-            const SizedBox(width: 10),
-            Expanded(child: _PillarCard(icon: Icons.bedtime, title: 'Restorative Sleep',
-                desc: 'Essential for growth hormone release.',
-                color: AppTheme.tertiaryContainer, textColor: AppTheme.onTertiaryContainer)),
+            Expanded(
+              child: _MetricTile(
+                icon: Icons.monitor_weight_outlined,
+                value: '${widget.vitals.weight}',
+                unit: 'kg',
+                label: 'Weight',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MetricTile(
+                icon: Icons.straighten,
+                value: '${widget.vitals.height}',
+                unit: 'cm',
+                label: 'Height',
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: 24),
+
+        // Weight Trend Curve Card
+        _buildTrendChartCard(
+          title: 'Weight Trend',
+          months: ['Jan', 'Feb', 'Mar', 'Apr', 'Now'],
+          isWeight: true,
+        ),
+        const SizedBox(height: 24),
+
+        // Height Trend Curve Card
+        _buildTrendChartCard(
+          title: 'Height Trend',
+          months: ['Jan', 'Feb', 'Mar', 'Apr', 'Now'],
+          isWeight: false,
+        ),
+        const SizedBox(height: 24),
+
+        // CTA Add Measurement
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: () => setState(() => _activeSubTab = 1),
+            icon: const Icon(Icons.add, size: 20),
+            label: Text(
+              'Add Measurement',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+          ),
         ),
       ],
     );
   }
-}
 
-class _GenderButton extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _GenderButton({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: selected
-                ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)]
-                : null,
+  Widget _buildTrendChartCard({
+    required String title,
+    required List<String> months,
+    required bool isWeight,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
           ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.borderColor),
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 130,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _WHOTrendPainter(isWeight: isWeight),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: months.map((m) {
+                  final isNow = m == 'Now';
+                  return Text(
+                    m,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+                      color: isNow ? AppTheme.accentSage : AppTheme.textSecondary,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalculatorView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Let's check in on their growth.",
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.primary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Enter a few quick details to see how they are tracking today.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+        ),
+        const SizedBox(height: 24),
+
+        // Gender Selector
+        Text(
+          'WHO ARE WE CHECKING?',
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3E2DF),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _gender = 'boy'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _gender == 'boy' ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Boy',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _gender = 'girl'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _gender == 'girl' ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Girl',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Age Inputs
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Age (Years)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    initialValue: '$_ageYears',
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) => _ageYears = int.tryParse(v) ?? 0,
+                    decoration: _inputDecoration('e.g. 2'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Months', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    initialValue: '$_ageMonths',
+                    keyboardType: TextInputType.number,
+                    onChanged: (v) => _ageMonths = int.tryParse(v) ?? 0,
+                    decoration: _inputDecoration('e.g. 3'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Weight & Height
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Weight (kg)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _weightController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: _inputDecoration('14.2', icon: Icons.monitor_weight_outlined),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Height (cm)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _heightController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: _inputDecoration('92.5', icon: Icons.straighten),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Calculate Button
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: _isCalculating ? null : _handleCalculate,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            ),
+            child: _isCalculating
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('Calculating WHO Growth...', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Calculate Growth', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, size: 20),
+                    ],
+                  ),
+          ),
+        ),
+
+        // Calculation Results
+        if (_calcResult != null) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.accentMint,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
               children: [
-                Icon(Icons.child_care, size: 18,
-                    color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant),
-                const SizedBox(width: 6),
-                Text(label,
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700,
-                        color: selected ? AppTheme.primary : AppTheme.onSurfaceVariant)),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite, color: AppTheme.primary, size: 28),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Calculation Complete',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _calcResult!['advice']!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.darkGreenText,
+                    height: 1.5,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.trending_up, color: AppTheme.primary, size: 18),
+                          const SizedBox(width: 6),
+                          Text('Percentile', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _calcResult!['percentile']!,
+                        style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.speed, color: AppTheme.primary, size: 18),
+                          const SizedBox(width: 6),
+                          Text('BMI', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _calcResult!['bmi']!,
+                        style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, {IconData? icon}) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: AppTheme.cardBgAlt,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppTheme.borderColor),
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppTheme.borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+      ),
+      suffixIcon: icon != null ? Icon(icon, color: AppTheme.textMuted, size: 20) : null,
     );
   }
 }
 
-class _StepButton extends StatelessWidget {
+class _MetricTile extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
-  const _StepButton({required this.icon, required this.onTap});
+  final String value;
+  final String unit;
+  final String label;
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerHigh,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 22, color: AppTheme.onSurface),
-      ),
-    );
-  }
-}
-
-class _PillarCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String desc;
-  final Color color;
-  final Color textColor;
-  const _PillarCard({required this.icon, required this.title, required this.desc,
-    required this.color, required this.textColor});
+  const _MetricTile({
+    required this.icon,
+    required this.value,
+    required this.unit,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 150,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.borderColor),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: textColor, size: 28),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: GoogleFonts.montserrat(fontSize: 12, fontWeight: FontWeight.w700, color: textColor)),
-              const SizedBox(height: 2),
-              Text(desc, style: GoogleFonts.inter(fontSize: 10, color: textColor.withOpacity(0.7), height: 1.4)),
-            ],
+          Icon(icon, color: AppTheme.accentSage, size: 22),
+          const SizedBox(height: 6),
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+              children: [
+                TextSpan(text: value, style: const TextStyle(fontSize: 22)),
+                TextSpan(text: ' $unit', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+              ],
+            ),
           ),
+          const SizedBox(height: 4),
+          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
         ],
       ),
     );
   }
+}
+
+class _WHOTrendPainter extends CustomPainter {
+  final bool isWeight;
+  _WHOTrendPainter({required this.isWeight});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // WHO Corridor Paint
+    final corridorPaint = Paint()
+      ..color = AppTheme.accentMint.withValues(alpha: 0.5)
+      ..style = PaintingStyle.fill;
+
+    final linePaint = Paint()
+      ..color = AppTheme.primary
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+
+    final dotPaint = Paint()
+      ..color = AppTheme.primary
+      ..style = PaintingStyle.fill;
+
+    final activeDotPaint = Paint()
+      ..color = AppTheme.accentSage
+      ..style = PaintingStyle.fill;
+
+    // Corridor Path
+    final corridorPath = Path()
+      ..moveTo(0, size.height * 0.7)
+      ..quadraticBezierTo(size.width * 0.4, size.height * 0.5, size.width, size.height * 0.25)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    canvas.drawPath(corridorPath, corridorPaint);
+
+    // Child Line
+    final linePath = Path()
+      ..moveTo(0, size.height * 0.8)
+      ..cubicTo(
+        size.width * 0.25,
+        size.height * 0.7,
+        size.width * 0.5,
+        size.height * 0.45,
+        size.width,
+        size.height * 0.3,
+      );
+
+    canvas.drawPath(linePath, linePaint);
+
+    // Draw Points
+    final pts = [
+      Offset(0, size.height * 0.8),
+      Offset(size.width * 0.25, size.height * 0.72),
+      Offset(size.width * 0.5, size.height * 0.52),
+      Offset(size.width * 0.75, size.height * 0.4),
+      Offset(size.width, size.height * 0.3),
+    ];
+
+    for (int i = 0; i < pts.length; i++) {
+      if (i == pts.length - 1) {
+        canvas.drawCircle(pts[i], 6, activeDotPaint);
+        canvas.drawCircle(pts[i], 8, Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 2);
+      } else {
+        canvas.drawCircle(pts[i], 4, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
