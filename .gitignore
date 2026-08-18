@@ -7,7 +7,7 @@ venv/
 venv311/
 **/venv/
 **/venv311/
-
+backend/.venv/
 # Large datasets
 dataset/
 **/dataset/

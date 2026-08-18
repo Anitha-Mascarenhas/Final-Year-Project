@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/child_profile.dart';
+import '../models/vital_record.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_header.dart';
+import '../widgets/vanta_globe_background.dart';
 import 'dashboard_screen.dart';
-import 'scan_screen.dart';
-import 'analysis_results_screen.dart';
-import 'nutrition_plan_screen.dart';
 import 'bmi_calculator_screen.dart';
-import 'clinical_benchmarks_screen.dart';
+import 'scan_screen.dart';
+import 'nutrition_plan_screen.dart';
+import 'profile_screen.dart';
 import 'voice_assistant_sheet.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -17,147 +20,110 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _activeIndex = 0;
-  bool _scanComplete = false;
+  int _activeTab = 0; // 0=Home, 1=Growth, 2=Scan, 3=Nutrition, 4=Profile, 5=PoshanAi
 
-  final List<_NavItem> _navItems = const [
-    _NavItem(label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
-    _NavItem(label: 'Charts', icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart),
-    _NavItem(label: 'Scan', icon: Icons.qr_code_scanner, activeIcon: Icons.qr_code_scanner),
-    _NavItem(label: 'Diet', icon: Icons.restaurant_outlined, activeIcon: Icons.restaurant),
-    _NavItem(label: 'BMI', icon: Icons.monitor_weight_outlined, activeIcon: Icons.monitor_weight),
-  ];
+  late ChildProfile _child;
+  late VitalRecord _vitals;
 
-  void _onNavTap(int index) {
-    setState(() {
-      _activeIndex = index;
-      if (index != 2) _scanComplete = false;
-    });
-  }
-
-  Widget _buildScreen() {
-    switch (_activeIndex) {
-      case 0:
-        return const DashboardScreen();
-      case 1:
-        return const ClinicalBenchmarksScreen();
-      case 2:
-        if (_scanComplete) {
-          return AnalysisResultsScreen(onReset: () => setState(() => _scanComplete = false));
-        }
-        return ScanScreen(onComplete: () => setState(() => _scanComplete = true));
-      case 3:
-        return const NutritionPlanScreen();
-      case 4:
-        return const BMICalculatorScreen();
-      default:
-        return const DashboardScreen();
-    }
-  }
-
-  void _openVoiceAssistant() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const VoiceAssistantSheet(),
+  @override
+  void initState() {
+    super.initState();
+    _child = ChildProfile(
+      name: 'Aarav',
+      parentNames: 'Sarah & Leo',
+      accountType: 'Premium Account',
+      gender: 'boy',
+      ageYears: 2,
+      ageMonths: 3,
+      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
+      status: 'On Track',
+      statusDescription: 'Following a healthy growth path compared to WHO standards.',
     );
+
+    _vitals = VitalRecord(
+      weight: 14.2,
+      height: 92.5,
+      muac: 14.5,
+      date: 'Updated 2 days ago',
+      bmi: 16.2,
+      percentile: '75th',
+    );
+  }
+
+  String _getPageTitle() {
+    switch (_activeTab) {
+      case 0:
+        return 'Home';
+      case 1:
+        return 'Growth Tracking';
+      case 2:
+        return 'AI Scan';
+      case 3:
+        return 'Nutrition Plan';
+      case 4:
+        return 'Child Profile';
+      case 5:
+        return 'PoshanAi Voice';
+      default:
+        return 'PoshanEye';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.surface,
-      extendBody: true,
-      body: Stack(
-        children: [
-          // Main content
-          SafeArea(
-            bottom: false,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero)
-                      .animate(animation),
-                  child: child,
-                ),
-              ),
-              child: KeyedSubtree(
-                key: ValueKey(_activeIndex),
-                child: _buildBody(),
+    // Scan screen (tab 2) keeps background occluded to ensure camera view is 100% clear
+    final isGlobeVisible = _activeTab != 2;
+
+    return VantaGlobeBackground(
+      isBackgroundVisible: isGlobeVisible,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        body: Stack(
+          children: [
+            // Body Content View
+            Positioned.fill(
+              child: IndexedStack(
+                index: _activeTab,
+                children: [
+                  DashboardScreen(
+                    child: _child,
+                    vitals: _vitals,
+                    onNavigateTab: (tab) => setState(() => _activeTab = tab),
+                  ),
+                  BMICalculatorScreen(
+                    child: _child,
+                    vitals: _vitals,
+                    onAddRecord: (record) => setState(() => _vitals = record),
+                  ),
+                  ScanScreen(
+                    child: _child,
+                    vitals: _vitals,
+                    onNavigateTab: (tab) => setState(() => _activeTab = tab),
+                  ),
+                  NutritionPlanScreen(child: _child),
+                  ProfileScreen(child: _child, vitals: _vitals),
+                  VoiceAssistantSheet(child: _child, vitals: _vitals),
+                ],
               ),
             ),
-          ),
 
-          // Floating AI Mic button (only on home)
-          if (_activeIndex == 0)
+            // Fixed Top Header
             Positioned(
-              bottom: 110,
-              right: 24,
-              child: FloatingActionButton(
-                onPressed: _openVoiceAssistant,
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 6,
-                child: const Icon(Icons.mic, size: 28),
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AppHeader(
+                title: _getPageTitle(),
+                showBack: _activeTab != 0,
+                onBackClick: () => setState(() => _activeTab = 0),
+                onProfileClick: () => setState(() => _activeTab = 4),
+                avatarUrl: _child.avatarUrl,
               ),
             ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  Widget _buildBody() {
-    return Column(
-      children: [
-        _buildHeader(),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-            child: _buildScreen(),
-          ),
+          ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundImage: NetworkImage(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuAeR_pQqkUYm6G60-ZaJvJBj5orVwDj4SOOZ3tbEOmx0tW3hILD7czLfg1tCanIyTflUs-u6jN1QyZqGZWyc9hwbV1LsTf3z1_hp0TBKF-hdS3MLGUYy1vhJtYdbG12NHfUavbHL-BToJ88VpDrV89AJPjOmFYZFDq1NWolmgWeU0y8ClCXwHBprEFjJuwKChsHHi1DKXp3t_KiMLtRe9yD8xcC3eCJ54bfLMNX2N-F_cH60lPNBQAG0VHZkx8z0VJcwAcTyX-3-l7i',
-            ),
-            onBackgroundImageError: (_, __) {},
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'PoshanEye',
-            style: GoogleFonts.montserrat(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: AppTheme.primary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppTheme.primary),
-            onPressed: () {},
-          ),
-        ],
+        bottomNavigationBar: _buildBottomNav(),
       ),
     );
   }
@@ -165,59 +131,70 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: const Color(0xFF1E1235).withValues(alpha: 0.92),
+        border: Border(top: BorderSide(color: const Color(0xFF3FFF80).withValues(alpha: 0.15), width: 1)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 20, offset: const Offset(0, -4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: SizedBox(
+          height: 64,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_navItems.length, (i) {
-              if (i == 2) {
-                // Center scan button elevated
-                return _buildScanButton();
-              }
-              return _buildNavItem(i);
-            }),
+            children: [
+              // 0: Home
+              _buildNavItem(index: 0, label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
+
+              // 1: Growth
+              _buildNavItem(index: 1, label: 'Growth', icon: Icons.trending_up, activeIcon: Icons.trending_up),
+
+              // 2: Center Elevated Scan FAB
+              _buildCenterScanFAB(),
+
+              // 3: Nutrition
+              _buildNavItem(index: 3, label: 'Nutrition', icon: Icons.restaurant_outlined, activeIcon: Icons.restaurant),
+
+              // 4: Profile
+              _buildNavItem(index: 4, label: 'Profile', icon: Icons.person_outline, activeIcon: Icons.person),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index) {
-    final item = _navItems[index];
-    final isActive = _activeIndex == index;
-    return GestureDetector(
-      onTap: () => _onNavTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.primary.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
+  Widget _buildNavItem({
+    required int index,
+    required String label,
+    required IconData icon,
+    required IconData activeIcon,
+  }) {
+    final isActive = _activeTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _activeTab = index),
+        behavior: HitTestBehavior.opaque,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isActive ? item.activeIcon : item.icon,
-              color: isActive ? AppTheme.primary : Colors.grey[400],
-              size: 24,
+              isActive ? activeIcon : icon,
+              color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
+              size: 22,
             ),
             const SizedBox(height: 2),
             Text(
-              item.label,
+              label,
               style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isActive ? AppTheme.primary : Colors.grey[400],
-                letterSpacing: 0.5,
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
               ),
             ),
           ],
@@ -226,48 +203,45 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _buildScanButton() {
-    final isActive = _activeIndex == 2;
-    return GestureDetector(
-      onTap: () => _onNavTap(2),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: isActive ? AppTheme.primary : AppTheme.primary.withOpacity(0.8),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+  Widget _buildCenterScanFAB() {
+    final isActive = _activeTab == 2;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _activeTab = 2),
+        child: Transform.translate(
+          offset: const Offset(0, -12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3FFF80),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF1E1235), width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF3FFF80).withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 26),
+                child: const Icon(Icons.qr_code_scanner, color: Color(0xFF1E1235), size: 26),
+              ),
+              Text(
+                'AI Scan',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
+                ),
+              ),
+            ],
           ),
-          Text(
-            'Scan',
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: isActive ? AppTheme.primary : Colors.grey[400],
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
-}
-
-class _NavItem {
-  final String label;
-  final IconData icon;
-  final IconData activeIcon;
-  const _NavItem({required this.label, required this.icon, required this.activeIcon});
 }
