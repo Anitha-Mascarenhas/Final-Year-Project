@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from pathlib import Path
 import shutil
 
-from backend.predict import run_prediction
+from predict import run_prediction
 
 
 app = FastAPI(title="PoshanEye Backend")
