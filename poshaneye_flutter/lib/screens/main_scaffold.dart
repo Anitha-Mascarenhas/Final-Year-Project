@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/child_profile.dart';
+import '../models/prediction_result.dart';
 import '../models/vital_record.dart';
-import '../theme/app_theme.dart';
 import '../widgets/app_header.dart';
 import '../widgets/vanta_globe_background.dart';
+import 'analysis_results_screen.dart';
 import 'dashboard_screen.dart';
 import 'bmi_calculator_screen.dart';
 import 'scan_screen.dart';
@@ -24,6 +25,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   late ChildProfile _child;
   late VitalRecord _vitals;
+
+  // ── Prediction result (non-null means show results screen) ──────
+  PredictionResult? _predictionResult;
 
   @override
   void initState() {
@@ -51,6 +55,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   String _getPageTitle() {
+    if (_predictionResult != null) return 'Analysis Results';
     switch (_activeTab) {
       case 0:
         return 'Home';
@@ -69,10 +74,21 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
+  void _handleAnalysisComplete(PredictionResult result) {
+    setState(() => _predictionResult = result);
+  }
+
+  void _handleResetAnalysis() {
+    setState(() {
+      _predictionResult = null;
+      _activeTab = 2; // Return to scan tab
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Scan screen (tab 2) keeps background occluded to ensure camera view is 100% clear
-    final isGlobeVisible = _activeTab != 2;
+    // Hide globe background when showing results or scan
+    final isGlobeVisible = _activeTab != 2 && _predictionResult == null;
 
     return VantaGlobeBackground(
       isBackgroundVisible: isGlobeVisible,
@@ -81,49 +97,64 @@ class _MainScaffoldState extends State<MainScaffold> {
         extendBody: true,
         body: Stack(
           children: [
-            // Body Content View
+            // ── Body Content View ─────────────────────────────────
             Positioned.fill(
-              child: IndexedStack(
-                index: _activeTab,
-                children: [
-                  DashboardScreen(
-                    child: _child,
-                    vitals: _vitals,
-                    onNavigateTab: (tab) => setState(() => _activeTab = tab),
-                  ),
-                  BMICalculatorScreen(
-                    child: _child,
-                    vitals: _vitals,
-                    onAddRecord: (record) => setState(() => _vitals = record),
-                  ),
-                  ScanScreen(
-                    child: _child,
-                    vitals: _vitals,
-                    onNavigateTab: (tab) => setState(() => _activeTab = tab),
-                  ),
-                  NutritionPlanScreen(child: _child),
-                  ProfileScreen(child: _child, vitals: _vitals),
-                  VoiceAssistantSheet(child: _child, vitals: _vitals),
-                ],
-              ),
+              child: _predictionResult != null
+                  ? AnalysisResultsScreen(
+                      result: _predictionResult!,
+                      onReset: _handleResetAnalysis,
+                    )
+                  : IndexedStack(
+                      index: _activeTab,
+                      children: [
+                        DashboardScreen(
+                          child: _child,
+                          vitals: _vitals,
+                          onNavigateTab: (tab) => setState(() => _activeTab = tab),
+                        ),
+                        BMICalculatorScreen(
+                          child: _child,
+                          vitals: _vitals,
+                          onAddRecord: (record) => setState(() => _vitals = record),
+                        ),
+                        ScanScreen(
+                          child: _child,
+                          vitals: _vitals,
+                          onNavigateTab: (tab) => setState(() => _activeTab = tab),
+                          onAnalysisComplete: _handleAnalysisComplete,
+                        ),
+                        NutritionPlanScreen(child: _child),
+                        ProfileScreen(child: _child, vitals: _vitals),
+                        VoiceAssistantSheet(child: _child, vitals: _vitals),
+                      ],
+                    ),
             ),
 
-            // Fixed Top Header
+            // ── Fixed Top Header ─────────────────────────────────
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: AppHeader(
                 title: _getPageTitle(),
-                showBack: _activeTab != 0,
-                onBackClick: () => setState(() => _activeTab = 0),
-                onProfileClick: () => setState(() => _activeTab = 4),
+                showBack: _activeTab != 0 || _predictionResult != null,
+                onBackClick: () {
+                  if (_predictionResult != null) {
+                    setState(() => _predictionResult = null);
+                  } else {
+                    setState(() => _activeTab = 0);
+                  }
+                },
+                onProfileClick: () => setState(() {
+                  _predictionResult = null;
+                  _activeTab = 4;
+                }),
                 avatarUrl: _child.avatarUrl,
               ),
             ),
           ],
         ),
-        bottomNavigationBar: _buildBottomNav(),
+        bottomNavigationBar: _predictionResult != null ? null : _buildBottomNav(),
       ),
     );
   }
@@ -178,7 +209,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isActive = _activeTab == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _activeTab = index),
+        onTap: () => setState(() {
+          _predictionResult = null;
+          _activeTab = index;
+        }),
         behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -207,7 +241,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isActive = _activeTab == 2;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _activeTab = 2),
+        onTap: () => setState(() {
+          _predictionResult = null;
+          _activeTab = 2;
+        }),
         child: Transform.translate(
           offset: const Offset(0, -12),
           child: Column(

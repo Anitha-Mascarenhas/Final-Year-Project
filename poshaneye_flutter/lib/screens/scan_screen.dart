@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/child_profile.dart';
+import '../models/prediction_result.dart';
 import '../models/vital_record.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bird_mascot.dart';
 
@@ -9,12 +14,14 @@ class ScanScreen extends StatefulWidget {
   final ChildProfile child;
   final VitalRecord vitals;
   final ValueChanged<int> onNavigateTab;
+  final ValueChanged<PredictionResult> onAnalysisComplete;
 
   const ScanScreen({
     super.key,
     required this.child,
     required this.vitals,
     required this.onNavigateTab,
+    required this.onAnalysisComplete,
   });
 
   @override
@@ -22,9 +29,68 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  String _scanMode = 'camera'; // 'camera', 'distraction', 'result'
+  // ── Navigation state ─────────────────────────────────────────────
+  String _scanMode = 'camera'; // 'camera', 'distraction', 'preview'
+
+  // ── Distraction state ────────────────────────────────────────────
   bool _distractionSoundsOn = false;
+
+  // ── Camera state ─────────────────────────────────────────────────
+  CameraController? _cameraController;
+  bool _isCameraInitialized = false;
+  String? _cameraError;
+
+  // ── Capture & analysis state ─────────────────────────────────────
   bool _isCapturing = false;
+  XFile? _capturedImage;
+  bool _isAnalyzing = false;
+  String? _analysisError;
+
+  // ── Lifecycle ────────────────────────────────────────────────────
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  // ── Camera initialisation ────────────────────────────────────────
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        if (mounted) setState(() => _cameraError = 'No cameras available on this device.');
+        return;
+      }
+
+      _cameraController = CameraController(
+        cameras.first,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+
+      await _cameraController!.initialize();
+
+      if (mounted) setState(() => _isCameraInitialized = true);
+    } on CameraException {
+      if (mounted) {
+        setState(() => _cameraError = 'Camera permission denied or unavailable.');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _cameraError = 'Failed to initialise camera.');
+      }
+    }
+  }
+
+  // ── Distraction helper ───────────────────────────────────────────
 
   void _playSoothingChime() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -36,23 +102,82 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  void _handleCapture() {
-    setState(() => _isCapturing = true);
+  // ── Capture ──────────────────────────────────────────────────────
+
+  Future<void> _handleCapture() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+
+    setState(() {
+      _isCapturing = true;
+      _analysisError = null;
+    });
     if (_distractionSoundsOn) _playSoothingChime();
 
-    Future.delayed(const Duration(milliseconds: 1200), () {
+    try {
+      final XFile image = await _cameraController!.takePicture();
       if (mounted) {
         setState(() {
+          _capturedImage = image;
           _isCapturing = false;
-          _scanMode = 'result';
+          _scanMode = 'preview';
         });
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isCapturing = false);
+        _showError('Failed to capture photo. Please try again.');
+      }
+    }
   }
+
+  // ── Analysis ─────────────────────────────────────────────────────
+
+  Future<void> _handleAnalyze() async {
+    if (_capturedImage == null) return;
+
+    setState(() {
+      _isAnalyzing = true;
+      _analysisError = null;
+    });
+
+    try {
+      final result = await ApiService.predict(_capturedImage!.path);
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+        widget.onAnalysisComplete(result);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _analysisError = e.message;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _analysisError = 'Could not connect to the analysis server. Please check your connection and try again.';
+        });
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── Build ────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    // Wrap entire ScanScreen in a opaque background container to ensure camera preview is 100% clear
     return Container(
       color: AppTheme.background,
       child: SingleChildScrollView(
@@ -69,15 +194,18 @@ class _ScanScreenState extends State<ScanScreen> {
     switch (_scanMode) {
       case 'distraction':
         return _buildDistractionMode();
-      case 'result':
-        return _buildResultMode();
+      case 'preview':
+        return _buildPreviewMode();
       case 'camera':
       default:
         return _buildCameraMode();
     }
   }
 
+  // ══════════════════════════════════════════════════════════════════
   // 1. CAMERA SCAN FRAME MODE
+  // ══════════════════════════════════════════════════════════════════
+
   Widget _buildCameraMode() {
     return Column(
       key: const ValueKey('camera'),
@@ -99,65 +227,117 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Clear Camera Preview Box with Silhouette & Corner Brackets
+        // ── Camera Preview Box with Overlays ───────────────────────
         Container(
           width: double.infinity,
           height: 380,
           decoration: BoxDecoration(
-            color: const Color(0xFFEFEEEA),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(color: AppTheme.borderAccent, width: 2),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16),
             ],
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Simulated Camera Feed Background
-              ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  child: const Center(
-                    child: Icon(Icons.camera_alt_outlined, size: 48, color: AppTheme.textMuted),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // ── Real Camera Feed OR Placeholder ─────────────────
+                if (_isCameraInitialized && _cameraController != null)
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _cameraController!.value.previewSize!.height,
+                        height: _cameraController!.value.previewSize!.width,
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    color: const Color(0xFFEFEEEA),
+                    child: Center(
+                      child: _cameraError != null
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.videocam_off, size: 48, color: AppTheme.textMuted),
+                                const SizedBox(height: 12),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Text(
+                                    _cameraError!,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _cameraError = null;
+                                      _isCameraInitialized = false;
+                                    });
+                                    _initCamera();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primary,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      'Retry',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const CircularProgressIndicator(color: AppTheme.primary),
+                    ),
                   ),
+
+                // ── Child Silhouette Outline ────────────────────────
+                CustomPaint(
+                  size: const Size(200, 320),
+                  painter: _SilhouettePainter(),
                 ),
-              ),
 
-              // Child Silhouette Outline
-              CustomPaint(
-                size: const Size(200, 320),
-                painter: _SilhouettePainter(),
-              ),
-
-              // Corner Brackets
-              const Positioned(
-                top: 16,
-                left: 16,
-                child: _CornerBracket(top: true, left: true),
-              ),
-              const Positioned(
-                top: 16,
-                right: 16,
-                child: _CornerBracket(top: true, left: false),
-              ),
-              const Positioned(
-                bottom: 16,
-                left: 16,
-                child: _CornerBracket(top: false, left: true),
-              ),
-              const Positioned(
-                bottom: 16,
-                right: 16,
-                child: _CornerBracket(top: false, left: false),
-              ),
-            ],
+                // ── Corner Brackets ─────────────────────────────────
+                const Positioned(
+                  top: 16,
+                  left: 16,
+                  child: _CornerBracket(top: true, left: true),
+                ),
+                const Positioned(
+                  top: 16,
+                  right: 16,
+                  child: _CornerBracket(top: true, left: false),
+                ),
+                const Positioned(
+                  bottom: 16,
+                  left: 16,
+                  child: _CornerBracket(top: false, left: true),
+                ),
+                const Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: _CornerBracket(top: false, left: false),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
 
-        // Mode Controls
+        // ── Mode Controls ──────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -216,7 +396,7 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Shutter Button
+        // ── Shutter Button ─────────────────────────────────────────
         GestureDetector(
           onTap: _isCapturing ? null : _handleCapture,
           child: Container(
@@ -248,7 +428,10 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
+  // ══════════════════════════════════════════════════════════════════
   // 2. CHILD DISTRACTION MODE
+  // ══════════════════════════════════════════════════════════════════
+
   Widget _buildDistractionMode() {
     return Column(
       key: const ValueKey('distraction'),
@@ -298,138 +481,159 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  // 3. SCAN RESULT MODE
-  Widget _buildResultMode() {
+  // ══════════════════════════════════════════════════════════════════
+  // 3. PREVIEW & ANALYSE MODE
+  // ══════════════════════════════════════════════════════════════════
+
+  Widget _buildPreviewMode() {
     return Column(
-      key: const ValueKey('result'),
+      key: const ValueKey('preview'),
       children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: const BoxDecoration(
-            color: AppTheme.accentMint,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.check_circle_outline, color: AppTheme.darkGreenText, size: 40),
-        ),
-        const SizedBox(height: 14),
+        // ── Header ─────────────────────────────────────────────────
         Text(
-          '${widget.child.name} is growing normally',
+          _isAnalyzing ? 'Analyzing photo...' : 'Review your photo',
           style: GoogleFonts.inter(
             fontSize: 22,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppTheme.textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
-          'Last checked today at 10:42 AM',
-          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+          _isAnalyzing
+              ? 'Sending to AI for nutritional screening...'
+              : 'Make sure ${widget.child.name} is clearly visible.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // Measurements Card
+        // ── Captured Image Preview ─────────────────────────────────
         Container(
-          padding: const EdgeInsets.all(20),
+          width: double.infinity,
+          height: 380,
           decoration: BoxDecoration(
-            color: AppTheme.cardBgAlt,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppTheme.borderColor),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: AppTheme.borderAccent, width: 2),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16),
+            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'LATEST MEASUREMENTS',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textMuted,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 14),
-              _buildResultRow('Weight', '${widget.vitals.weight}', 'kg'),
-              const Divider(height: 20, color: AppTheme.borderColor),
-              _buildResultRow('Height', '${widget.vitals.height}', 'cm'),
-              const Divider(height: 20, color: AppTheme.borderColor),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('MUAC', style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary)),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (_capturedImage != null)
+                  Image.file(
+                    File(_capturedImage!.path),
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                else
+                  Container(
+                    color: const Color(0xFFEFEEEA),
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 48, color: AppTheme.textMuted),
+                    ),
+                  ),
+
+                // Loading overlay when analysing
+                if (_isAnalyzing)
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            TextSpan(text: '${widget.vitals.muac}', style: const TextStyle(fontSize: 22)),
-                            const TextSpan(text: ' cm', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400)),
+                            const SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 3),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              'AI is analysing...',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'This may take a moment',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentMint,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(color: AppTheme.accentSage, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Healthy',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentSage),
-                        ),
-                      ],
                     ),
                   ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
 
-        // What This Means
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'WHAT THIS MEANS',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textMuted,
-                letterSpacing: 1.2,
-              ),
+        // ── Error Banner ───────────────────────────────────────────
+        if (_analysisError != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDECEA),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE57373)),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${widget.child.name} is right on track. His weight and height are perfectly balanced, and his arm circumference shows he is getting plenty of the right nutrients. Keep doing what you\'re doing!',
-              style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textPrimary, height: 1.5),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Color(0xFFBA1A1A), size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _analysisError!,
+                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFBA1A1A)),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 28),
+          ),
 
-        // Action Buttons
+        // ── Analyse Button ─────────────────────────────────────────
         SizedBox(
           width: double.infinity,
           height: 52,
           child: ElevatedButton.icon(
-            onPressed: () => widget.onNavigateTab(3), // View Nutrition Plan
-            icon: const Icon(Icons.restaurant_outlined, size: 20),
-            label: Text('View nutrition plan', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+            onPressed: _isAnalyzing ? null : _handleAnalyze,
+            icon: _isAnalyzing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Icon(Icons.analytics_outlined, size: 20),
+            label: Text(
+              _isAnalyzing ? 'Analyzing...' : 'Analyze',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
@@ -438,47 +642,38 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ),
         const SizedBox(height: 12),
+
+        // ── Retake Button ──────────────────────────────────────────
         SizedBox(
           width: double.infinity,
           height: 50,
           child: OutlinedButton(
-            onPressed: () => setState(() => _scanMode = 'camera'),
+            onPressed: _isAnalyzing
+                ? null
+                : () => setState(() {
+                      _capturedImage = null;
+                      _analysisError = null;
+                      _scanMode = 'camera';
+                    }),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primary,
               side: const BorderSide(color: AppTheme.primary, width: 2),
               shape: const StadiumBorder(),
             ),
-            child: Text('Scan again', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+            child: Text(
+              'Retake photo',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+            ),
           ),
         ),
       ],
     );
   }
-
-  Widget _buildResultRow(String label, String val, String unit) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary)),
-            RichText(
-              text: TextSpan(
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                children: [
-                  TextSpan(text: val, style: const TextStyle(fontSize: 22)),
-                  TextSpan(text: ' $unit', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const Icon(Icons.show_chart, color: AppTheme.accentSage, size: 28),
-      ],
-    );
-  }
 }
+
+// ════════════════════════════════════════════════════════════════════
+// Private helpers
+// ════════════════════════════════════════════════════════════════════
 
 class _CornerBracket extends StatelessWidget {
   final bool top;
