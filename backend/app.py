@@ -1,4 +1,4 @@
-from backend.fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File
 from pathlib import Path
 import shutil
 
