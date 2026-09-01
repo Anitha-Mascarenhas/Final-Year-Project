@@ -37,7 +37,7 @@ class PoshanEyePredictor:
         image = np.array(image, dtype=np.float32)
 
         # MobileNetV2 preprocessing
-        image = image / 127.5 - 1.0
+        image = image / 255.0
 
         image = np.expand_dims(image, axis=0)
 
