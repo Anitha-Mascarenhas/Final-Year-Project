@@ -1,0 +1,53 @@
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Python
+**/__pycache__
+**/.venv
+**/venv
+**/venv311
+
+# Training data and datasets
+dataset
+**/dataset
+
+# Training / research directories (not needed for production backend)
+aiml
+PoshanEye
+Poshaneyemn
+models
+
+# Flutter frontend
+poshaneye_flutter
+
+# Training outputs
+**/outputs
+
+# Unused model artifacts
+**/*.h5
+**/measurement_*.pkl
+**/cv_pipeline.joblib
+**/measurement_pipeline.joblib
+
+# Existing uploads (don't bake test uploads into image)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Temporary and generated files
+**/temp_mediapipe_download*
+**/logs
+*.log
+*.pyc
+*.pyo
+
+# Documentation
+**/*.md
+LICENSE
+
+# Freebuff workspace
+.freebuff
