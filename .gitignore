@@ -22,3 +22,4 @@ temp_mediapipe_download*/
 .idea/
 # Training logs
 **/outputs/logs/
+poshaneye_flutter/assets/videos/*.mp4

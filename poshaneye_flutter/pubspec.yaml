@@ -17,6 +17,9 @@ dependencies:
   camera: ^0.11.0+2
   http: ^1.2.1
   path: ^1.9.0
+  video_player: ^2.8.6
+  file_picker: ^6.1.1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -27,3 +30,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/videos/cheetah.mp4
+    - assets/videos/albatross.mp4
+    - assets/videos/shark.mp4

@@ -13,8 +13,6 @@ class AnalysisResultsScreen extends StatelessWidget {
     required this.onReset,
   });
 
-  // ── Helpers ────────────────────────────────────────────────────────
-
   String _formatLabel(String prediction) {
     switch (prediction.toLowerCase()) {
       case 'healthy':
@@ -63,7 +61,7 @@ class AnalysisResultsScreen extends StatelessWidget {
   Color _statusTextColor(String prediction) {
     switch (prediction.toLowerCase()) {
       case 'healthy':
-        return AppTheme.darkGreenText;
+        return AppTheme.primaryDark;
       case 'underweight':
         return const Color(0xFFE65100);
       case 'stunted':
@@ -71,11 +69,9 @@ class AnalysisResultsScreen extends StatelessWidget {
       case 'stunted and underweight':
         return const Color(0xFFBA1A1A);
       default:
-        return AppTheme.darkGreenText;
+        return AppTheme.primaryDark;
     }
   }
-
-  // ── Build ────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -83,12 +79,19 @@ class AnalysisResultsScreen extends StatelessWidget {
     final confidence = result.confidence;
     final probabilities = result.probabilities;
 
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+    final textMuted = AppTheme.textColorMuted(context);
+    final cardBg = AppTheme.cardBgColor(context);
+    final cardBgAlt = AppTheme.cardBgAltColor(context);
+    final borderColor = AppTheme.borderColorValue(context);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ───────────────────────────────────────────────
+          // Header
           Text(
             'ASSESSMENT COMPLETED',
             style: GoogleFonts.inter(
@@ -104,7 +107,7 @@ class AnalysisResultsScreen extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
+              color: textPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -112,13 +115,13 @@ class AnalysisResultsScreen extends StatelessWidget {
             'AI-powered nutritional screening based on optical MUAC measurement and biometric visual analysis.',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: AppTheme.textSecondary,
+              color: textSecondary,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
 
-          // ── Primary Result Card ──────────────────────────────────
+          // Primary Result Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -150,14 +153,14 @@ class AnalysisResultsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Confidence Card ──────────────────────────────────────
+          // Confidence Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppTheme.cardBg,
+              color: cardBg,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +170,7 @@ class AnalysisResultsScreen extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textMuted,
+                    color: textMuted,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -180,7 +183,7 @@ class AnalysisResultsScreen extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: confidence,
                           minHeight: 10,
-                          backgroundColor: AppTheme.borderColor,
+                          backgroundColor: borderColor,
                           color: AppTheme.primary,
                         ),
                       ),
@@ -201,14 +204,14 @@ class AnalysisResultsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Probability Breakdown ────────────────────────────────
+          // Probability Breakdown
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppTheme.cardBgAlt,
+              color: cardBgAlt,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,24 +221,24 @@ class AnalysisResultsScreen extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textMuted,
+                    color: textMuted,
                     letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: 14),
-                ..._buildProbabilityRows(probabilities, prediction),
+                ..._buildProbabilityRows(probabilities, prediction, textPrimary, textSecondary, borderColor),
               ],
             ),
           ),
           const SizedBox(height: 28),
 
-          // ── Disclaimer ───────────────────────────────────────────
+          // Disclaimer
           Text(
             'DISCLAIMER',
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textMuted,
+              color: textMuted,
               letterSpacing: 1.2,
             ),
           ),
@@ -244,13 +247,13 @@ class AnalysisResultsScreen extends StatelessWidget {
             'This AI screening is intended as a preliminary assessment tool and does not replace professional medical advice. Please consult a qualified healthcare provider for definitive diagnosis and treatment.',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: AppTheme.textSecondary,
+              color: textSecondary,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 28),
 
-          // ── Action Buttons ───────────────────────────────────────
+          // Action Buttons
           Center(
             child: TextButton(
               onPressed: onReset,
@@ -269,11 +272,12 @@ class AnalysisResultsScreen extends StatelessWidget {
     );
   }
 
-  // ── Probability Rows ────────────────────────────────────────────
-
   List<Widget> _buildProbabilityRows(
     Map<String, double> probabilities,
     String prediction,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
   ) {
     final entries = probabilities.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -288,34 +292,42 @@ class AnalysisResultsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    if (isPrimary)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: const BoxDecoration(
-                          color: AppTheme.primary,
-                          shape: BoxShape.circle,
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isPrimary)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: const BoxDecoration(
+                            color: AppTheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      Flexible(
+                        child: Text(
+                          _capitalizeEachWord(entry.key),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w500,
+                            color: isPrimary ? AppTheme.primary : textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    Text(
-                      _capitalizeEachWord(entry.key),
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w500,
-                        color: isPrimary ? AppTheme.primary : AppTheme.textPrimary,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${(entry.value * 100).toStringAsFixed(1)}%',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: isPrimary ? FontWeight.w800 : FontWeight.w600,
-                    color: isPrimary ? AppTheme.primary : AppTheme.textSecondary,
+                    color: isPrimary ? AppTheme.primary : textSecondary,
                   ),
                 ),
               ],
@@ -326,8 +338,8 @@ class AnalysisResultsScreen extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: entry.value,
                 minHeight: 6,
-                backgroundColor: AppTheme.borderColor,
-                color: isPrimary ? AppTheme.primary : AppTheme.accentSage,
+                backgroundColor: borderColor,
+                color: isPrimary ? AppTheme.primary : AppTheme.accentBlue,
               ),
             ),
           ],
