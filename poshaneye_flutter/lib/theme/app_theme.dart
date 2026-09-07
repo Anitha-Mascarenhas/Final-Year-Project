@@ -20,8 +20,7 @@ class AppTheme {
   // Typography & Status Colors
   static const Color textPrimary = Color(0xFF1B1C1A);      // Charcoal Primary
   static const Color textSecondary = Color(0xFF424844);    // Muted Dark Neutral
-  static const Color textMuted = Color(0xFF727973);        // Light Muted Neutral
-  static const Color globeGreen = Color(0xFF3FFF80);       // Vanta Globe Electric Green
+  static const Color textMuted = Color(0xFF727973);        // Light Muted Neutral    // Vanta Globe Electric Green
 
   static ThemeData get lightTheme {
     return ThemeData(
