@@ -98,27 +98,36 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+    final textMuted = AppTheme.textColorMuted(context);
+    final scaffoldBg = AppTheme.scaffoldBgColor(context);
+    final cardBg = AppTheme.cardBgColor(context);
+    final cardBgAlt = AppTheme.cardBgAltColor(context);
+    final borderColor = AppTheme.borderColorValue(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: AppTheme.background,
+      color: scaffoldBg,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
         child: Column(
           children: [
             // Title Header
-            const Icon(Icons.graphic_eq, color: AppTheme.primary, size: 36),
+            Icon(Icons.graphic_eq, color: AppTheme.primary, size: 36),
             const SizedBox(height: 6),
             Text(
               "Hi, I'm PoshanAi",
               style: GoogleFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               'How can I help you and your little one today?',
-              style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+              style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -174,7 +183,7 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textSecondary,
+                color: textSecondary,
               ),
             ),
             const SizedBox(height: 24),
@@ -195,14 +204,14 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isUser ? AppTheme.primary : AppTheme.cardBg,
+                          color: isUser ? AppTheme.primary : cardBg,
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Text(
                           msg['text']!,
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: isUser ? Colors.white : AppTheme.textPrimary,
+                            color: isUser ? Colors.white : textPrimary,
                             height: 1.4,
                           ),
                         ),
@@ -216,25 +225,25 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
             // Suggested Prompt Chips
             Text(
               'Try asking about...',
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
+              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: textMuted),
             ),
             const SizedBox(height: 10),
 
             _PromptChip(
               icon: Icons.monitor_weight_outlined,
-              text: '"Is ${widget.child.name}\'s weight tracking well?"',
+              text: "\"Is ${widget.child.name}'s weight tracking well?\"",
               onTap: () => _handleSendMessage("Is ${widget.child.name}'s weight tracking well?"),
             ),
             const SizedBox(height: 8),
             _PromptChip(
               icon: Icons.restaurant,
-              text: '"What\'s a good lunch for a toddler?"',
+              text: "\"What's a good lunch for a toddler?\"",
               onTap: () => _handleSendMessage("What's a good lunch for a toddler?"),
             ),
             const SizedBox(height: 8),
             _PromptChip(
               icon: Icons.lightbulb_outline,
-              text: '"How to handle picky eating?"',
+              text: "\"How to handle picky eating?\"",
               onTap: () => _handleSendMessage("How to handle picky eating?"),
             ),
             const SizedBox(height: 16),
@@ -246,18 +255,20 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
                   child: TextFormField(
                     controller: _inputController,
                     onFieldSubmitted: _handleSendMessage,
+                    style: TextStyle(color: textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Ask PoshanAi anything...',
+                      hintStyle: TextStyle(color: textSecondary),
                       filled: true,
-                      fillColor: AppTheme.cardBgAlt,
+                      fillColor: cardBgAlt,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
-                        borderSide: const BorderSide(color: AppTheme.borderColor),
+                        borderSide: BorderSide(color: borderColor),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
-                        borderSide: const BorderSide(color: AppTheme.borderColor),
+                        borderSide: BorderSide(color: borderColor),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -297,15 +308,19 @@ class _PromptChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final cardBgAlt = AppTheme.cardBgAltColor(context);
+    final borderColor = AppTheme.borderColorValue(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.cardBgAlt,
+          color: cardBgAlt,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.borderColor),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -319,7 +334,9 @@ class _PromptChip extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

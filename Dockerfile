@@ -2,7 +2,8 @@ FROM python:3.11-slim
 
 # Prevent Python from buffering stdout/stderr (useful for container logs)
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/backend
 
 WORKDIR /app
 

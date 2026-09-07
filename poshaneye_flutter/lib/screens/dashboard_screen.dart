@@ -18,59 +18,74 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+    final cardBg = AppTheme.cardBgColor(context);
+    final vitalsBg = AppTheme.vitalsCardBgColor(context);
+    final borderColor = AppTheme.borderColorValue(context);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Greeting Header
-          Text(
-            'Good morning,',
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${child.name} is doing well.',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
+          // Compact Greeting
+          _buildGreeting(child, textPrimary, textSecondary),
+          const SizedBox(height: 16),
 
           // Growth Status Summary Card
-          _buildGrowthStatusCard(),
-          const SizedBox(height: 24),
+          _buildGrowthStatusCard(child, textPrimary, textSecondary, cardBg, borderColor),
+          const SizedBox(height: 12),
 
           // Current Vitals Card (3 Columns)
-          _buildCurrentVitalsCard(),
-          const SizedBox(height: 24),
+          _buildCurrentVitalsCard(vitals, textPrimary, textSecondary, vitalsBg),
+          const SizedBox(height: 12),
 
           // Latest Assessment Card
-          _buildLatestAssessmentCard(),
-          const SizedBox(height: 28),
+          _buildLatestAssessmentCard(textPrimary, textSecondary, cardBg, borderColor, context),
+          const SizedBox(height: 16),
 
           // Action Buttons
-          _buildActionButtons(),
+          _buildActionButtons(context, onNavigateTab),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildGrowthStatusCard() {
+  Widget _buildGreeting(ChildProfile child, Color textPrimary, Color textSecondary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Good morning,',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${child.name} is doing well.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGrowthStatusCard(ChildProfile child, Color textPrimary, Color textSecondary, Color cardBg, Color borderColor) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.borderColor.withValues(alpha: 0.8)),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor.withValues(alpha: 0.8)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,10 +93,10 @@ class DashboardScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 10,
-                height: 10,
+                width: 8,
+                height: 8,
                 decoration: const BoxDecoration(
-                  color: AppTheme.accentSage,
+                  color: AppTheme.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -91,29 +106,29 @@ class DashboardScreen extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryContainer,
+                  color: AppTheme.primary,
                   letterSpacing: 1.2,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             'Normal Growth',
             style: GoogleFonts.inter(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppTheme.primary,
+              color: textPrimary,
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
-            '${child.name} remains in the healthy percentile for his age group. Keep up the great work.',
+            '${child.name} remains in the healthy percentile for his age group.',
             style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-              height: 1.5,
+              fontSize: 13,
+              color: textSecondary,
+              height: 1.4,
             ),
           ),
         ],
@@ -121,12 +136,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentVitalsCard() {
+  Widget _buildCurrentVitalsCard(VitalRecord vitals, Color textPrimary, Color textSecondary, Color vitalsBg) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.vitalsCardBg,
-        borderRadius: BorderRadius.circular(24),
+        color: vitalsBg,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
@@ -136,7 +151,7 @@ class DashboardScreen extends StatelessWidget {
               Text(
                 'Current Vitals',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.primary,
                 ),
@@ -144,14 +159,14 @@ class DashboardScreen extends StatelessWidget {
               Text(
                 vitals.date,
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.textSecondary,
+                  color: textSecondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -184,27 +199,29 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLatestAssessmentCard() {
+  Widget _buildLatestAssessmentCard(Color textPrimary, Color textSecondary, Color cardBg, Color borderColor, BuildContext context) {
+    final cardBgAlt = AppTheme.cardBgAltColor(context);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardBgAlt,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.borderColor),
+        color: cardBgAlt,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: AppTheme.accentMint,
-              shape: BoxShape.circle,
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryContainer,
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.assignment_turned_in_outlined, color: AppTheme.accentSage, size: 24),
+            child: const Icon(Icons.assignment_turned_in_outlined, color: AppTheme.primary, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,36 +229,36 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   'Latest Assessment',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Last scan was 2 days ago. The analysis indicates healthy nutritional milestones.',
+                  'Last scan was 2 days ago. Healthy nutritional milestones.',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    color: textSecondary,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 GestureDetector(
-                  onTap: () => onNavigateTab(1), // Go to Growth Tracking tab
+                  onTap: () => onNavigateTab(1),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'View full report',
+                        'View report',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           color: AppTheme.primary,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward, size: 16, color: AppTheme.primary),
+                      Icon(Icons.arrow_forward, size: 14, color: AppTheme.primary),
                     ],
                   ),
                 ),
@@ -253,66 +270,42 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context, ValueChanged<int> onNavigateTab) {
     return Column(
       children: [
-        // Start New Scan
         SizedBox(
           width: double.infinity,
-          height: 54,
+          height: 48,
           child: ElevatedButton.icon(
-            onPressed: () => onNavigateTab(2), // Scan tab
-            icon: const Icon(Icons.qr_code_scanner, size: 22),
+            onPressed: () => onNavigateTab(2),
+            icon: const Icon(Icons.qr_code_scanner, size: 20),
             label: Text(
               'Start New Scan',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primary,
               foregroundColor: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
-        const SizedBox(height: 12),
-
-        // Nutrition Plan
+        const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
-          height: 54,
+          height: 48,
           child: OutlinedButton.icon(
-            onPressed: () => onNavigateTab(3), // Nutrition tab
-            icon: const Icon(Icons.restaurant_outlined, size: 22),
+            onPressed: () => onNavigateTab(3),
+            icon: const Icon(Icons.restaurant_outlined, size: 20),
             label: Text(
               'Nutrition Plan',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primary,
-              side: const BorderSide(color: AppTheme.primary, width: 2),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Ask PoshanAi Voice Assistant
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton.icon(
-            onPressed: () => onNavigateTab(5), // PoshanAi sheet / tab
-            icon: const Icon(Icons.mic, size: 22),
-            label: Text(
-              'Ask PoshanAi Voice Assistant',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentMint,
-              foregroundColor: AppTheme.darkGreenText,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              side: const BorderSide(color: AppTheme.primary, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -334,32 +327,39 @@ class _VitalItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
+              color: textSecondary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           RichText(
             text: TextSpan(
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: textPrimary,
               ),
               children: [
-                TextSpan(text: value, style: const TextStyle(fontSize: 18)),
-                TextSpan(text: ' $unit', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+                TextSpan(text: value, style: const TextStyle(fontSize: 16)),
+                TextSpan(text: ' $unit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w400, color: textSecondary)),
               ],
             ),
           ),

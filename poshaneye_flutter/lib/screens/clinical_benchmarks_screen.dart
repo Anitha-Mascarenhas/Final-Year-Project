@@ -22,21 +22,28 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+    final cardBg = AppTheme.cardBgColor(context);
+    final cardBgAlt = AppTheme.cardBgAltColor(context);
+    final borderColor = AppTheme.borderColorValue(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(textPrimary, textSecondary, cardBg, isDark),
           const SizedBox(height: 24),
-          _buildTable(),
+          _buildTable(textPrimary, textSecondary, cardBg, cardBgAlt, borderColor),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(Color textPrimary, Color textSecondary, Color cardBg, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -59,7 +66,7 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
+                  color: textPrimary,
                 ),
               ),
             ],
@@ -69,7 +76,7 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: AppTheme.cardBg,
+            color: cardBg,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -80,7 +87,7 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: sel ? Colors.white : Colors.transparent,
+                    color: sel ? (isDark ? AppTheme.darkSurface : Colors.white) : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -88,7 +95,7 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: sel ? AppTheme.primary : AppTheme.textSecondary,
+                      color: sel ? AppTheme.primary : textSecondary,
                     ),
                   ),
                 ),
@@ -100,12 +107,12 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
     );
   }
 
-  Widget _buildTable() {
+  Widget _buildTable(Color textPrimary, Color textSecondary, Color cardBg, Color cardBgAlt, Color borderColor) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.cardBg,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: borderColor),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -123,14 +130,14 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
             rows: _tableData.map((row) => DataRow(
               cells: [
                 DataCell(Text(row['age']!, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppTheme.primary))),
-                DataCell(Text('${row['weight']} kg')),
-                DataCell(Text('${row['height']} cm')),
-                DataCell(Text(row['muac']!)),
+                DataCell(Text('${row['weight']} kg', style: TextStyle(color: textPrimary))),
+                DataCell(Text('${row['height']} cm', style: TextStyle(color: textPrimary))),
+                DataCell(Text(row['muac']!, style: TextStyle(color: textPrimary))),
                 DataCell(
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: row['status'] == 'Optimal' ? AppTheme.accentMint : AppTheme.cardBgAlt,
+                      color: row['status'] == 'Optimal' ? AppTheme.accentMint : cardBgAlt,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -138,7 +145,7 @@ class _ClinicalBenchmarksScreenState extends State<ClinicalBenchmarksScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: row['status'] == 'Optimal' ? AppTheme.primary : AppTheme.textSecondary,
+                        color: row['status'] == 'Optimal' ? AppTheme.primary : textSecondary,
                       ),
                     ),
                   ),

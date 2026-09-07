@@ -1,14 +1,16 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:video_player/video_player.dart';
 import '../models/child_profile.dart';
 import '../models/prediction_result.dart';
 import '../models/vital_record.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/bird_mascot.dart';
 
 class ScanScreen extends StatefulWidget {
   final ChildProfile child;
@@ -29,24 +31,47 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  // ── Navigation state ─────────────────────────────────────────────
-  String _scanMode = 'camera'; // 'camera', 'distraction', 'preview'
-
-  // ── Distraction state ────────────────────────────────────────────
+  String _scanMode = 'camera'; // 'camera', 'video_select', 'video_play', 'preview'
   bool _distractionSoundsOn = false;
+  String _imageSource = 'camera'; // 'camera' or 'upload'
 
-  // ── Camera state ─────────────────────────────────────────────────
+  // Camera state
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
   String? _cameraError;
-
-  // ── Capture & analysis state ─────────────────────────────────────
   bool _isCapturing = false;
-  XFile? _capturedImage;
+
+  // Image state (web-compatible)
+  Uint8List? _capturedImageBytes;
+
   bool _isAnalyzing = false;
   String? _analysisError;
 
-  // ── Lifecycle ────────────────────────────────────────────────────
+  // Video state
+  VideoPlayerController? _videoController;
+  String? _selectedVideo;
+  bool _isVideoPlaying = false;
+
+  final List<Map<String, dynamic>> _videos = [
+    {
+      'name': 'Cheetah',
+      'asset': 'assets/videos/cheetah.mp4',
+      'icon': Icons.pets,
+      'description': 'Fast and playful cheetah',
+    },
+    {
+      'name': 'Albatross',
+      'asset': 'assets/videos/albatross.mp4',
+      'icon': Icons.flight,
+      'description': 'Graceful soaring albatross',
+    },
+    {
+      'name': 'Shark',
+      'asset': 'assets/videos/shark.mp4',
+      'icon': Icons.water,
+      'description': 'Majestic swimming shark',
+    },
+  ];
 
   @override
   void initState() {
@@ -57,16 +82,19 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void dispose() {
     _cameraController?.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
-
-  // ── Camera initialisation ────────────────────────────────────────
 
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        if (mounted) setState(() => _cameraError = 'No cameras available on this device.');
+        if (mounted) {
+          setState(() => _cameraError = kIsWeb
+              ? 'No camera found. Please connect a camera or use Upload Image.'
+              : 'No cameras available on this device.');
+        }
         return;
       }
 
@@ -81,16 +109,14 @@ class _ScanScreenState extends State<ScanScreen> {
       if (mounted) setState(() => _isCameraInitialized = true);
     } on CameraException {
       if (mounted) {
-        setState(() => _cameraError = 'Camera permission denied or unavailable.');
+        setState(() => _cameraError = 'Camera permission denied or unavailable. You can allow camera access in your browser settings or upload an image instead.');
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _cameraError = 'Failed to initialise camera.');
+        setState(() => _cameraError = 'Failed to initialise camera. Please check your camera settings or use Upload Image.');
       }
     }
   }
-
-  // ── Distraction helper ───────────────────────────────────────────
 
   void _playSoothingChime() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +128,62 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  // ── Capture ──────────────────────────────────────────────────────
+  // ── Video Controls ──────────────────────────────────────────────
+
+  Future<void> _initializeVideo(String assetPath) async {
+    _videoController?.dispose();
+    _videoController = VideoPlayerController.asset(assetPath);
+
+    try {
+      await _videoController!.initialize();
+      _videoController!.setLooping(true);
+      _videoController!.setVolume(0); // Muted by default
+      _videoController!.play();
+      if (mounted) {
+        setState(() {
+          _isVideoPlaying = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to load video'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _toggleVideoPlayback() {
+    if (_videoController == null) return;
+    setState(() {
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
+        _isVideoPlaying = false;
+      } else {
+        _videoController!.play();
+        _isVideoPlaying = true;
+      }
+    });
+  }
+
+  void _stopVideo() {
+    _videoController?.pause();
+    _videoController?.seekTo(Duration.zero);
+    setState(() => _isVideoPlaying = false);
+  }
+
+  void _selectVideo(String videoName, String assetPath) {
+    setState(() {
+      _selectedVideo = videoName;
+      _scanMode = 'video_play';
+    });
+    _initializeVideo(assetPath);
+  }
+
+  // ── Image Capture ──────────────────────────────────────────────
 
   Future<void> _handleCapture() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
@@ -115,12 +196,16 @@ class _ScanScreenState extends State<ScanScreen> {
 
     try {
       final XFile image = await _cameraController!.takePicture();
+      final bytes = await image.readAsBytes();
+
       if (mounted) {
         setState(() {
-          _capturedImage = image;
+          _capturedImageBytes = bytes;
           _isCapturing = false;
           _scanMode = 'preview';
+          _imageSource = 'camera';
         });
+        _stopVideo();
       }
     } catch (e) {
       if (mounted) {
@@ -130,10 +215,58 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  // ── Image Upload ──────────────────────────────────────────────
+
+  Future<void> _handleUpload() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true, // Important: ensures bytes are loaded for web
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+
+      // Get bytes — withData: true populates file.bytes on all platforms
+      Uint8List? bytes = file.bytes;
+
+      // Fallback: read from path on mobile only (path is NOT available on web)
+      if (bytes == null && !kIsWeb) {
+        try {
+          final xfile = XFile(file.path!);
+          bytes = await xfile.readAsBytes();
+        } catch (_) {
+          // path-based reading failed
+        }
+      }
+
+      if (bytes == null) {
+        _showError('Failed to read the selected image. Please try another file.');
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _capturedImageBytes = bytes;
+          _scanMode = 'preview';
+          _imageSource = 'upload';
+          _analysisError = null;
+        });
+        _stopVideo();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Failed to pick image. Please try again.');
+      }
+    }
+  }
+
   // ── Analysis ─────────────────────────────────────────────────────
 
   Future<void> _handleAnalyze() async {
-    if (_capturedImage == null) return;
+    if (_capturedImageBytes == null) return;
 
     setState(() {
       _isAnalyzing = true;
@@ -141,7 +274,24 @@ class _ScanScreenState extends State<ScanScreen> {
     });
 
     try {
-      final result = await ApiService.predict(_capturedImage!.path);
+      // Build child data from existing profile and vitals
+      final childData = {
+        'height': widget.vitals.height,
+        'weight': widget.vitals.weight,
+        'age': widget.child.ageYears * 12 + widget.child.ageMonths,
+        'muac': widget.vitals.muac,
+        'hc': 0.0, // Head circumference not in VitalRecord yet
+      };
+
+      // Determine filename based on source
+      final fileName = _imageSource == 'upload' ? 'uploaded_image.jpg' : 'captured_image.jpg';
+
+      final result = await ApiService.predict(
+        imageBytes: _capturedImageBytes!,
+        fileName: fileName,
+        childData: childData,
+      );
+
       if (mounted) {
         setState(() => _isAnalyzing = false);
         widget.onAnalysisComplete(result);
@@ -178,72 +328,82 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final cameraPreviewHeight = (screenHeight * 0.45).clamp(250.0, 400.0);
+
+    final textPrimary = AppTheme.textColorPrimary(context);
+    final textSecondary = AppTheme.textColorSecondary(context);
+    final scaffoldBg = AppTheme.scaffoldBgColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: AppTheme.background,
+      color: scaffoldBg,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 80, 20, 110),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: _buildCurrentMode(),
+          child: _buildCurrentMode(cameraPreviewHeight, textPrimary, textSecondary, scaffoldBg, isDark),
         ),
       ),
     );
   }
 
-  Widget _buildCurrentMode() {
+  Widget _buildCurrentMode(double cameraPreviewHeight, Color textPrimary, Color textSecondary, Color scaffoldBg, bool isDark) {
     switch (_scanMode) {
-      case 'distraction':
-        return _buildDistractionMode();
+      case 'video_select':
+        return _buildVideoSelectionMode(textPrimary, textSecondary, isDark);
+      case 'video_play':
+        return _buildVideoPlayMode(cameraPreviewHeight, textPrimary, textSecondary, isDark);
       case 'preview':
-        return _buildPreviewMode();
+        return _buildPreviewMode(cameraPreviewHeight, textPrimary, textSecondary, scaffoldBg, isDark);
       case 'camera':
       default:
-        return _buildCameraMode();
+        return _buildCameraMode(cameraPreviewHeight, textPrimary, textSecondary, scaffoldBg, isDark);
     }
   }
 
   // ══════════════════════════════════════════════════════════════════
-  // 1. CAMERA SCAN FRAME MODE
+  // 1. CAMERA MODE
   // ══════════════════════════════════════════════════════════════════
 
-  Widget _buildCameraMode() {
+  Widget _buildCameraMode(double cameraPreviewHeight, Color textPrimary, Color textSecondary, Color scaffoldBg, bool isDark) {
     return Column(
       key: const ValueKey('camera'),
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           "Let's check in on their growth",
           style: GoogleFonts.inter(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
           'Position ${widget.child.name} inside the gentle frame below.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
 
-        // ── Camera Preview Box with Overlays ───────────────────────
+        // Camera Preview Box
         Container(
           width: double.infinity,
-          height: 380,
+          height: cameraPreviewHeight,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: AppTheme.borderAccent, width: 2),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.borderAccentColor(context), width: 2),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(22),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // ── Real Camera Feed OR Placeholder ─────────────────
                 if (_isCameraInitialized && _cameraController != null)
                   SizedBox.expand(
                     child: FittedBox(
@@ -257,20 +417,20 @@ class _ScanScreenState extends State<ScanScreen> {
                   )
                 else
                   Container(
-                    color: const Color(0xFFEFEEEA),
+                    color: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
                     child: Center(
                       child: _cameraError != null
                           ? Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.videocam_off, size: 48, color: AppTheme.textMuted),
+                                Icon(Icons.cloud_upload_outlined, size: 48, color: textSecondary),
                                 const SizedBox(height: 12),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 24),
                                   child: Text(
                                     _cameraError!,
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+                                    style: GoogleFonts.inter(fontSize: 13, color: textSecondary),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -304,198 +464,499 @@ class _ScanScreenState extends State<ScanScreen> {
                     ),
                   ),
 
-                // ── Child Silhouette Outline ────────────────────────
-                CustomPaint(
-                  size: const Size(200, 320),
-                  painter: _SilhouettePainter(),
-                ),
-
-                // ── Corner Brackets ─────────────────────────────────
-                const Positioned(
-                  top: 16,
-                  left: 16,
-                  child: _CornerBracket(top: true, left: true),
-                ),
-                const Positioned(
-                  top: 16,
-                  right: 16,
-                  child: _CornerBracket(top: true, left: false),
-                ),
-                const Positioned(
-                  bottom: 16,
-                  left: 16,
-                  child: _CornerBracket(top: false, left: true),
-                ),
-                const Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: _CornerBracket(top: false, left: false),
-                ),
+                // Corner Brackets
+                const Positioned(top: 16, left: 16, child: _CornerBracket(top: true, left: true)),
+                const Positioned(top: 16, right: 16, child: _CornerBracket(top: true, left: false)),
+                const Positioned(bottom: 16, left: 16, child: _CornerBracket(top: false, left: true)),
+                const Positioned(bottom: 16, right: 16, child: _CornerBracket(top: false, left: false)),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // ── Mode Controls ──────────────────────────────────────────
+        // Action Buttons Row
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Sound Distraction Switch
-            GestureDetector(
-              onTap: () {
-                setState(() => _distractionSoundsOn = !_distractionSoundsOn);
-                if (_distractionSoundsOn) _playSoothingChime();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE9E8E4),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.volume_up, size: 18, color: AppTheme.accentSage),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Distract with sounds',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+            // Upload Image Button - using ElevatedButton for web compatibility
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _handleUpload,
+                  icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+                  label: Text(
+                    'Upload Image',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 8),
-                    Switch.adaptive(
-                      value: _distractionSoundsOn,
-                      onChanged: (val) {
-                        setState(() => _distractionSoundsOn = val);
-                        if (val) _playSoothingChime();
-                      },
-                      activeTrackColor: AppTheme.primary,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
+                    foregroundColor: AppTheme.primary,
+                    elevation: 0,
+                    side: BorderSide(color: AppTheme.borderColorValue(context)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
 
-            // Mascot Mode Button
-            ElevatedButton(
-              onPressed: () => setState(() => _scanMode = 'distraction'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accentMint,
-                foregroundColor: AppTheme.darkGreenText,
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                elevation: 0,
-              ),
-              child: Text(
-                'Mascot Mode',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+            const SizedBox(width: 12),
+
+            // Distraction Videos Button
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _scanMode = 'video_select'),
+                  icon: const Icon(Icons.play_circle_outline, size: 20),
+                  label: Text(
+                    'Distraction',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
+                    foregroundColor: AppTheme.accentSage,
+                    elevation: 0,
+                    side: BorderSide(color: AppTheme.borderColorValue(context)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 24),
 
-        // ── Shutter Button ─────────────────────────────────────────
-        GestureDetector(
-          onTap: _isCapturing ? null : _handleCapture,
-          child: Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: AppTheme.primary.withValues(alpha: 0.2), blurRadius: 16, spreadRadius: 4),
-              ],
+        const SizedBox(height: 16),
+
+        // Mode Controls Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.volume_up, size: 18, color: AppTheme.accentSage),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Sounds',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch.adaptive(
+                    value: _distractionSoundsOn,
+                    onChanged: (val) {
+                      setState(() => _distractionSoundsOn = val);
+                      if (val) _playSoothingChime();
+                    },
+                    activeTrackColor: AppTheme.primary,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ],
+              ),
             ),
-            padding: const EdgeInsets.all(6),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // Shutter Button (show when camera is available on any platform)
+        if (_isCameraInitialized)
+          GestureDetector(
+            onTap: _isCapturing ? null : _handleCapture,
             child: Container(
-              decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
-              child: _isCapturing
-                  ? const Center(
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                      ),
-                    )
-                  : const Icon(Icons.camera_alt, color: Colors.white, size: 32),
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: AppTheme.primary.withValues(alpha: 0.2), blurRadius: 16, spreadRadius: 4),
+                ],
+              ),
+              padding: const EdgeInsets.all(6),
+              child: Container(
+                decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+                child: _isCapturing
+                    ? const Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        ),
+                      )
+                    : const Icon(Icons.camera_alt, color: Colors.white, size: 32),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
   // ══════════════════════════════════════════════════════════════════
-  // 2. CHILD DISTRACTION MODE
+  // 2. VIDEO SELECTION MODE
   // ══════════════════════════════════════════════════════════════════
 
-  Widget _buildDistractionMode() {
+  Widget _buildVideoSelectionMode(Color textPrimary, Color textSecondary, bool isDark) {
     return Column(
-      key: const ValueKey('distraction'),
+      key: const ValueKey('video_select'),
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'DISTRACTION MODE ON',
+          'Choose a Distraction Video',
           style: GoogleFonts.inter(
             fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.primary,
-            letterSpacing: -0.5,
+            fontWeight: FontWeight.w700,
+            color: textPrimary,
           ),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
-          'Look here, ${widget.child.name}!',
-          style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textSecondary),
+          'Select a video to keep ${widget.child.name} engaged during the scan.',
+          style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
 
-        // Interactive Animated Bird Mascot
-        BirdMascot(
-          onTap: _playSoothingChime,
-        ),
+        // Video Selection Cards
+        ...(_videos.map((video) => _buildVideoCard(video, textPrimary, textSecondary, isDark))),
+
         const SizedBox(height: 16),
 
-        Text(
-          'Tap the bird for a cheerful chime!',
-          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
-        ),
-        const SizedBox(height: 28),
-
-        // Exit Distraction Button
-        ElevatedButton.icon(
+        // Back Button
+        TextButton.icon(
           onPressed: () => setState(() => _scanMode = 'camera'),
-          icon: const Icon(Icons.close, size: 18),
-          label: Text('Exit Distraction Mode', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFE9E8E4),
-            foregroundColor: AppTheme.textSecondary,
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            elevation: 0,
+          icon: Icon(Icons.arrow_back, color: textSecondary, size: 18),
+          label: Text(
+            'Back to Camera',
+            style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildVideoCard(Map<String, dynamic> video, Color textPrimary, Color textSecondary, bool isDark) {
+    final isSelected = _selectedVideo == video['name'];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () => _selectVideo(video['name'], video['asset']),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryContainer : (isDark ? AppTheme.darkCard : Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppTheme.primary : AppTheme.borderColorValue(context),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primary : AppTheme.accentMint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  video['icon'],
+                  color: isSelected ? Colors.white : AppTheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      video['name'],
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      video['description'],
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.play_circle_outline,
+                color: isSelected ? AppTheme.primary : textSecondary,
+                size: 28,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ══════════════════════════════════════════════════════════════════
-  // 3. PREVIEW & ANALYSE MODE
+  // 3. VIDEO PLAY MODE
   // ══════════════════════════════════════════════════════════════════
 
-  Widget _buildPreviewMode() {
+  Widget _buildVideoPlayMode(double cameraPreviewHeight, Color textPrimary, Color textSecondary, bool isDark) {
+    return Column(
+      key: const ValueKey('video_play'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Distraction Mode',
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _selectedVideo ?? 'Video',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppTheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+
+        // Video Player
+        Container(
+          width: double.infinity,
+          height: cameraPreviewHeight * 0.8,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Video
+                if (_videoController != null && _videoController!.value.isInitialized)
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController!.value.size.width,
+                        height: _videoController!.value.size.height,
+                        child: VideoPlayer(_videoController!),
+                      ),
+                    ),
+                  )
+                else
+                  const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+
+                // Play/Pause Overlay
+                GestureDetector(
+                  onTap: _toggleVideoPlayback,
+                  child: AnimatedOpacity(
+                    opacity: _isVideoPlaying ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isVideoPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Close Button
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () {
+                      _stopVideo();
+                      setState(() => _scanMode = 'camera');
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Video Controls Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Play/Pause Button
+            GestureDetector(
+              onTap: _toggleVideoPlayback,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: AppTheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isVideoPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            // Mute Indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCard : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.volume_off, size: 16, color: textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Muted',
+                    style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Capture Button (when video is playing)
+        Text(
+          'Tap the shutter button below to capture',
+          style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
+          textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: 12),
+
+        // Shutter Button (show when camera is available on any platform)
+        if (_isCameraInitialized)
+          GestureDetector(
+            onTap: _isCapturing ? null : _handleCapture,
+            child: Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: AppTheme.primary.withValues(alpha: 0.2), blurRadius: 16, spreadRadius: 4),
+                ],
+              ),
+              padding: const EdgeInsets.all(6),
+              child: Container(
+                decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+                child: _isCapturing
+                    ? const Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        ),
+                      )
+                    : const Icon(Icons.camera_alt, color: Colors.white, size: 32),
+              ),
+            ),
+          ),
+
+        // Upload button in video mode (show when camera is NOT available as fallback)
+        if (!_isCameraInitialized)
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _handleUpload,
+              icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+              label: Text(
+                'Upload Image',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // 4. PREVIEW MODE
+  // ══════════════════════════════════════════════════════════════════
+
+  Widget _buildPreviewMode(double cameraPreviewHeight, Color textPrimary, Color textSecondary, Color scaffoldBg, bool isDark) {
     return Column(
       key: const ValueKey('preview'),
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Header ─────────────────────────────────────────────────
         Text(
           _isAnalyzing ? 'Analyzing photo...' : 'Review your photo',
           style: GoogleFonts.inter(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
@@ -503,44 +964,54 @@ class _ScanScreenState extends State<ScanScreen> {
         Text(
           _isAnalyzing
               ? 'Sending to AI for nutritional screening...'
-              : 'Make sure ${widget.child.name} is clearly visible.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppTheme.textSecondary),
+              : _imageSource == 'upload'
+                  ? 'Image uploaded successfully.'
+                  : 'Make sure ${widget.child.name} is clearly visible.',
+          style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
 
-        // ── Captured Image Preview ─────────────────────────────────
+        // Captured/Uploaded Image Preview (using Image.memory for web compatibility)
         Container(
           width: double.infinity,
-          height: 380,
+          height: cameraPreviewHeight,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: AppTheme.borderAccent, width: 2),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.borderAccentColor(context), width: 2),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(22),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (_capturedImage != null)
-                  Image.file(
-                    File(_capturedImage!.path),
+                // Image display using bytes (works on web and mobile)
+                if (_capturedImageBytes != null)
+                  Image.memory(
+                    _capturedImageBytes!,
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
+                        child: Center(
+                          child: Icon(Icons.image_not_supported, size: 48, color: textSecondary),
+                        ),
+                      );
+                    },
                   )
                 else
                   Container(
-                    color: const Color(0xFFEFEEEA),
-                    child: const Center(
-                      child: Icon(Icons.image_not_supported, size: 48, color: AppTheme.textMuted),
+                    color: isDark ? AppTheme.darkCardAlt : const Color(0xFFF1F5F9),
+                    child: Center(
+                      child: Icon(Icons.image_not_supported, size: 48, color: textSecondary),
                     ),
                   ),
 
-                // Loading overlay when analysing
                 if (_isAnalyzing)
                   Container(
                     width: double.infinity,
@@ -578,7 +1049,7 @@ class _ScanScreenState extends State<ScanScreen> {
                               'This may take a moment',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: AppTheme.textSecondary,
+                                color: AppTheme.textColorSecondary(context),
                               ),
                             ),
                           ],
@@ -592,32 +1063,32 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
         const SizedBox(height: 12),
 
-        // ── Error Banner ───────────────────────────────────────────
+        // Error Banner
         if (_analysisError != null)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFDECEA),
+              color: const Color(0xFFFEE2E2),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE57373)),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Color(0xFFBA1A1A), size: 20),
+                const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     _analysisError!,
-                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFBA1A1A)),
+                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFDC2626)),
                   ),
                 ),
               ],
             ),
           ),
 
-        // ── Analyse Button ─────────────────────────────────────────
+        // Analyse Button
         SizedBox(
           width: double.infinity,
           height: 52,
@@ -643,7 +1114,7 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
         const SizedBox(height: 12),
 
-        // ── Retake Button ──────────────────────────────────────────
+        // Retake/Choose Another Button
         SizedBox(
           width: double.infinity,
           height: 50,
@@ -651,9 +1122,9 @@ class _ScanScreenState extends State<ScanScreen> {
             onPressed: _isAnalyzing
                 ? null
                 : () => setState(() {
-                      _capturedImage = null;
-                      _analysisError = null;
-                      _scanMode = 'camera';
+                  _capturedImageBytes = null;
+                  _analysisError = null;
+                  _scanMode = 'camera';
                     }),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primary,
@@ -661,7 +1132,7 @@ class _ScanScreenState extends State<ScanScreen> {
               shape: const StadiumBorder(),
             ),
             child: Text(
-              'Retake photo',
+              _imageSource == 'upload' ? 'Choose Another' : 'Retake photo',
               style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
             ),
           ),
@@ -670,10 +1141,6 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════
-// Private helpers
-// ════════════════════════════════════════════════════════════════════
 
 class _CornerBracket extends StatelessWidget {
   final bool top;
@@ -695,33 +1162,4 @@ class _CornerBracket extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SilhouettePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.primaryContainer.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..addOval(Rect.fromCenter(center: Offset(size.width * 0.5, 60), width: 70, height: 80))
-      ..moveTo(size.width * 0.5, 100)
-      ..lineTo(size.width * 0.5, 220)
-      ..moveTo(size.width * 0.5, 130)
-      ..lineTo(size.width * 0.2, 180)
-      ..moveTo(size.width * 0.5, 130)
-      ..lineTo(size.width * 0.8, 180)
-      ..moveTo(size.width * 0.5, 220)
-      ..lineTo(size.width * 0.3, 300)
-      ..moveTo(size.width * 0.5, 220)
-      ..lineTo(size.width * 0.7, 300);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
