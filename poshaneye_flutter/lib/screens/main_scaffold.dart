@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/child_profile.dart';
 import '../models/prediction_result.dart';
 import '../models/vital_record.dart';
-import '../widgets/app_header.dart';
-import '../widgets/vanta_globe_background.dart';
+
 import 'analysis_results_screen.dart';
 import 'dashboard_screen.dart';
 import 'bmi_calculator_screen.dart';
 import 'scan_screen.dart';
 import 'nutrition_plan_screen.dart';
 import 'profile_screen.dart';
-import 'voice_assistant_sheet.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -21,17 +20,17 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _activeTab = 0; // 0=Home, 1=Growth, 2=Scan, 3=Nutrition, 4=Profile, 5=PoshanAi
+  int _activeTab = 0;
 
   late ChildProfile _child;
   late VitalRecord _vitals;
 
-  // ── Prediction result (non-null means show results screen) ──────
   PredictionResult? _predictionResult;
 
   @override
   void initState() {
     super.initState();
+
     _child = ChildProfile(
       name: 'Aarav',
       parentNames: 'Sarah & Leo',
@@ -39,9 +38,11 @@ class _MainScaffoldState extends State<MainScaffold> {
       gender: 'boy',
       ageYears: 2,
       ageMonths: 3,
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
       status: 'On Track',
-      statusDescription: 'Following a healthy growth path compared to WHO standards.',
+      statusDescription:
+          'Following a healthy growth path compared to WHO standards.',
     );
 
     _vitals = VitalRecord(
@@ -55,7 +56,10 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   String _getPageTitle() {
-    if (_predictionResult != null) return 'Analysis Results';
+    if (_predictionResult != null) {
+      return 'Analysis Results';
+    }
+
     switch (_activeTab) {
       case 0:
         return 'Home';
@@ -67,103 +71,125 @@ class _MainScaffoldState extends State<MainScaffold> {
         return 'Nutrition Plan';
       case 4:
         return 'Child Profile';
-      case 5:
-        return 'PoshanAi Voice';
       default:
         return 'PoshanEye';
     }
   }
 
   void _handleAnalysisComplete(PredictionResult result) {
-    setState(() => _predictionResult = result);
+    setState(() {
+      _predictionResult = result;
+    });
   }
 
   void _handleResetAnalysis() {
     setState(() {
       _predictionResult = null;
-      _activeTab = 2; // Return to scan tab
+      _activeTab = 2;
     });
+  }
+
+  void _handleNavigateTab(int index) {
+    setState(() {
+      _predictionResult = null;
+      _activeTab = index;
+    });
+  }
+
+  void _handleAddRecord(VitalRecord record) {
+    setState(() {
+      _vitals = record;
+    });
+  }
+
+  Widget _buildCurrentPage() {
+    // Show prediction results after a successful AI scan.
+    if (_predictionResult != null) {
+      return AnalysisResultsScreen(
+        result: _predictionResult!,
+        onReset: _handleResetAnalysis,
+      );
+    }
+
+    switch (_activeTab) {
+      case 0:
+        return DashboardScreen(
+          child: _child,
+          vitals: _vitals,
+          onNavigateTab: _handleNavigateTab,
+        );
+
+      case 1:
+        return BMICalculatorScreen(
+          child: _child,
+          vitals: _vitals,
+          onAddRecord: _handleAddRecord,
+        );
+
+      case 2:
+        return ScanScreen(
+          child: _child,
+          vitals: _vitals,
+          onNavigateTab: _handleNavigateTab,
+          onAnalysisComplete: _handleAnalysisComplete,
+        );
+
+      case 3:
+        return NutritionPlanScreen(
+          child: _child,
+        );
+
+      case 4:
+        return ProfileScreen(
+          child: _child,
+          vitals: _vitals,
+        );
+
+      default:
+        return DashboardScreen(
+          child: _child,
+          vitals: _vitals,
+          onNavigateTab: _handleNavigateTab,
+        );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Hide globe background when showing results or scan
-    final isGlobeVisible = _activeTab != 2 && _predictionResult == null;
+    return Scaffold(
+      backgroundColor: const Color(0xFF120A21),
 
-    return VantaGlobeBackground(
-      isBackgroundVisible: isGlobeVisible,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        body: Stack(
-          children: [
-            // ── Body Content View ─────────────────────────────────
-            Positioned.fill(
-              child: _predictionResult != null
-                  ? AnalysisResultsScreen(
-                      result: _predictionResult!,
-                      onReset: _handleResetAnalysis,
-                    )
-                  : IndexedStack(
-                      index: _activeTab,
-                      children: [
-                        DashboardScreen(
-                          child: _child,
-                          vitals: _vitals,
-                          onNavigateTab: (tab) => setState(() => _activeTab = tab),
-                        ),
-                        BMICalculatorScreen(
-                          child: _child,
-                          vitals: _vitals,
-                          onAddRecord: (record) => setState(() => _vitals = record),
-                        ),
-                        ScanScreen(
-                          child: _child,
-                          vitals: _vitals,
-                          onNavigateTab: (tab) => setState(() => _activeTab = tab),
-                          onAnalysisComplete: _handleAnalysisComplete,
-                        ),
-                        NutritionPlanScreen(child: _child),
-                        ProfileScreen(child: _child, vitals: _vitals),
-                        VoiceAssistantSheet(child: _child, vitals: _vitals),
-                      ],
-                    ),
-            ),
-
-            // ── Fixed Top Header ─────────────────────────────────
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: AppHeader(
-                title: _getPageTitle(),
-                showBack: _activeTab != 0 || _predictionResult != null,
-                onBackClick: () {
-                  if (_predictionResult != null) {
-                    setState(() => _predictionResult = null);
-                  } else {
-                    setState(() => _activeTab = 0);
-                  }
-                },
-                onProfileClick: () => setState(() {
-                  _predictionResult = null;
-                  _activeTab = 4;
-                }),
-                avatarUrl: _child.avatarUrl,
-              ),
-            ),
-          ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF120A21),
+        elevation: 0,
+        title: Text(
+          _getPageTitle(),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        bottomNavigationBar: _predictionResult != null ? null : _buildBottomNav(),
       ),
+
+      body: SafeArea(
+        child: _buildCurrentPage(),
+      ),
+
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1235).withValues(alpha: 0.92),
-        border: Border(top: BorderSide(color: const Color(0xFF3FFF80).withValues(alpha: 0.15), width: 1)),
+        color: const Color(0xFF1E1235),
+        border: Border(
+          top: BorderSide(
+            color: const Color(0xFF3FFF80).withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.25),
@@ -172,6 +198,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           ),
         ],
       ),
+
       child: SafeArea(
         top: false,
         child: SizedBox(
@@ -179,20 +206,35 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // 0: Home
-              _buildNavItem(index: 0, label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home),
+              _buildNavItem(
+                index: 0,
+                label: 'Home',
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+              ),
 
-              // 1: Growth
-              _buildNavItem(index: 1, label: 'Growth', icon: Icons.trending_up, activeIcon: Icons.trending_up),
+              _buildNavItem(
+                index: 1,
+                label: 'Growth',
+                icon: Icons.trending_up,
+                activeIcon: Icons.trending_up,
+              ),
 
-              // 2: Center Elevated Scan FAB
               _buildCenterScanFAB(),
 
-              // 3: Nutrition
-              _buildNavItem(index: 3, label: 'Nutrition', icon: Icons.restaurant_outlined, activeIcon: Icons.restaurant),
+              _buildNavItem(
+                index: 3,
+                label: 'Nutrition',
+                icon: Icons.restaurant_outlined,
+                activeIcon: Icons.restaurant,
+              ),
 
-              // 4: Profile
-              _buildNavItem(index: 4, label: 'Profile', icon: Icons.person_outline, activeIcon: Icons.person),
+              _buildNavItem(
+                index: 4,
+                label: 'Profile',
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+              ),
             ],
           ),
         ),
@@ -207,28 +249,35 @@ class _MainScaffoldState extends State<MainScaffold> {
     required IconData activeIcon,
   }) {
     final isActive = _activeTab == index;
+
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() {
-          _predictionResult = null;
-          _activeTab = index;
-        }),
+        onTap: () {
+          _handleNavigateTab(index);
+        },
         behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               isActive ? activeIcon : icon,
-              color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
+              color: isActive
+                  ? const Color(0xFF3FFF80)
+                  : Colors.white54,
               size: 22,
             ),
+
             const SizedBox(height: 2),
+
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 11,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
+                fontWeight:
+                    isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive
+                    ? const Color(0xFF3FFF80)
+                    : Colors.white54,
               ),
             ),
           ],
@@ -239,14 +288,18 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _buildCenterScanFAB() {
     final isActive = _activeTab == 2;
+
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() {
-          _predictionResult = null;
-          _activeTab = 2;
-        }),
+        onTap: () {
+          setState(() {
+            _predictionResult = null;
+            _activeTab = 2;
+          });
+        },
+        behavior: HitTestBehavior.opaque,
         child: Transform.translate(
-          offset: const Offset(0, -12),
+          offset: const Offset(0, -8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -256,23 +309,34 @@ class _MainScaffoldState extends State<MainScaffold> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF3FFF80),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF1E1235), width: 3),
+                  border: Border.all(
+                    color: const Color(0xFF1E1235),
+                    width: 3,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF3FFF80).withValues(alpha: 0.4),
+                      color: const Color(0xFF3FFF80)
+                          .withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: const Icon(Icons.qr_code_scanner, color: Color(0xFF1E1235), size: 26),
+                child: const Icon(
+                  Icons.qr_code_scanner,
+                  color: Color(0xFF1E1235),
+                  size: 26,
+                ),
               ),
+
               Text(
                 'AI Scan',
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: isActive ? const Color(0xFF3FFF80) : Colors.white54,
+                  color: isActive
+                      ? const Color(0xFF3FFF80)
+                      : Colors.white54,
                 ),
               ),
             ],
