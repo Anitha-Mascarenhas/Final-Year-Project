@@ -4,9 +4,19 @@ from pathlib import Path
 import shutil
 
 from predict import run_prediction
-
+from routers.auth import router as auth_router
+from routers.health_worker import router as health_worker_router
+#This is for testing
+from routers.test_protected import router as protected_router
+from routers.test_screening import router as test_screening_router
 
 app = FastAPI(title="PoshanEye Backend")
+app.include_router(auth_router)
+app.include_router(health_worker_router)
+#this is for testing
+app.include_router(protected_router)
+app.include_router(test_screening_router)
+
 
 # ── CORS Configuration ──────────────────────────────────────────────
 # Allow any localhost/127.0.0.1 origin on any port.
