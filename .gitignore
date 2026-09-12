@@ -23,3 +23,5 @@ temp_mediapipe_download*/
 # Training logs
 **/outputs/logs/
 poshaneye_flutter/assets/videos/*.mp4
+
+/backend/.env
