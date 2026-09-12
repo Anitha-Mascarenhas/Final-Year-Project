@@ -63,6 +63,23 @@ def main() -> None:
 
     pipeline.train_measurement_baselines(train_df, validation_df, test_df)
 
+    # --- Class-weighted image experiment ---
+    from sklearn.utils.class_weight import compute_class_weight
+
+    train_label_counts = train_df["label"].value_counts().sort_index()
+    print("\n[Experiment] Training set class counts:")
+    for label_id, count in train_label_counts.items():
+        print(f"  class {label_id} ({CLASS_NAMES[label_id]}): {count}")
+
+    classes = np.unique(train_df["label"].values)
+    class_weights_array = compute_class_weight(
+        "balanced", classes=classes, y=train_df["label"].values,
+    )
+    class_weight = {int(c): float(w) for c, w in zip(classes, class_weights_array)}
+    print("[Experiment] Balanced class weights:")
+    for label_id, weight in class_weight.items():
+        print(f"  class {label_id} ({CLASS_NAMES[label_id]}): {weight:.4f}")
+
     def _metrics_to_dict(model: tf.keras.Model, metrics_result):
         metrics_names = list(model.metrics_names)
         print("[Evaluation] model metrics names:", metrics_names)
@@ -78,13 +95,18 @@ def main() -> None:
         return {name: float(value) for name, value in zip(metrics_names, values)}
 
     if image_available:
-        train_image_dataset = build_image_dataset(train_df["image_path"].values, train_df["label"].values)
+        train_image_dataset = build_image_dataset(
+            train_df["image_path"].values, train_df["label"].values, augment=True,
+        )
         validation_image_dataset = build_image_dataset(
             validation_df["image_path"].values,
             validation_df["label"].values,
             shuffle=False,
         )
-        image_model = pipeline.train_image_model(train_image_dataset, validation_image_dataset, len(CLASS_NAMES))
+        image_model = pipeline.train_image_model(
+            train_image_dataset, validation_image_dataset, len(CLASS_NAMES),
+            class_weight=class_weight,
+        )
         image_test_dataset = build_image_dataset(test_df["image_path"].values, test_df["label"].values, shuffle=False)
         image_metrics = image_model.evaluate(image_test_dataset, verbose=0)
         image_metrics_dict = _metrics_to_dict(image_model, image_metrics)

@@ -177,8 +177,11 @@ class Pipeline:
         train_dataset: tf.data.Dataset,
         val_dataset: tf.data.Dataset,
         num_classes: int,
+        class_weight: dict[int, float] | None = None,
     ) -> tf.keras.Model:
-        history = self.image_trainer.train(train_dataset, val_dataset, num_classes)
+        history = self.image_trainer.train(
+            train_dataset, val_dataset, num_classes, class_weight=class_weight,
+        )
         self.evaluator.save_training_history(history, "image_model")
         self.image_trainer.save(self.model_dir / "image_model.h5")
         self.image_trainer.save_tflite(self.model_dir / TFLITE_FILENAME)
