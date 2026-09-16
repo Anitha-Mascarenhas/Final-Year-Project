@@ -21,7 +21,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import GridSearchCV, train_test_split
 
-from config import CLASS_NAMES, MODEL_DIR, RANDOM_STATE
+from config import MODEL_DIR, RANDOM_STATE
 from features import MeasurementFeaturePipeline
 from utils import ensure_dir, save_joblib
 
@@ -42,10 +42,23 @@ class ModelResult:
 class MeasurementModelTrainer:
     """Train and compare measurement-only baseline models."""
 
-    def __init__(self, model_dir: Path = MODEL_DIR):
+    def __init__(self, model_dir: Path = MODEL_DIR, class_names: list[str] | None = None):
         self.model_dir = ensure_dir(model_dir)
         self.feature_pipeline = MeasurementFeaturePipeline()
         self.results: dict[str, ModelResult] = {}
+        # Encoded-label order (index -> name). Supplied by the fitted LabelEncoder via
+        # DataPreprocessor.get_class_names(); config.CLASS_NAMES is not in that order.
+        self.class_names = list(class_names) if class_names is not None else None
+
+    def _resolve_class_names(self, class_names: list[str] | None = None) -> list[str]:
+        names = class_names if class_names is not None else self.class_names
+        if not names:
+            raise ValueError(
+                "Measurement evaluation needs class names in encoded-label order. Pass the "
+                "fitted LabelEncoder classes (DataPreprocessor.get_class_names()) to "
+                "MeasurementModelTrainer or to evaluate()/evaluate_on_test()."
+            )
+        return list(names)
 
     def fit(self, df: pd.DataFrame, label_column: str = "label") -> None:
         # Fit feature pipeline on training data and train models (no evaluation here)
@@ -61,17 +74,31 @@ class MeasurementModelTrainer:
         self._fit_lightgbm(X, y)
         self._fit_mlp(X, y)
 
-    def evaluate(self, X: np.ndarray, y: np.ndarray, model: Any, name: str) -> ModelResult:
+    def evaluate(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        model: Any,
+        name: str,
+        class_names: list[str] | None = None,
+    ) -> ModelResult:
+        names = self._resolve_class_names(class_names)
         predictions = model.predict(X)
         probabilities = self._predict_proba(model, X)
         roc_auc = None
-        if probabilities is not None and probabilities.shape[1] == len(CLASS_NAMES):
+        if probabilities is not None and probabilities.shape[1] == len(names):
             try:
                 roc_auc = roc_auc_score(y, probabilities, multi_class="ovo")
             except ValueError:
                 roc_auc = None
 
-        report = classification_report(y, predictions, target_names=CLASS_NAMES, zero_division=0)
+        report = classification_report(
+            y,
+            predictions,
+            labels=list(range(len(names))),
+            target_names=names,
+            zero_division=0,
+        )
         # Print evaluation artifacts for visibility
         print(f"\n[Measurement Evaluation] Model: {name}")
         print("Classification Report:\n", report)
@@ -162,15 +189,21 @@ class MeasurementModelTrainer:
         self.trained_models["MLP"] = model
         save_joblib(self.model_dir / "measurement_mlp.pkl", model)
 
-    def evaluate_on_test(self, df_test: pd.DataFrame, label_column: str = "label") -> None:
+    def evaluate_on_test(
+        self,
+        df_test: pd.DataFrame,
+        label_column: str = "label",
+        class_names: list[str] | None = None,
+    ) -> None:
         """Evaluate all trained models on the held-out test set and populate self.results."""
+        names = self._resolve_class_names(class_names)
         X_test = self.feature_pipeline.transform(df_test)
         y_test = df_test[label_column].astype(int).values
         # Clear any previous results and evaluate
         self.results = {}
         for name, model in self.trained_models.items():
             try:
-                self.evaluate(X_test, y_test, model, name)
+                self.evaluate(X_test, y_test, model, name, class_names=names)
             except Exception as e:
                 print(f"Error evaluating model {name} on test set: {e}")
 

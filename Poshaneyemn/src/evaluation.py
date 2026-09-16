@@ -13,7 +13,6 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from config import CLASS_NAMES
 from utils import ensure_dir, save_json
 
 
@@ -31,16 +30,29 @@ class Evaluation:
             "f1_score": float(f1_score(y_true, y_pred, average="weighted", zero_division=0)),
         }
 
-    def save_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray, filename: str) -> Path:
-        matrix = confusion_matrix(y_true, y_pred)
+    def save_confusion_matrix(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        filename: str,
+        class_names: list[str],
+    ) -> Path:
+        """Save a confusion matrix labelled in encoded-label order.
+
+        ``class_names`` must come from the fitted ``LabelEncoder`` (see
+        ``DataPreprocessor.get_class_names``): ``config.CLASS_NAMES`` is a display list
+        and is NOT ordered the same way as model output indices.
+        """
+        labels = list(range(len(class_names)))
+        matrix = confusion_matrix(y_true, y_pred, labels=labels)
         fig, ax = plt.subplots(figsize=(6, 5))
         heatmap = ax.imshow(matrix, interpolation="nearest", cmap="Blues")
         ax.figure.colorbar(heatmap, ax=ax)
         ax.set(
-            xticks=np.arange(len(CLASS_NAMES)),
-            yticks=np.arange(len(CLASS_NAMES)),
-            xticklabels=CLASS_NAMES,
-            yticklabels=CLASS_NAMES,
+            xticks=np.arange(len(class_names)),
+            yticks=np.arange(len(class_names)),
+            xticklabels=class_names,
+            yticklabels=class_names,
             ylabel="True label",
             xlabel="Predicted label",
             title="Confusion Matrix",
@@ -74,10 +86,132 @@ class Evaluation:
             paths.append(filename)
         return paths
 
-    def save_classification_report(self, y_true: np.ndarray, y_pred: np.ndarray, filename: str) -> Path:
-        report = classification_report(y_true, y_pred, target_names=CLASS_NAMES, zero_division=0)
+    def save_classification_report(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        filename: str,
+        class_names: list[str],
+    ) -> Path:
+        """Save a per-class report labelled in encoded-label order.
+
+        ``class_names`` must come from the fitted ``LabelEncoder`` for the same reason
+        as in :meth:`save_confusion_matrix`.
+        """
+        report = classification_report(
+            y_true,
+            y_pred,
+            labels=list(range(len(class_names))),
+            target_names=class_names,
+            zero_division=0,
+        )
         path = self.output_dir / filename
         path.write_text(report, encoding="utf-8")
+        return path
+
+    def save_full_classification_report(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        class_names: list[str],
+        filename_prefix: str,
+    ) -> dict[str, Path]:
+        """Save per-class precision/recall/F1, macro/weighted averages and a confusion matrix.
+
+        ``class_names`` is passed explicitly because the model output indices follow
+        ``sklearn.preprocessing.LabelEncoder`` order, which is not the same as the
+        positional order of ``config.CLASS_NAMES``.
+        """
+        labels = list(range(len(class_names)))
+        report_dict = classification_report(
+            y_true,
+            y_pred,
+            labels=labels,
+            target_names=class_names,
+            output_dict=True,
+            zero_division=0,
+        )
+        per_class = {
+            name: {
+                "precision": float(report_dict[name]["precision"]),
+                "recall": float(report_dict[name]["recall"]),
+                "f1_score": float(report_dict[name]["f1-score"]),
+                "support": int(report_dict[name]["support"]),
+            }
+            for name in class_names
+        }
+        macro = report_dict["macro avg"]
+        weighted = report_dict["weighted avg"]
+        metrics = {
+            "accuracy": float(accuracy_score(y_true, y_pred)),
+            "per_class": per_class,
+            "macro": {
+                "precision": float(macro["precision"]),
+                "recall": float(macro["recall"]),
+                "f1_score": float(macro["f1-score"]),
+            },
+            "weighted": {
+                "precision": float(weighted["precision"]),
+                "recall": float(weighted["recall"]),
+                "f1_score": float(weighted["f1-score"]),
+            },
+            "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels).tolist(),
+            "class_index_order": list(class_names),
+        }
+
+        metrics_path = self.save_metrics(metrics, f"{filename_prefix}_metrics.json")
+        report_path = self.output_dir / f"{filename_prefix}_classification_report.txt"
+        report_path.write_text(
+            classification_report(
+                y_true,
+                y_pred,
+                labels=labels,
+                target_names=class_names,
+                zero_division=0,
+            ),
+            encoding="utf-8",
+        )
+        figure_path = self._save_confusion_figure(
+            np.asarray(metrics["confusion_matrix"]),
+            class_names,
+            f"{filename_prefix}_confusion_matrix.png",
+        )
+        return {"metrics": metrics_path, "report": report_path, "confusion_matrix": figure_path}
+
+    def _save_confusion_figure(
+        self,
+        matrix: np.ndarray,
+        class_names: list[str],
+        filename: str,
+    ) -> Path:
+        fig, ax = plt.subplots(figsize=(7, 6))
+        heatmap = ax.imshow(matrix, interpolation="nearest", cmap="Blues")
+        ax.figure.colorbar(heatmap, ax=ax)
+        ax.set(
+            xticks=np.arange(len(class_names)),
+            yticks=np.arange(len(class_names)),
+            xticklabels=class_names,
+            yticklabels=class_names,
+            ylabel="True label",
+            xlabel="Predicted label",
+            title="Confusion Matrix",
+        )
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+        threshold = matrix.max() / 2.0 if matrix.size and matrix.max() else 0.0
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                ax.text(
+                    j,
+                    i,
+                    int(matrix[i, j]),
+                    ha="center",
+                    va="center",
+                    color="white" if matrix[i, j] > threshold else "black",
+                )
+        path = self.output_dir / filename
+        fig.tight_layout()
+        fig.savefig(path, dpi=300)
+        plt.close(fig)
         return path
 
     def save_metrics(self, metrics: dict[str, float], filename: str) -> Path:

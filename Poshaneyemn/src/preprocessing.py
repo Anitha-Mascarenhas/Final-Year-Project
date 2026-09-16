@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from config import (
-    CLASS_NAMES,
     MEASUREMENT_COLUMNS,
     PRIMARY_IMAGE_VIEW,
     RANDOM_STATE,
@@ -106,7 +105,19 @@ class DataPreprocessor:
         return train.reset_index(drop=True), val.reset_index(drop=True), test.reset_index(drop=True)
 
     def get_class_names(self) -> list[str]:
-        return list(self.encoder.classes_)
+        """Return the class names in encoded-label order (index -> name).
+
+        This is the only authoritative numeric-to-class mapping: ``encode_labels``
+        assigns ids via ``LabelEncoder``, so ``encoder.classes_`` defines what each
+        model output index means. ``config.CLASS_NAMES`` is a display list and is not
+        ordered the same way.
+        """
+        if not hasattr(self.encoder, "classes_"):
+            raise RuntimeError(
+                "LabelEncoder is not fitted yet; call encode_labels() (or Pipeline.build_datasets()) "
+                "before requesting class names."
+            )
+        return [str(name) for name in self.encoder.classes_]
 
     def validate_training_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """Validate the training dataframe before a stratified split."""
