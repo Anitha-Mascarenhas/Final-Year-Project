@@ -27,3 +27,31 @@ async def create_screening(
         "probabilities": probabilities,
         "createdAt": screening_document["createdAt"]
     }
+
+
+async def get_screening_history(child_id: str):
+    screenings = await screenings_collection.find(
+        {"childId": child_id},
+        {
+            "_id": 1,
+            "childId": 1,
+            "prediction": 1,
+            "confidence": 1,
+            "probabilities": 1,
+            "createdAt": 1
+        }
+    ).sort("createdAt", -1).to_list(length=100)
+
+    history = []
+
+    for screening in screenings:
+        history.append({
+            "screeningId": str(screening["_id"]),
+            "childId": screening["childId"],
+            "prediction": screening["prediction"],
+            "confidence": screening["confidence"],
+            "probabilities": screening["probabilities"],
+            "createdAt": screening["createdAt"]
+        })
+
+    return history

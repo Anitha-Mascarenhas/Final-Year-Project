@@ -6,6 +6,7 @@ import shutil
 from predict import run_prediction
 from routers.auth import router as auth_router
 from routers.health_worker import router as health_worker_router
+from routers.screening import router as screening_router
 #This is for testing
 from routers.test_protected import router as protected_router
 from routers.test_screening import router as test_screening_router
@@ -13,6 +14,7 @@ from routers.test_screening import router as test_screening_router
 app = FastAPI(title="PoshanEye Backend")
 app.include_router(auth_router)
 app.include_router(health_worker_router)
+app.include_router(screening_router)
 #this is for testing
 app.include_router(protected_router)
 app.include_router(test_screening_router)
