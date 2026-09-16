@@ -14,6 +14,7 @@ class ParentSignupRequest(BaseModel):
 class HealthWorkerSignupRequest(BaseModel):
     name: str = Field(min_length=1)
     email: Optional[EmailStr] = None
+    hospitalId: str = Field(min_length=1)
     password: str = Field(min_length=8)
     confirmPassword: str
 

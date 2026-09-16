@@ -26,6 +26,7 @@ db = client[MONGODB_DB_NAME]
 children_collection = db["children"]
 parents_collection = db["parents"]
 health_workers_collection = db["health_workers"]
+hospitals_collection = db["hospitals"]
 counters_collection = db["counters"]
 screenings_collection = db["screenings"]
 

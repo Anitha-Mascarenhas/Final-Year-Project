@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from services.hospital_service import get_hospital_by_id
 
 from db.mongodb import (
     children_collection,
@@ -51,15 +52,20 @@ async def create_parent_account(data):
 #This is the function to create a health worker account. It takes in the data from the HealthWorkerSignupRequest schema, checks if the passwords match, generates a unique worker ID, hashes the password, and inserts the new health worker document into the health_workers_collection in MongoDB. Finally, it returns a success message along with the generated worker ID.
 
 async def create_health_worker_account(data):
-
     if data.password != data.confirmPassword:
         raise ValueError("Passwords do not match")
+
+    hospital = await get_hospital_by_id(data.hospitalId)
+
+    if not hospital:
+        raise ValueError("Invalid or unregistered hospital ID")
 
     worker_id = await generate_worker_id()
 
     worker_document = {
         "workerId": worker_id,
         "name": data.name,
+        "hospitalId": hospital["hospitalId"],
         "passwordHash": hash_password(data.password),
         "email": data.email,
         "createdAt": datetime.now(timezone.utc)
@@ -69,6 +75,8 @@ async def create_health_worker_account(data):
 
     return {
         "workerId": worker_id,
+        "hospitalId": hospital["hospitalId"],
+        "hospitalName": hospital["hospitalName"],
         "message": "Health worker account created successfully"
     }
 
