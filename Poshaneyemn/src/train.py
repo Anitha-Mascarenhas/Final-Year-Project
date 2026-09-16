@@ -31,8 +31,12 @@ def main() -> None:
     output_dir = ensure_dir(args.output_dir)
     model_dir = ensure_dir(args.model_dir)
 
-    pipeline = Pipeline()
+    pipeline = Pipeline(model_dir=model_dir, output_dir=output_dir)
     train_df, validation_df, test_df = pipeline.build_datasets()
+
+    # Authoritative numeric -> class mapping: encoded label ids come from the fitted
+    # LabelEncoder, which is NOT the positional order of config.CLASS_NAMES.
+    encoder_class_names = pipeline.preprocessor.get_class_names()
 
     cv_features, cv_source = pipeline.loader.discover_and_load_cv_features(
         args.cv_features_csv,
@@ -69,7 +73,7 @@ def main() -> None:
     train_label_counts = train_df["label"].value_counts().sort_index()
     print("\n[Experiment] Training set class counts:")
     for label_id, count in train_label_counts.items():
-        print(f"  class {label_id} ({CLASS_NAMES[label_id]}): {count}")
+        print(f"  class {label_id} ({encoder_class_names[label_id]}): {count}")
 
     classes = np.unique(train_df["label"].values)
     class_weights_array = compute_class_weight(
@@ -78,7 +82,7 @@ def main() -> None:
     class_weight = {int(c): float(w) for c, w in zip(classes, class_weights_array)}
     print("[Experiment] Balanced class weights:")
     for label_id, weight in class_weight.items():
-        print(f"  class {label_id} ({CLASS_NAMES[label_id]}): {weight:.4f}")
+        print(f"  class {label_id} ({encoder_class_names[label_id]}): {weight:.4f}")
 
     def _metrics_to_dict(model: tf.keras.Model, metrics_result):
         metrics_names = list(model.metrics_names)
@@ -111,6 +115,21 @@ def main() -> None:
         image_metrics = image_model.evaluate(image_test_dataset, verbose=0)
         image_metrics_dict = _metrics_to_dict(image_model, image_metrics)
         save_json(output_dir / "image_evaluation_metrics.json", image_metrics_dict)
+
+        # Detailed per-class report for the held-out test set. The class names come from
+        # the fitted LabelEncoder because model output indices follow encoder order,
+        # which is not the positional order of config.CLASS_NAMES.
+        test_true = np.concatenate([labels.numpy() for _, labels in image_test_dataset])
+        test_probabilities = image_model.predict(image_test_dataset, verbose=0)
+        test_pred = np.argmax(test_probabilities, axis=1)
+        detailed_paths = pipeline.evaluator.save_full_classification_report(
+            test_true,
+            test_pred,
+            encoder_class_names,
+            "image_model_test",
+        )
+        for artifact_name, artifact_path in detailed_paths.items():
+            print(f"[Evaluation] {artifact_name}: {artifact_path}")
     else:
         print("Image data not available. Skipping image model training.")
 
@@ -155,7 +174,7 @@ def main() -> None:
 
     pipeline.save_label_map()
     exporter = ModelExporter(model_dir=model_dir)
-    exporter.save_label_map(CLASS_NAMES, output_dir / "label_map.json")
+    exporter.save_label_map(encoder_class_names, output_dir / "label_map.json")
     print("Training complete. Models and reports are available in:", output_dir)
 
 
