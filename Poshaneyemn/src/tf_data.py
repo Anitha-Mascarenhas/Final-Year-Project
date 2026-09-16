@@ -46,10 +46,18 @@ def image_path_to_tensor(image_path: tf.Tensor, label: tf.Tensor) -> tuple[tf.Te
     return preprocess_image(image_path), label
 
 
+# Keras preprocessing layers must be instantiated once and reused.
+# Constructing them inside a function mapped over a tf.data.Dataset creates new
+# tf.Variables on every traced call, which tf.function forbids:
+#   "tf.function only supports singleton tf.Variables created on the first call."
+_AUGMENT_RANDOM_FLIP = RandomFlip("horizontal")
+_AUGMENT_RANDOM_CONTRAST = RandomContrast(0.1)
+
+
 def augment_image(image: tf.Tensor) -> tf.Tensor:
     """Apply light augmentation appropriate for child health photographs."""
-    image = RandomFlip("horizontal")(image)
-    image = RandomContrast(0.1)(image)
+    image = _AUGMENT_RANDOM_FLIP(image)
+    image = _AUGMENT_RANDOM_CONTRAST(image)
     return image
 
 
