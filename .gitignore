@@ -23,7 +23,12 @@ temp_mediapipe_download*/
 # Training logs
 **/outputs/logs/
 poshaneye_flutter/assets/videos/*.mp4
+# Large generated training caches
+Poshaneyemn/experiments/image_model_binary_child_level/cache/*.npy
 
+# Large dataset archives
+Poshaneyemn/experiments/upper_arm_segmentation/images_adish.zip
+Poshaneyemn/experiments/upper_arm_segmentation/images_anitha.zip
 /backend/.env.venv/
 .venv/
 Poshaneyemn/.venv_test/
