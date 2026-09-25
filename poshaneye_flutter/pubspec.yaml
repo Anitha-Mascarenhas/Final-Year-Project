@@ -45,3 +45,4 @@ flutter:
     - assets/models/hybrid_production_preprocessor.json
     - assets/models/hybrid_production_svm_portable.json
     - assets/models/hybrid_production_label_map.json
+    - assets/models/hybrid_production_manifest.json
