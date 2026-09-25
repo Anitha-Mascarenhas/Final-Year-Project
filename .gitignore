@@ -7,11 +7,17 @@ venv/
 venv311/
 **/venv/
 **/venv311/
+.venv/
 backend/.venv/
+Poshaneyemn/.venv_test/
+
+# Environment files
+backend/.env
+/backend/.env.venv/
+
 # Large datasets
 dataset/
 **/dataset/
-
 
 # Temporary folders
 temp_mediapipe_download*/
@@ -20,17 +26,15 @@ temp_mediapipe_download*/
 # IDE
 .vscode/
 .idea/
+
 # Training logs
 **/outputs/logs/
+
+# Flutter videos
 poshaneye_flutter/assets/videos/*.mp4
+
 # Large generated training caches
-Poshaneyemn/experiments/image_model_binary_child_level/cache/*.npy
+Poshaneyemn/experiments/image_model_binary_child_level/cache/
 
 # Large dataset archives
-Poshaneyemn/experiments/upper_arm_segmentation/images_adish.zip
-Poshaneyemn/experiments/upper_arm_segmentation/images_anitha.zip
-/backend/.env.venv/
-.venv/
-Poshaneyemn/.venv_test/
-backend/.env
-Poshaneyemn/experiments/upper_arm_segmentation/images
+Poshaneyemn/experiments/upper_arm_segmentation/*.zip
