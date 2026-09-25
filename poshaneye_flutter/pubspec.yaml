@@ -1,5 +1,5 @@
-name: poshaneye
-description: PoshanEye - AI-powered pediatric nutrition screening app.
+name: poshaneye_auth
+description: "PoshanEye role selection, sign in, and sign up Flutter application."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,22 +9,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.6
-  google_fonts: ^6.1.0
-  cached_network_image: ^3.3.1
-  fl_chart: ^0.66.2
-  percent_indicator: ^4.2.3
-  camera: ^0.11.0+2
-  http: ^1.2.1
-  path: ^1.9.0
-  video_player: ^2.8.6
-  file_picker: ^8.1.3  # >=8 required: 6.x uses the removed v1 Android embedding (Registrar) and breaks the build
-  intl: ^0.19.0
-  image: ^4.2.0  # offline JPEG/PNG decode for on-device hybrid inference
-  # On-device TFLite runners for the production hybrid pipeline:
-  # hybrid_production_image_feature_extractor.tflite ([1,224,224,3] -> [1,128])
-  # hybrid_production_segmentation.tflite ([1,512,512,3] -> [1,512,512,2])
-  tflite_flutter: ^0.11.0
+  google_fonts: ^6.2.1
+  lucide_icons: ^0.257.0
+  go_router: ^16.2.4
+  flutter_riverpod: ^3.0.0
+  flutter_animate: ^4.5.2
+  camera: ^0.11.2
+  image_picker: ^1.2.3
+  video_player: ^2.14.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -33,16 +26,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/videos/cheetah.mp4
-    - assets/videos/albatross.mp4
-    - assets/videos/shark.mp4
-    # Production hybrid inference (do NOT deploy the legacy best_model.tflite):
-    # image feature extractor (TFLite) + preprocessing params + portable RBF-SVM + labels
-    - assets/models/hybrid_production_image_feature_extractor.tflite
-    - assets/models/hybrid_production_segmentation.tflite
-    - assets/models/hybrid_production_preprocessor.json
-    - assets/models/hybrid_production_svm_portable.json
-    - assets/models/hybrid_production_label_map.json
-    - assets/models/hybrid_production_manifest.json

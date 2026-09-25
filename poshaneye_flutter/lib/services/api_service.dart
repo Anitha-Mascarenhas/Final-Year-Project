@@ -1,105 +1,88 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/prediction_result.dart';
 
-class ApiService {
-  ApiService._();
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
 
-  // ── Configuration ──────────────────────────────────────────────────
-  // Platform-aware base URL.
-  // Web/Chrome → http://localhost:8000
-  // Android emulator → http://10.0.2.2:8000
-  // iOS simulator / physical device → http://localhost:8000
+  ApiException(this.message, [this.statusCode]);
+
+  @override
+  String toString() => message;
+}
+
+class ApiService {
+  // Centralized Base URL configuration.
+  // Change here or set at runtime if needed.
   static String get baseUrl {
-    return const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'http://localhost:8000',
-    );
+    if (kIsWeb) {
+      return 'http://localhost:8000';
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    } else {
+      return 'http://localhost:8000';
+    }
   }
 
-  static const Duration _timeout = Duration(seconds: 60);
+  static const Duration _timeout = Duration(seconds: 25);
 
-  // ── Health check ───────────────────────────────────────────────────
+  /// Check backend health status
   static Future<bool> checkHealth() async {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/health'))
-          .timeout(_timeout);
+          .timeout(const Duration(seconds: 5));
       return response.statusCode == 200;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Backend health check failed: $e');
       return false;
     }
   }
 
-  // ── Predict ────────────────────────────────────────────────────────
-  /// Send image and child measurements to the backend for prediction.
-  ///
-  /// [imageBytes] - the raw image bytes (works on both web and mobile)
-  /// [fileName] - filename for the multipart form (e.g., 'image.jpg')
-  /// [childData] - map containing child measurements:
-  ///   - height (double, in cm)
-  ///   - weight (double, in kg)
-  ///   - age (int, in months)
-  ///   - muac (double, in cm) — optional, defaults to 0
-  ///   - hc (double, in cm) — optional, defaults to 0
-  static Future<PredictionResult> predict({
-    required Uint8List imageBytes,
-    required String fileName,
-    required Map<String, dynamic> childData,
+  /// Predict malnutrition status from image bytes
+  static Future<PredictionResult> predictImage(
+    Uint8List imageBytes, {
+    String filename = 'child_image.jpg',
   }) async {
-    final uri = Uri.parse('$baseUrl/predict');
-    final request = http.MultipartRequest('POST', uri);
+    if (imageBytes.isEmpty) {
+      throw ApiException('Please select or capture a valid image first.');
+    }
 
-    // Add image file as bytes (web-compatible)
-    request.files.add(
-      http.MultipartFile.fromBytes(
+    try {
+      final uri = Uri.parse('$baseUrl/predict');
+      final request = http.MultipartRequest('POST', uri);
+
+      final multipartFile = http.MultipartFile.fromBytes(
         'file',
         imageBytes,
-        filename: fileName,
-      ),
-    );
+        filename: filename,
+      );
 
-    // Add child measurements
-    request.fields['height'] = (childData['height'] ?? 0).toString();
-    request.fields['weight'] = (childData['weight'] ?? 0).toString();
-    request.fields['age'] = (childData['age'] ?? 0).toString();
-    request.fields['muac'] = (childData['muac'] ?? 0).toString();
-    request.fields['hc'] = (childData['hc'] ?? 0).toString();
+      request.files.add(multipartFile);
 
-    final streamedResponse = await request.send().timeout(_timeout);
+      final streamedResponse = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamedResponse);
 
-    if (streamedResponse.statusCode != 200) {
-      final errorBody = await streamedResponse.stream.bytesToString();
-      String message;
-      try {
-        final errorJson = jsonDecode(errorBody) as Map<String, dynamic>;
-        message = errorJson['detail'] ?? errorJson['message'] ?? 'Backend error';
-      } catch (_) {
-        message = 'Backend returned status ${streamedResponse.statusCode}';
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonBody = json.decode(response.body);
+        return PredictionResult.fromJson(jsonBody);
+      } else {
+        String detail = 'Server returned error code ${response.statusCode}';
+        try {
+          final errJson = json.decode(response.body);
+          if (errJson is Map && errJson.containsKey('detail')) {
+            detail = errJson['detail'].toString();
+          }
+        } catch (_) {}
+        throw ApiException(detail, response.statusCode);
       }
-      throw ApiException(message);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('API request error: $e');
+      throw ApiException('Unable to connect to server. Please check the backend and try again.');
     }
-
-    final body = await streamedResponse.stream.bytesToString();
-    final json = jsonDecode(body) as Map<String, dynamic>;
-
-    // Validate required fields
-    if (!json.containsKey('prediction') ||
-        !json.containsKey('confidence') ||
-        !json.containsKey('probabilities')) {
-      throw const ApiException('Invalid response: missing required fields');
-    }
-
-    return PredictionResult.fromJson(json);
   }
-}
-
-class ApiException implements Exception {
-  final String message;
-  const ApiException(this.message);
-
-  @override
-  String toString() => 'ApiException: $message';
 }

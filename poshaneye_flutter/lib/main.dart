@@ -1,71 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'router/app_router.dart';
 import 'theme/app_theme.dart';
-import 'screens/auth_screen.dart';
-import 'screens/main_scaffold.dart';
+import 'widgets/interactive_eye_logo.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-  ));
-  runApp(const PoshanEyeApp());
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
+  runApp(const ProviderScope(child: PoshanEyeApp()));
 }
 
-class PoshanEyeApp extends StatefulWidget {
+class PoshanEyeApp extends StatelessWidget {
   const PoshanEyeApp({super.key});
 
   @override
-  State<PoshanEyeApp> createState() => _PoshanEyeAppState();
-}
-
-class _PoshanEyeAppState extends State<PoshanEyeApp> {
-  ThemeMode _themeMode = ThemeMode.light; // Default to LIGHT mode
-  bool _isAuthenticated = false;
-
-  void _toggleTheme() {
-    setState(() {
-      _themeMode = _themeMode == ThemeMode.dark
-          ? ThemeMode.light
-          : ThemeMode.dark;
-    });
-
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: _themeMode == ThemeMode.dark
-          ? Brightness.light
-          : Brightness.dark,
-    ));
-  }
-
-  void _handleLoginSuccess() {
-    setState(() => _isAuthenticated = true);
-  }
-
-  void _handleLogout() {
-    setState(() => _isAuthenticated = false);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ThemeProvider(
-      themeMode: _themeMode,
-      toggleTheme: _toggleTheme,
-      child: MaterialApp(
-        title: 'PoshanEye',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: _themeMode,
-        home: _isAuthenticated
-            ? MainScaffold(onLogout: _handleLogout)
-            : AuthScreen(onLoginSuccess: _handleLoginSuccess),
-      ),
+    return MaterialApp.router(
+      title: 'PoshanEye',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
+      builder: (context, child) {
+        return MouseRegion(
+          onHover: (event) =>
+              InteractiveEyeLogoState.updateMountedTargets(event.position),
+          child: Listener(
+            onPointerDown: (event) =>
+                InteractiveEyeLogoState.updateMountedTargets(event.position),
+            onPointerMove: (event) =>
+                InteractiveEyeLogoState.updateMountedTargets(event.position),
+            onPointerHover: (event) =>
+                InteractiveEyeLogoState.updateMountedTargets(event.position),
+            onPointerUp: (event) =>
+                InteractiveEyeLogoState.updateMountedTargets(event.position),
+            child: Container(
+              color: const Color(0xFF0C2417),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.25),
+                          blurRadius: 28,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      routerConfig: appRouter,
     );
   }
 }

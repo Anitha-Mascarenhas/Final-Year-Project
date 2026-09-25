@@ -1,254 +1,306 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
+export 'app_colors.dart';
 
-// ════════════════════════════════════════════════════════════════════
-// THEME PROVIDER — InheritedWidget for app-wide theme state
-// ════════════════════════════════════════════════════════════════════
+/// Design system font helpers for consistent typography.
+class AppFonts {
+  // Sora Bold 700 → major headings, large numbers, primary titles
+  static TextStyle soraHeading({
+    double fontSize = 26,
+    Color color = AppColors.textDark,
+    double? letterSpacing,
+  }) =>
+      GoogleFonts.sora(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: letterSpacing,
+      );
 
-class ThemeProvider extends InheritedWidget {
-  final ThemeMode themeMode;
-  final VoidCallback toggleTheme;
+  // Sora SemiBold 600 → card titles and important labels
+  static TextStyle soraSemiBold({
+    double fontSize = 16,
+    Color color = AppColors.textDark,
+  }) =>
+      GoogleFonts.sora(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w600,
+        color: color,
+      );
 
-  const ThemeProvider({
-    super.key,
-    required this.themeMode,
-    required this.toggleTheme,
-    required super.child,
-  });
+  // Sora 900 → large hero numbers
+  static TextStyle soraBlack({
+    double fontSize = 40,
+    Color color = AppColors.textDark,
+    String? fontFamily,
+  }) =>
+      GoogleFonts.sora(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w900,
+        color: color,
+      );
 
-  bool get isDark => themeMode == ThemeMode.dark;
+  // Manrope Medium 500 → body text and descriptions
+  static TextStyle manropeBody({
+    double fontSize = 13,
+    Color color = AppColors.textSecondary,
+  }) =>
+      GoogleFonts.manrope(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+        color: color,
+      );
 
-  static ThemeProvider of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<ThemeProvider>();
-    assert(provider != null, 'No ThemeProvider found in context');
-    return provider!;
-  }
+  // Manrope Bold 700 → important buttons/actions
+  static TextStyle manropeBold({
+    double fontSize = 15,
+    Color color = AppColors.textDark,
+  }) =>
+      GoogleFonts.manrope(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: color,
+      );
 
-  @override
-  bool updateShouldNotify(ThemeProvider oldWidget) {
-    return themeMode != oldWidget.themeMode;
-  }
+  // Space Grotesk SemiBold 600 → small labels, status labels, technical/measurement labels
+  static TextStyle spaceGroteskLabel({
+    double fontSize = 11,
+    Color color = AppColors.textSecondary,
+    double? letterSpacing,
+  }) =>
+      GoogleFonts.spaceGrotesk(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w600,
+        color: color,
+        letterSpacing: letterSpacing ?? 0.6,
+      );
 }
 
-// ════════════════════════════════════════════════════════════════════
-// APP THEME — Refined Blue Palette
-// ════════════════════════════════════════════════════════════════════
-
 class AppTheme {
-  // ── Brand Palette (shared blue accent) ──────────────────────────
-  static const Color primary = Color(0xFF2563EB);        // Refined Blue
-  static const Color primaryDark = Color(0xFF1D4ED8);    // Deeper Blue
-  static const Color primaryLight = Color(0xFF3B82F6);   // Lighter Blue
-  static const Color primaryContainer = Color(0xFFDBEAFE); // Light Blue Container
-  static const Color accentBlue = Color(0xFF60A5FA);     // Soft Blue Accent
-  static const Color accentMint = Color(0xFFDBEAFE);     // Light Blue Tint
-  static const Color accentSage = Color(0xFF1E40AF);     // Dark Blue Accent
-  static const Color darkText = Color(0xFF0F172A);       // Navy Text
-
-  // ── Dark mode colors ────────────────────────────────────────────
-  static const Color darkBackground = Color(0xFF0A0F1A);  // Near-black with navy
-  static const Color darkSurface = Color(0xFF111827);     // Dark charcoal
-  static const Color darkCard = Color(0xFF1F2937);        // Dark card
-  static const Color darkCardAlt = Color(0xFF253042);     // Slightly lighter
-  static const Color darkVitalsCard = Color(0xFF1E293B);  // Slate dark
-  static const Color darkBorder = Color(0xFF334155);      // Slate border
-  static const Color darkBorderAccent = Color(0xFF1E3A5F); // Blue-dark border
-  static const Color darkTextPrimary = Color(0xFFF1F5F9); // Off-white
-  static const Color darkTextSecondary = Color(0xFF94A3B8); // Light gray
-  static const Color darkTextMuted = Color(0xFF64748B);   // Muted gray
-
-  // ── Light mode colors ───────────────────────────────────────────
-  static const Color lightBackground = Color(0xFFF8FAFC);  // Very light gray
-  static const Color lightSurface = Color(0xFFFFFFFF);     // White
-  static const Color lightCard = Color(0xFFFFFFFF);        // White
-  static const Color lightCardAlt = Color(0xFFF1F5F9);     // Light slate
-  static const Color lightVitalsCard = Color(0xFFEFF6FF);  // Very light blue
-  static const Color lightBorder = Color(0xFFE2E8F0);      // Slate border
-  static const Color lightBorderAccent = Color(0xFFBFDBFE); // Light blue border
-  static const Color lightTextPrimary = Color(0xFF0F172A);  // Navy
-  static const Color lightTextSecondary = Color(0xFF475569); // Slate
-  static const Color lightTextMuted = Color(0xFF94A3B8);    // Muted
-
-  // ── Accent Colors (shared) ──────────────────────────────────────
-  static const Color accentGreen = Color(0xFF22C55E);     // Success green
-  static const Color accentRed = Color(0xFFEF4444);       // Error red
-  static const Color navDarkBg = Color(0xFF111827);       // Dark nav
-  static const Color navLightBg = Color(0xFFFFFFFF);      // White nav
-
-  // ════════════════════════════════════════════════════════════════════
-  // THEME ACCESSORS — use these throughout the app
-  // ════════════════════════════════════════════════════════════════════
-
-  static Color backgroundColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkBackground
-        : lightBackground;
-  }
-
-  static Color cardBgColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkCard
-        : lightCard;
-  }
-
-  static Color cardBgAltColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkCardAlt
-        : lightCardAlt;
-  }
-
-  static Color vitalsCardBgColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkVitalsCard
-        : lightVitalsCard;
-  }
-
-  static Color borderColorValue(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkBorder
-        : lightBorder;
-  }
-
-  static Color borderAccentColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkBorderAccent
-        : lightBorderAccent;
-  }
-
-  static Color textColorPrimary(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkTextPrimary
-        : lightTextPrimary;
-  }
-
-  static Color textColorSecondary(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkTextSecondary
-        : lightTextSecondary;
-  }
-
-  static Color textColorMuted(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkTextMuted
-        : lightTextMuted;
-  }
-
-  static Color navBgColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? navDarkBg
-        : navLightBg;
-  }
-
-  static Color navBorderColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? primary.withValues(alpha: 0.2)
-        : primary.withValues(alpha: 0.1);
-  }
-
-  static Color navActiveColor(BuildContext context) {
-    return primary;
-  }
-
-  static Color navInactiveColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? Colors.white54
-        : Colors.black45;
-  }
-
-  static Color scaffoldBgColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkBackground
-        : lightBackground;
-  }
-
-  static Color iconBtnBgColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkCard
-        : lightCardAlt;
-  }
-
-  static Color fabBorderColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? darkBackground
-        : lightBackground;
-  }
-
-  // ════════════════════════════════════════════════════════════════════
-  // LIGHT THEME — Blue + White
-  // ════════════════════════════════════════════════════════════════════
+  static const Duration themeTransitionDuration = Duration(milliseconds: 350);
+  static const Curve themeTransitionCurve = Curves.easeInOut;
 
   static ThemeData get lightTheme {
+    // Use Manrope as the global base — most body text
+    final baseTextTheme =
+        GoogleFonts.manropeTextTheme(ThemeData.light().textTheme);
+
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: lightBackground,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        primary: primary,
+      scaffoldBackgroundColor: AppColors.background,
+      textTheme: baseTextTheme.copyWith(
+        // Display / hero (large numbers, major headings) → Sora Bold 700
+        displayLarge: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 57,
+            color: AppColors.textDark),
+        displayMedium: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 45,
+            color: AppColors.textDark),
+        displaySmall: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 36,
+            color: AppColors.textDark),
+        headlineLarge: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 32,
+            color: AppColors.textDark),
+        headlineMedium: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 28,
+            color: AppColors.textDark),
+        headlineSmall: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
+            color: AppColors.textDark),
+        // Titles → Sora SemiBold 600
+        titleLarge: GoogleFonts.sora(
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            color: AppColors.textDark),
+        titleMedium: GoogleFonts.sora(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: AppColors.textDark),
+        titleSmall: GoogleFonts.sora(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.textDark),
+        // Body → Manrope Medium 500
+        bodyLarge: GoogleFonts.manrope(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: AppColors.textDark),
+        bodyMedium: GoogleFonts.manrope(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: AppColors.textSecondary),
+        bodySmall: GoogleFonts.manrope(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color: AppColors.textSecondary),
+        // Labels → Space Grotesk SemiBold 600
+        labelLarge: GoogleFonts.spaceGrotesk(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.textSecondary),
+        labelMedium: GoogleFonts.spaceGrotesk(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            color: AppColors.textSecondary),
+        labelSmall: GoogleFonts.spaceGrotesk(
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            color: AppColors.textSecondary),
+      ),
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primaryForest,
         onPrimary: Colors.white,
-        primaryContainer: primaryContainer,
-        onPrimaryContainer: primaryDark,
-        secondary: accentSage,
-        onSecondary: Colors.white,
-        secondaryContainer: lightVitalsCard,
-        onSecondaryContainer: primaryDark,
-        surface: lightBackground,
-        onSurface: lightTextPrimary,
-        error: accentRed,
+        secondary: AppColors.neonGreen,
+        onSecondary: AppColors.textDark,
+        surface: AppColors.background,
+        onSurface: AppColors.textDark,
+        error: Color(0xFFB42318),
         onError: Colors.white,
       ),
-      textTheme: GoogleFonts.interTextTheme().copyWith(
-        displayLarge: GoogleFonts.inter(fontWeight: FontWeight.w800, color: lightTextPrimary),
-        displayMedium: GoogleFonts.inter(fontWeight: FontWeight.w700, color: lightTextPrimary),
-        headlineLarge: GoogleFonts.inter(fontWeight: FontWeight.w700, color: lightTextPrimary),
-        headlineMedium: GoogleFonts.inter(fontWeight: FontWeight.w700, color: lightTextPrimary),
-        titleLarge: GoogleFonts.inter(fontWeight: FontWeight.w600, color: lightTextPrimary),
-        bodyLarge: GoogleFonts.inter(fontWeight: FontWeight.w400, color: lightTextPrimary),
-        bodyMedium: GoogleFonts.inter(fontWeight: FontWeight.w400, color: lightTextSecondary),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: _FluidPageTransitionsBuilder(),
+          TargetPlatform.iOS: _FluidPageTransitionsBuilder(),
+          TargetPlatform.windows: _FluidPageTransitionsBuilder(),
+          TargetPlatform.macOS: _FluidPageTransitionsBuilder(),
+          TargetPlatform.linux: _FluidPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: _FluidPageTransitionsBuilder(),
+        },
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
+      cardTheme: CardThemeData(
+        color: AppColors.cardSurfaceLight,
         elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: AppColors.cardBorder),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide:
+              const BorderSide(color: AppColors.primaryForest, width: 1.5),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryForest,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size.fromHeight(50),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.primaryForest,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
       ),
     );
   }
 
-  // ════════════════════════════════════════════════════════════════════
-  // DARK THEME — Black + Blue
-  // ════════════════════════════════════════════════════════════════════
-
   static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: darkBackground,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: primaryLight,
-        onPrimary: darkBackground,
-        primaryContainer: primaryDark,
-        onPrimaryContainer: Colors.white,
-        secondary: accentBlue,
-        onSecondary: darkBackground,
-        secondaryContainer: darkVitalsCard,
-        onSecondaryContainer: primaryLight,
-        surface: darkSurface,
-        onSurface: darkTextPrimary,
-        error: accentRed,
-        onError: Colors.white,
+    final light = lightTheme;
+
+    return light.copyWith(
+      scaffoldBackgroundColor: const Color(0xFF14241B),
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF2AE196),
+        onPrimary: Color(0xFF0C2417),
+        secondary: Color(0xFF2AE196),
+        onSecondary: Color(0xFF0C2417),
+        surface: Color(0xFF1D3528),
+        onSurface: Color(0xFFE8F2EA),
+        error: Color(0xFFFFB4AB),
+        onError: Color(0xFF690005),
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.inter(fontWeight: FontWeight.w800, color: darkTextPrimary),
-        displayMedium: GoogleFonts.inter(fontWeight: FontWeight.w700, color: darkTextPrimary),
-        headlineLarge: GoogleFonts.inter(fontWeight: FontWeight.w700, color: darkTextPrimary),
-        headlineMedium: GoogleFonts.inter(fontWeight: FontWeight.w700, color: darkTextPrimary),
-        titleLarge: GoogleFonts.inter(fontWeight: FontWeight.w600, color: darkTextPrimary),
-        bodyLarge: GoogleFonts.inter(fontWeight: FontWeight.w400, color: darkTextPrimary),
-        bodyMedium: GoogleFonts.inter(fontWeight: FontWeight.w400, color: darkTextSecondary),
+      textTheme: light.textTheme.apply(
+        bodyColor: const Color(0xFFE8F2EA),
+        displayColor: const Color(0xFFE8F2EA),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      cardTheme: light.cardTheme.copyWith(
+        color: const Color(0xFF1D3528),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: Color(0xFF34513F)),
+        ),
+      ),
+      inputDecorationTheme: light.inputDecorationTheme.copyWith(
+        fillColor: const Color(0xFF1D3528),
+        labelStyle: const TextStyle(color: Color(0xFFA9C0B1)),
+        hintStyle: const TextStyle(color: Color(0xFFA9C0B1)),
+      ),
+    );
+  }
+}
+
+class AppThemeTransition extends StatelessWidget {
+  final bool isDark;
+  final Widget child;
+
+  const AppThemeTransition({
+    super.key,
+    required this.isDark,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedTheme(
+      data: isDark ? AppTheme.darkTheme : AppTheme.lightTheme,
+      duration: AppTheme.themeTransitionDuration,
+      curve: AppTheme.themeTransitionCurve,
+      child: child,
+    );
+  }
+}
+
+class _FluidPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _FluidPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero)
+            .animate(curved),
+        child: child,
       ),
     );
   }
