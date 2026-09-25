@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import tensorflow as tf
 
-from config import CLASS_NAMES, MODEL_DIR
+from config import MODEL_DIR
 from features import CVFeaturePipeline, MeasurementFeaturePipeline
 from utils import load_joblib
 
@@ -23,6 +23,9 @@ class Predictor:
         self.measurement_pipeline = MeasurementFeaturePipeline().load(measurement_pipeline_path)
         self.cv_pipeline = CVFeaturePipeline().load(cv_pipeline_path)
         self.label_encoder = load_joblib(label_encoder_path)
+        # Model output indices follow the LabelEncoder order, so the encoder's classes
+        # are the authoritative numeric-to-class mapping (not config.CLASS_NAMES).
+        self.class_names = [str(name) for name in self.label_encoder.classes_]
 
     def predict_measurement(self, df) -> dict[str, Any]:
         features = self.measurement_pipeline.transform(df)
@@ -61,20 +64,29 @@ class Predictor:
     def _format_prediction(self, probabilities: np.ndarray) -> dict[str, Any]:
         best_index = int(np.argmax(probabilities))
         return {
-            "prediction": CLASS_NAMES[best_index],
+            "prediction": self.class_names[best_index],
             "confidence": float(probabilities[best_index]),
-            "probabilities": {CLASS_NAMES[i]: float(probabilities[i]) for i in range(len(CLASS_NAMES))},
+            "probabilities": {
+                self.class_names[i]: float(probabilities[i]) for i in range(len(self.class_names))
+            },
         }
 
 
 class TFLitePredictor:
     """Wrapper for running inference using a TensorFlow Lite model."""
 
-    def __init__(self, tflite_model_path: Path):
+    def __init__(
+        self,
+        tflite_model_path: Path,
+        label_encoder_path: Path = MODEL_DIR / "label_encoder.pkl",
+    ):
         self.interpreter = tf.lite.Interpreter(model_path=str(tflite_model_path))
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
+        # Numeric output indices come from the LabelEncoder used at training time.
+        self.label_encoder = load_joblib(label_encoder_path)
+        self.class_names = [str(name) for name in self.label_encoder.classes_]
 
     def infer(self, image_tensor: np.ndarray) -> dict[str, Any]:
         input_index = self.input_details[0]["index"]
@@ -83,7 +95,9 @@ class TFLitePredictor:
         probabilities = self.interpreter.get_tensor(self.output_details[0]["index"])[0]
         best_index = int(np.argmax(probabilities))
         return {
-            "prediction": CLASS_NAMES[best_index],
+            "prediction": self.class_names[best_index],
             "confidence": float(probabilities[best_index]),
-            "probabilities": {CLASS_NAMES[i]: float(probabilities[i]) for i in range(len(CLASS_NAMES))},
+            "probabilities": {
+                self.class_names[i]: float(probabilities[i]) for i in range(len(self.class_names))
+            },
         }

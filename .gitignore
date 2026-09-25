@@ -24,4 +24,8 @@ temp_mediapipe_download*/
 **/outputs/logs/
 poshaneye_flutter/assets/videos/*.mp4
 
-/backend/.env
+/backend/.env.venv/
+.venv/
+Poshaneyemn/.venv_test/
+backend/.env
+Poshaneyemn/experiments/upper_arm_segmentation/images

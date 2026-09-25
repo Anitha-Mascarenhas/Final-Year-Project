@@ -67,6 +67,7 @@ class ImageModelTrainer:
         validation_dataset: tf.data.Dataset,
         num_classes: int,
         epochs: int = EPOCHS,
+        class_weight: dict[int, float] | None = None,
     ) -> tf.keras.callbacks.History:
         if self.model is None:
             loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
@@ -97,6 +98,7 @@ class ImageModelTrainer:
             validation_data=validation_dataset,
             epochs=epochs,
             callbacks=callbacks,
+            class_weight=class_weight,
         )
         self.model = tf.keras.models.load_model(checkpoint_path)
         return history

@@ -1,0 +1,5 @@
+                                healthy       stunted  stunted and    underweight
+                  healthy           242             2             1             4
+                  stunted            11             2             1             0
+  stunted and underweight             3             0            21            15
+              underweight             8             0             4            45

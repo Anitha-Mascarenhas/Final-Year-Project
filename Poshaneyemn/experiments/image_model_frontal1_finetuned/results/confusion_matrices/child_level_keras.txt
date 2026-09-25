@@ -1,0 +1,10 @@
+Keras - test child level (one frontal1 per child)
+
+rows = true label, cols = predicted label
+0 = healthy, 1 = malnourished
+
+TN=35  FP=62
+FN=31  TP=65
+
+[[35, 62],
+ [31, 65]]

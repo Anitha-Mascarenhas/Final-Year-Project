@@ -1,0 +1,9 @@
+child_level_keras
+n=193  accuracy=0.5130  balanced_accuracy=0.5124
+precision[malnourished]=0.5132  recall[malnourished]=0.4062  F1[malnourished]=0.4535
+recall[healthy]=0.6186
+
+confusion matrix (rows=true, cols=predicted)
+            pred healthy  pred malnourished
+true healthy           60                 37
+true malnourish        57                 39

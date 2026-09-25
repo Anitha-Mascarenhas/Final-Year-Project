@@ -9,7 +9,6 @@ import tensorflow as tf
 from config import (
     ANTHROVISION_CSV,
     ARAN_CSV,
-    CLASS_NAMES,
     LABELS_FILENAME,
     LOG_DIR,
     MEASUREMENT_COLUMNS,
@@ -29,16 +28,16 @@ from utils import ensure_dir, save_json, save_joblib
 class Pipeline:
     """Pipeline for building and evaluating the PoshanEye AIML models."""
 
-    def __init__(self):
+    def __init__(self, model_dir: Path | None = None, output_dir: Path | None = None):
+        self.model_dir = ensure_dir(MODEL_DIR if model_dir is None else model_dir)
+        self.output_dir = ensure_dir(OUTPUT_DIR if output_dir is None else output_dir)
         self.loader = DatasetLoader()
         self.preprocessor = DataPreprocessor()
         self.measurement_pipeline = MeasurementFeaturePipeline()
         self.cv_pipeline = CVFeaturePipeline()
-        self.image_trainer = ImageModelTrainer()
+        self.image_trainer = ImageModelTrainer(model_dir=self.model_dir)
         self.hybrid_trainer = HybridModelTrainer()
-        self.evaluator = Evaluation(OUTPUT_DIR)
-        self.output_dir = ensure_dir(OUTPUT_DIR)
-        self.model_dir = ensure_dir(MODEL_DIR)
+        self.evaluator = Evaluation(self.output_dir)
         self.log_dir = ensure_dir(LOG_DIR)
 
     def build_datasets(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -149,12 +148,14 @@ class Pipeline:
         if test_df is not None:
             print(f"[Measurement] Test samples: {len(test_df)}")
 
-        trainer = MeasurementModelTrainer(model_dir=self.model_dir)
+        # Class names must follow the fitted LabelEncoder order, not config.CLASS_NAMES.
+        class_names = self.preprocessor.get_class_names()
+        trainer = MeasurementModelTrainer(model_dir=self.model_dir, class_names=class_names)
         trainer.fit(train_df)
 
         # Evaluate trained models only on held-out test set
         if test_df is not None:
-            trainer.evaluate_on_test(test_df)
+            trainer.evaluate_on_test(test_df, class_names=class_names)
 
         best = trainer.get_best_model()
         if best is not None:
@@ -177,8 +178,11 @@ class Pipeline:
         train_dataset: tf.data.Dataset,
         val_dataset: tf.data.Dataset,
         num_classes: int,
+        class_weight: dict[int, float] | None = None,
     ) -> tf.keras.Model:
-        history = self.image_trainer.train(train_dataset, val_dataset, num_classes)
+        history = self.image_trainer.train(
+            train_dataset, val_dataset, num_classes, class_weight=class_weight,
+        )
         self.evaluator.save_training_history(history, "image_model")
         self.image_trainer.save(self.model_dir / "image_model.h5")
         self.image_trainer.save_tflite(self.model_dir / TFLITE_FILENAME)
@@ -215,7 +219,12 @@ class Pipeline:
         return model
 
     def save_label_map(self) -> None:
-        label_map = {i: label for i, label in enumerate(CLASS_NAMES)}
+        """Write index -> class name using the fitted LabelEncoder order.
+
+        ``config.CLASS_NAMES`` is a display list, not the encoded label order, so it
+        must not be used to name model output indices.
+        """
+        label_map = {i: name for i, name in enumerate(self.preprocessor.get_class_names())}
         save_json(self.output_dir / LABELS_FILENAME, label_map)
 
     def build(self) -> None:

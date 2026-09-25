@@ -1,0 +1,2266 @@
+{
+  "generated_at": "2026-09-18T14:14:19.599788+00:00",
+  "split": {
+    "train": {
+      "total": 1391,
+      "per_class": {
+        "healthy": 974,
+        "stunted": 38,
+        "stunted and underweight": 148,
+        "underweight": 231
+      }
+    },
+    "validation": {
+      "total": 321,
+      "per_class": {
+        "healthy": 225,
+        "stunted": 9,
+        "stunted and underweight": 34,
+        "underweight": 53
+      }
+    },
+    "test": {
+      "total": 429,
+      "per_class": {
+        "healthy": 301,
+        "stunted": 12,
+        "stunted and underweight": 45,
+        "underweight": 71
+      }
+    },
+    "class_names": [
+      "healthy",
+      "stunted",
+      "stunted and underweight",
+      "underweight"
+    ],
+    "split_source": "Pipeline.build_datasets -> DataPreprocessor.split_dataset (stratified, RANDOM_STATE=42)"
+  },
+  "selected_arm": "alpha_0.50",
+  "selection_rule": "highest validation macro_f1 among arms with validation healthy recall >= 0.8",
+  "test_set_note": "Test split is the project's existing held-out split (429 images) and was not used for training, augmentation or arm selection.",
+  "label_mapping_check": {
+    "encoder_classes": [
+      "healthy",
+      "stunted",
+      "stunted and underweight",
+      "underweight"
+    ],
+    "note": "Model output indices follow the fitted LabelEncoder order."
+  },
+  "models": {
+    "production": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\models\\best_model.tflite",
+      "primary_preprocessing": "div255",
+      "arm_config": null,
+      "metrics_by_preprocessing": {
+        "mobilenet": {
+          "accuracy": 0.6946386946386947,
+          "balanced_accuracy": 0.2501988676243508,
+          "healthy_recall": 0.9867109634551495,
+          "mean_top_probability": 0.6990494728088379,
+          "predicted_distribution": [
+            423,
+            0,
+            0,
+            6
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7021276595744681,
+              "recall": 0.9867109634551495,
+              "f1": 0.8204419889502762,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.16666666666666666,
+              "recall": 0.014084507042253521,
+              "f1": 0.025974025974025976,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.21719858156028368,
+            "recall": 0.2501988676243508,
+            "f1": 0.21160400373107555
+          },
+          "weighted": {
+            "precision": 0.5202185521334458,
+            "recall": 0.6946386946386947,
+            "f1": 0.5799468403687389
+          },
+          "confusion_matrix": [
+            [
+              297,
+              0,
+              0,
+              4
+            ],
+            [
+              11,
+              0,
+              0,
+              1
+            ],
+            [
+              45,
+              0,
+              0,
+              0
+            ],
+            [
+              70,
+              0,
+              0,
+              1
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.17      0.01      0.03        71\n\n               accuracy                           0.69       429\n              macro avg       0.22      0.25      0.21       429\n           weighted avg       0.52      0.69      0.58       429\n",
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.6993006993006993,
+          "balanced_accuracy": 0.25724112114547754,
+          "healthy_recall": 0.9867109634551495,
+          "mean_top_probability": 0.6712275147438049,
+          "predicted_distribution": [
+            421,
+            0,
+            0,
+            8
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7054631828978623,
+              "recall": 0.9867109634551495,
+              "f1": 0.8227146814404432,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.375,
+              "recall": 0.04225352112676056,
+              "f1": 0.0759493670886076,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.27011579572446553,
+            "recall": 0.25724112114547754,
+            "f1": 0.2246660121322627
+          },
+          "weighted": {
+            "precision": 0.5570382705180805,
+            "recall": 0.6993006993006993,
+            "f1": 0.589812410668682
+          },
+          "confusion_matrix": [
+            [
+              297,
+              0,
+              0,
+              4
+            ],
+            [
+              11,
+              0,
+              0,
+              1
+            ],
+            [
+              45,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              0,
+              3
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.38      0.04      0.08        71\n\n               accuracy                           0.70       429\n              macro avg       0.27      0.26      0.22       429\n           weighted avg       0.56      0.70      0.59       429\n",
+          "total": 429
+        }
+      },
+      "primary_metrics": {
+        "accuracy": 0.6993006993006993,
+        "balanced_accuracy": 0.25724112114547754,
+        "healthy_recall": 0.9867109634551495,
+        "mean_top_probability": 0.6712275147438049,
+        "predicted_distribution": [
+          421,
+          0,
+          0,
+          8
+        ],
+        "per_class": {
+          "healthy": {
+            "index": 0,
+            "precision": 0.7054631828978623,
+            "recall": 0.9867109634551495,
+            "f1": 0.8227146814404432,
+            "support": 301
+          },
+          "stunted": {
+            "index": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12
+          },
+          "stunted and underweight": {
+            "index": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 45
+          },
+          "underweight": {
+            "index": 3,
+            "precision": 0.375,
+            "recall": 0.04225352112676056,
+            "f1": 0.0759493670886076,
+            "support": 71
+          }
+        },
+        "macro": {
+          "precision": 0.27011579572446553,
+          "recall": 0.25724112114547754,
+          "f1": 0.2246660121322627
+        },
+        "weighted": {
+          "precision": 0.5570382705180805,
+          "recall": 0.6993006993006993,
+          "f1": 0.589812410668682
+        },
+        "confusion_matrix": [
+          [
+            297,
+            0,
+            0,
+            4
+          ],
+          [
+            11,
+            0,
+            0,
+            1
+          ],
+          [
+            45,
+            0,
+            0,
+            0
+          ],
+          [
+            68,
+            0,
+            0,
+            3
+          ]
+        ],
+        "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.38      0.04      0.08        71\n\n               accuracy                           0.70       429\n              macro avg       0.27      0.26      0.22       429\n           weighted avg       0.56      0.70      0.59       429\n",
+        "total": 429
+      }
+    },
+    "v1_balanced_alpha_1.00": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\models\\class_balanced_experiment\\best_model.tflite",
+      "primary_preprocessing": "mobilenet",
+      "arm_config": null,
+      "metrics_by_preprocessing": {
+        "mobilenet": {
+          "accuracy": 0.5011655011655012,
+          "balanced_accuracy": 0.254761384846547,
+          "healthy_recall": 0.6478405315614618,
+          "mean_top_probability": 0.44055411219596863,
+          "predicted_distribution": [
+            274,
+            41,
+            62,
+            52
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7116788321167883,
+              "recall": 0.6478405315614618,
+              "f1": 0.6782608695652174,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.1774193548387097,
+              "recall": 0.24444444444444444,
+              "f1": 0.205607476635514,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.17307692307692307,
+              "recall": 0.1267605633802817,
+              "f1": 0.14634146341463414,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.26554377750810526,
+            "recall": 0.254761384846547,
+            "f1": 0.2575524524038414
+          },
+          "weighted": {
+            "precision": 0.5465912843201789,
+            "recall": 0.5011655011655012,
+            "f1": 0.5216762286484092
+          },
+          "confusion_matrix": [
+            [
+              195,
+              30,
+              40,
+              36
+            ],
+            [
+              7,
+              0,
+              2,
+              3
+            ],
+            [
+              25,
+              5,
+              11,
+              4
+            ],
+            [
+              47,
+              6,
+              9,
+              9
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.65      0.68       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.18      0.24      0.21        45\n            underweight       0.17      0.13      0.15        71\n\n               accuracy                           0.50       429\n              macro avg       0.27      0.25      0.26       429\n           weighted avg       0.55      0.50      0.52       429\n",
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.5011655011655012,
+          "balanced_accuracy": 0.2803547382486131,
+          "healthy_recall": 0.6212624584717608,
+          "mean_top_probability": 0.4503302276134491,
+          "predicted_distribution": [
+            259,
+            22,
+            84,
+            64
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.722007722007722,
+              "recall": 0.6212624584717608,
+              "f1": 0.6678571428571428,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.15476190476190477,
+              "recall": 0.28888888888888886,
+              "f1": 0.20155038759689922,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.234375,
+              "recall": 0.2112676056338028,
+              "f1": 0.2222222222222222,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.2777861566924067,
+            "recall": 0.2803547382486131,
+            "f1": 0.27290743816906604
+          },
+          "weighted": {
+            "precision": 0.5616066084816085,
+            "recall": 0.5011655011655012,
+            "f1": 0.5265094294164061
+          },
+          "confusion_matrix": [
+            [
+              187,
+              18,
+              57,
+              39
+            ],
+            [
+              7,
+              0,
+              3,
+              2
+            ],
+            [
+              22,
+              2,
+              13,
+              8
+            ],
+            [
+              43,
+              2,
+              11,
+              15
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.72      0.62      0.67       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.15      0.29      0.20        45\n            underweight       0.23      0.21      0.22        71\n\n               accuracy                           0.50       429\n              macro avg       0.28      0.28      0.27       429\n           weighted avg       0.56      0.50      0.53       429\n",
+          "total": 429
+        }
+      },
+      "primary_metrics": {
+        "accuracy": 0.5011655011655012,
+        "balanced_accuracy": 0.254761384846547,
+        "healthy_recall": 0.6478405315614618,
+        "mean_top_probability": 0.44055411219596863,
+        "predicted_distribution": [
+          274,
+          41,
+          62,
+          52
+        ],
+        "per_class": {
+          "healthy": {
+            "index": 0,
+            "precision": 0.7116788321167883,
+            "recall": 0.6478405315614618,
+            "f1": 0.6782608695652174,
+            "support": 301
+          },
+          "stunted": {
+            "index": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12
+          },
+          "stunted and underweight": {
+            "index": 2,
+            "precision": 0.1774193548387097,
+            "recall": 0.24444444444444444,
+            "f1": 0.205607476635514,
+            "support": 45
+          },
+          "underweight": {
+            "index": 3,
+            "precision": 0.17307692307692307,
+            "recall": 0.1267605633802817,
+            "f1": 0.14634146341463414,
+            "support": 71
+          }
+        },
+        "macro": {
+          "precision": 0.26554377750810526,
+          "recall": 0.254761384846547,
+          "f1": 0.2575524524038414
+        },
+        "weighted": {
+          "precision": 0.5465912843201789,
+          "recall": 0.5011655011655012,
+          "f1": 0.5216762286484092
+        },
+        "confusion_matrix": [
+          [
+            195,
+            30,
+            40,
+            36
+          ],
+          [
+            7,
+            0,
+            2,
+            3
+          ],
+          [
+            25,
+            5,
+            11,
+            4
+          ],
+          [
+            47,
+            6,
+            9,
+            9
+          ]
+        ],
+        "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.65      0.68       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.18      0.24      0.21        45\n            underweight       0.17      0.13      0.15        71\n\n               accuracy                           0.50       429\n              macro avg       0.27      0.25      0.26       429\n           weighted avg       0.55      0.50      0.52       429\n",
+        "total": 429
+      }
+    },
+    "alpha_0.25": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.25\\best_model.tflite",
+      "primary_preprocessing": "mobilenet",
+      "arm_config": {
+        "alpha": 0.25,
+        "class_weights": {
+          "0": 0.7729956419812662,
+          "1": 1.7392855366280389,
+          "2": 1.2380875482623004,
+          "3": 1.1076786620594592
+        },
+        "class_counts": {
+          "healthy": 974,
+          "stunted": 38,
+          "stunted and underweight": 148,
+          "underweight": 231
+        },
+        "selection_note": "best guarded validation macro F1 at epoch 12",
+        "selected_epoch": 12,
+        "epochs_run": 13,
+        "history": [
+          {
+            "epoch": 1,
+            "train_loss": 1.1870285272598267,
+            "val_loss": 0.9664965271949768,
+            "val_accuracy": 0.6915887850467289,
+            "val_balanced_accuracy": 0.24666666666666667,
+            "val_macro_f1": 0.2047970479704797,
+            "val_macro_recall": 0.24666666666666667,
+            "val_healthy_recall": 0.9866666666666667
+          },
+          {
+            "epoch": 2,
+            "train_loss": 1.066180944442749,
+            "val_loss": 0.9769349694252014,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20550458715596331,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 3,
+            "train_loss": 1.0278100967407227,
+            "val_loss": 0.9425456523895264,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20626151012891344,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 4,
+            "train_loss": 0.9960670471191406,
+            "val_loss": 0.9345301985740662,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20626151012891344,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 5,
+            "train_loss": 0.9868067502975464,
+            "val_loss": 0.9413225650787354,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20550458715596331,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 6,
+            "train_loss": 0.9668282866477966,
+            "val_loss": 0.9254938364028931,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20588235294117646,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 7,
+            "train_loss": 0.9495975375175476,
+            "val_loss": 0.9313861131668091,
+            "val_accuracy": 0.6884735202492211,
+            "val_balanced_accuracy": 0.24555555555555555,
+            "val_macro_f1": 0.2053903345724907,
+            "val_macro_recall": 0.24555555555555555,
+            "val_healthy_recall": 0.9822222222222222
+          },
+          {
+            "epoch": 8,
+            "train_loss": 0.9558970928192139,
+            "val_loss": 0.9074764847755432,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.20588235294117646,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 9,
+            "train_loss": 0.9404314160346985,
+            "val_loss": 0.9135467410087585,
+            "val_accuracy": 0.6915887850467289,
+            "val_balanced_accuracy": 0.24666666666666667,
+            "val_macro_f1": 0.20555555555555555,
+            "val_macro_recall": 0.24666666666666667,
+            "val_healthy_recall": 0.9866666666666667
+          },
+          {
+            "epoch": 10,
+            "train_loss": 0.9128432869911194,
+            "val_loss": 0.9184686541557312,
+            "val_accuracy": 0.6947040498442367,
+            "val_balanced_accuracy": 0.2477777777777778,
+            "val_macro_f1": 0.20609981515711645,
+            "val_macro_recall": 0.2477777777777778,
+            "val_healthy_recall": 0.9911111111111112
+          },
+          {
+            "epoch": 11,
+            "train_loss": 0.8980597257614136,
+            "val_loss": 0.9263198971748352,
+            "val_accuracy": 0.6947040498442367,
+            "val_balanced_accuracy": 0.2477777777777778,
+            "val_macro_f1": 0.20609981515711645,
+            "val_macro_recall": 0.2477777777777778,
+            "val_healthy_recall": 0.9911111111111112
+          },
+          {
+            "epoch": 12,
+            "train_loss": 0.9131985306739807,
+            "val_loss": 0.9117545485496521,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.2066420664206642,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          },
+          {
+            "epoch": 13,
+            "train_loss": 0.8831114172935486,
+            "val_loss": 0.9125908017158508,
+            "val_accuracy": 0.6978193146417445,
+            "val_balanced_accuracy": 0.24888888888888888,
+            "val_macro_f1": 0.2066420664206642,
+            "val_macro_recall": 0.24888888888888888,
+            "val_healthy_recall": 0.9955555555555555
+          }
+        ],
+        "unguarded_best": {
+          "epoch": 12,
+          "val_macro_f1": 0.2066420664206642
+        },
+        "keras_history": {
+          "loss": [
+            1.1870285272598267,
+            1.066180944442749,
+            1.0278100967407227,
+            0.9960670471191406,
+            0.9868067502975464,
+            0.9668282866477966,
+            0.9495975375175476,
+            0.9558970928192139,
+            0.9404314160346985,
+            0.9128432869911194,
+            0.8980597257614136,
+            0.9131985306739807,
+            0.8831114172935486
+          ],
+          "sparse_categorical_accuracy": [
+            0.5614665746688843,
+            0.6225736737251282,
+            0.6376707553863525,
+            0.6362329125404358,
+            0.6347951292991638,
+            0.6498921513557434,
+            0.6570812463760376,
+            0.64342200756073,
+            0.6613946557044983,
+            0.6649892330169678,
+            0.6793673634529114,
+            0.6613946557044983,
+            0.6843997240066528
+          ],
+          "val_loss": [
+            0.9664965271949768,
+            0.9769349694252014,
+            0.9425456523895264,
+            0.9345301985740662,
+            0.9413225650787354,
+            0.9254938364028931,
+            0.9313861131668091,
+            0.9074764847755432,
+            0.9135467410087585,
+            0.9184686541557312,
+            0.9263198971748352,
+            0.9117545485496521,
+            0.9125908017158508
+          ],
+          "val_sparse_categorical_accuracy": [
+            0.6915887594223022,
+            0.6978192925453186,
+            0.6978192925453186,
+            0.6978192925453186,
+            0.6978192925453186,
+            0.6978192925453186,
+            0.6884735226631165,
+            0.6978192925453186,
+            0.6915887594223022,
+            0.6947040557861328,
+            0.6947040557861328,
+            0.6978192925453186,
+            0.6978192925453186
+          ],
+          "learning_rate": [
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05
+          ]
+        },
+        "validation_metrics": {
+          "accuracy": 0.6978193146417445,
+          "balanced_accuracy": 0.24888888888888888,
+          "healthy_recall": 0.9955555555555555,
+          "mean_top_probability": 0.6589705348014832,
+          "predicted_distribution": [
+            317,
+            0,
+            3,
+            1
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7066246056782335,
+              "recall": 0.9955555555555555,
+              "f1": 0.8265682656826568,
+              "support": 225
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 9
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 34
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 53
+            }
+          },
+          "macro": {
+            "precision": 0.17665615141955837,
+            "recall": 0.24888888888888888,
+            "f1": 0.2066420664206642
+          },
+          "weighted": {
+            "precision": 0.4952976208025001,
+            "recall": 0.6978193146417445,
+            "f1": 0.5793702796841053
+          },
+          "confusion_matrix": [
+            [
+              224,
+              0,
+              0,
+              1
+            ],
+            [
+              9,
+              0,
+              0,
+              0
+            ],
+            [
+              34,
+              0,
+              0,
+              0
+            ],
+            [
+              50,
+              0,
+              3,
+              0
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      1.00      0.83       225\n                stunted       0.00      0.00      0.00         9\nstunted and underweight       0.00      0.00      0.00        34\n            underweight       0.00      0.00      0.00        53\n\n               accuracy                           0.70       321\n              macro avg       0.18      0.25      0.21       321\n           weighted avg       0.50      0.70      0.58       321\n",
+          "total": 321
+        },
+        "tflite_path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.25\\best_model.tflite"
+      },
+      "metrics_by_preprocessing": {
+        "mobilenet": {
+          "accuracy": 0.696969696969697,
+          "balanced_accuracy": 0.24833887043189368,
+          "healthy_recall": 0.9933554817275747,
+          "mean_top_probability": 0.6421579718589783,
+          "predicted_distribution": [
+            427,
+            0,
+            2,
+            0
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7002341920374707,
+              "recall": 0.9933554817275747,
+              "f1": 0.8214285714285714,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.17505854800936768,
+            "recall": 0.24833887043189368,
+            "f1": 0.20535714285714285
+          },
+          "weighted": {
+            "precision": 0.4913065076999504,
+            "recall": 0.696969696969697,
+            "f1": 0.5763403263403264
+          },
+          "confusion_matrix": [
+            [
+              299,
+              0,
+              2,
+              0
+            ],
+            [
+              12,
+              0,
+              0,
+              0
+            ],
+            [
+              45,
+              0,
+              0,
+              0
+            ],
+            [
+              71,
+              0,
+              0,
+              0
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.00      0.00      0.00        71\n\n               accuracy                           0.70       429\n              macro avg       0.18      0.25      0.21       429\n           weighted avg       0.49      0.70      0.58       429\n",
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.696969696969697,
+          "balanced_accuracy": 0.2530638612033961,
+          "healthy_recall": 0.9900332225913622,
+          "mean_top_probability": 0.6400413513183594,
+          "predicted_distribution": [
+            424,
+            0,
+            5,
+            0
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7028301886792453,
+              "recall": 0.9900332225913622,
+              "f1": 0.8220689655172414,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.2,
+              "recall": 0.022222222222222223,
+              "f1": 0.04,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.22570754716981134,
+            "recall": 0.2530638612033961,
+            "f1": 0.21551724137931036
+          },
+          "weighted": {
+            "precision": 0.5141069622201697,
+            "recall": 0.696969696969697,
+            "f1": 0.5809854513302789
+          },
+          "confusion_matrix": [
+            [
+              298,
+              0,
+              3,
+              0
+            ],
+            [
+              12,
+              0,
+              0,
+              0
+            ],
+            [
+              44,
+              0,
+              1,
+              0
+            ],
+            [
+              70,
+              0,
+              1,
+              0
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.20      0.02      0.04        45\n            underweight       0.00      0.00      0.00        71\n\n               accuracy                           0.70       429\n              macro avg       0.23      0.25      0.22       429\n           weighted avg       0.51      0.70      0.58       429\n",
+          "total": 429
+        }
+      },
+      "primary_metrics": {
+        "accuracy": 0.696969696969697,
+        "balanced_accuracy": 0.24833887043189368,
+        "healthy_recall": 0.9933554817275747,
+        "mean_top_probability": 0.6421579718589783,
+        "predicted_distribution": [
+          427,
+          0,
+          2,
+          0
+        ],
+        "per_class": {
+          "healthy": {
+            "index": 0,
+            "precision": 0.7002341920374707,
+            "recall": 0.9933554817275747,
+            "f1": 0.8214285714285714,
+            "support": 301
+          },
+          "stunted": {
+            "index": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12
+          },
+          "stunted and underweight": {
+            "index": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 45
+          },
+          "underweight": {
+            "index": 3,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 71
+          }
+        },
+        "macro": {
+          "precision": 0.17505854800936768,
+          "recall": 0.24833887043189368,
+          "f1": 0.20535714285714285
+        },
+        "weighted": {
+          "precision": 0.4913065076999504,
+          "recall": 0.696969696969697,
+          "f1": 0.5763403263403264
+        },
+        "confusion_matrix": [
+          [
+            299,
+            0,
+            2,
+            0
+          ],
+          [
+            12,
+            0,
+            0,
+            0
+          ],
+          [
+            45,
+            0,
+            0,
+            0
+          ],
+          [
+            71,
+            0,
+            0,
+            0
+          ]
+        ],
+        "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.00      0.00      0.00        71\n\n               accuracy                           0.70       429\n              macro avg       0.18      0.25      0.21       429\n           weighted avg       0.49      0.70      0.58       429\n",
+        "total": 429
+      }
+    },
+    "alpha_0.50": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.50\\best_model.tflite",
+      "primary_preprocessing": "mobilenet",
+      "arm_config": {
+        "alpha": 0.5,
+        "class_weights": {
+          "0": 0.5975222625220299,
+          "1": 3.0251141779234856,
+          "2": 1.5328607771621539,
+          "3": 1.2269520183818337
+        },
+        "class_counts": {
+          "healthy": 974,
+          "stunted": 38,
+          "stunted and underweight": 148,
+          "underweight": 231
+        },
+        "selection_note": "best guarded validation macro F1 at epoch 6",
+        "selected_epoch": 6,
+        "epochs_run": 20,
+        "history": [
+          {
+            "epoch": 1,
+            "train_loss": 1.2969365119934082,
+            "val_loss": 1.0833483934402466,
+            "val_accuracy": 0.5514018691588785,
+            "val_balanced_accuracy": 0.24326920705389074,
+            "val_macro_f1": 0.23983026829575513,
+            "val_macro_recall": 0.24326920705389074,
+            "val_healthy_recall": 0.7422222222222222
+          },
+          {
+            "epoch": 2,
+            "train_loss": 1.1292766332626343,
+            "val_loss": 1.0679222345352173,
+            "val_accuracy": 0.573208722741433,
+            "val_balanced_accuracy": 0.24022937476877543,
+            "val_macro_f1": 0.23011844455506428,
+            "val_macro_recall": 0.24022937476877543,
+            "val_healthy_recall": 0.7866666666666666
+          },
+          {
+            "epoch": 3,
+            "train_loss": 1.080946445465088,
+            "val_loss": 1.02153742313385,
+            "val_accuracy": 0.6199376947040498,
+            "val_balanced_accuracy": 0.22111111111111112,
+            "val_macro_f1": 0.19245647969052224,
+            "val_macro_recall": 0.22111111111111112,
+            "val_healthy_recall": 0.8844444444444445
+          },
+          {
+            "epoch": 4,
+            "train_loss": 1.090811848640442,
+            "val_loss": 1.029746651649475,
+            "val_accuracy": 0.616822429906542,
+            "val_balanced_accuracy": 0.23081761006289309,
+            "val_macro_f1": 0.2119291338582677,
+            "val_macro_recall": 0.23081761006289309,
+            "val_healthy_recall": 0.8666666666666667
+          },
+          {
+            "epoch": 5,
+            "train_loss": 1.0475677251815796,
+            "val_loss": 1.070218801498413,
+            "val_accuracy": 0.6012461059190031,
+            "val_balanced_accuracy": 0.2449574546799852,
+            "val_macro_f1": 0.23780309669880223,
+            "val_macro_recall": 0.2449574546799852,
+            "val_healthy_recall": 0.8266666666666667
+          },
+          {
+            "epoch": 6,
+            "train_loss": 1.0560779571533203,
+            "val_loss": 1.078087329864502,
+            "val_accuracy": 0.5919003115264797,
+            "val_balanced_accuracy": 0.2538673079294611,
+            "val_macro_f1": 0.24277884657188817,
+            "val_macro_recall": 0.2538673079294611,
+            "val_healthy_recall": 0.8266666666666667
+          },
+          {
+            "epoch": 7,
+            "train_loss": 1.0243383646011353,
+            "val_loss": 1.0007572174072266,
+            "val_accuracy": 0.6292834890965732,
+            "val_balanced_accuracy": 0.23429214453076827,
+            "val_macro_f1": 0.21124651654081267,
+            "val_macro_recall": 0.23429214453076827,
+            "val_healthy_recall": 0.8888888888888888
+          },
+          {
+            "epoch": 8,
+            "train_loss": 1.0093867778778076,
+            "val_loss": 1.0102720260620117,
+            "val_accuracy": 0.632398753894081,
+            "val_balanced_accuracy": 0.24525095572820324,
+            "val_macro_f1": 0.22795056873629987,
+            "val_macro_recall": 0.24525095572820324,
+            "val_healthy_recall": 0.8844444444444445
+          },
+          {
+            "epoch": 9,
+            "train_loss": 1.0057156085968018,
+            "val_loss": 1.0003269910812378,
+            "val_accuracy": 0.6386292834890965,
+            "val_balanced_accuracy": 0.24747317795042545,
+            "val_macro_f1": 0.22938857560568085,
+            "val_macro_recall": 0.24747317795042545,
+            "val_healthy_recall": 0.8933333333333333
+          },
+          {
+            "epoch": 10,
+            "train_loss": 0.9976364374160767,
+            "val_loss": 0.97678142786026,
+            "val_accuracy": 0.660436137071651,
+            "val_balanced_accuracy": 0.24900912566284375,
+            "val_macro_f1": 0.22604621652307488,
+            "val_macro_recall": 0.24900912566284375,
+            "val_healthy_recall": 0.9288888888888889
+          },
+          {
+            "epoch": 11,
+            "train_loss": 0.9983068704605103,
+            "val_loss": 0.9957445859909058,
+            "val_accuracy": 0.6386292834890965,
+            "val_balanced_accuracy": 0.24026143790849674,
+            "val_macro_f1": 0.21418209450124343,
+            "val_macro_recall": 0.24026143790849674,
+            "val_healthy_recall": 0.9022222222222223
+          },
+          {
+            "epoch": 12,
+            "train_loss": 0.9700422286987305,
+            "val_loss": 0.992420494556427,
+            "val_accuracy": 0.6417445482866043,
+            "val_balanced_accuracy": 0.24858428906153657,
+            "val_macro_f1": 0.230229358636829,
+            "val_macro_recall": 0.24858428906153657,
+            "val_healthy_recall": 0.8977777777777778
+          },
+          {
+            "epoch": 13,
+            "train_loss": 0.999941349029541,
+            "val_loss": 0.9722890853881836,
+            "val_accuracy": 0.6697819314641744,
+            "val_balanced_accuracy": 0.2461006289308176,
+            "val_macro_f1": 0.21780635106175728,
+            "val_macro_recall": 0.2461006289308176,
+            "val_healthy_recall": 0.9466666666666667
+          },
+          {
+            "epoch": 14,
+            "train_loss": 0.9928807020187378,
+            "val_loss": 0.9723535180091858,
+            "val_accuracy": 0.6666666666666666,
+            "val_balanced_accuracy": 0.2476254778641016,
+            "val_macro_f1": 0.21972330992888647,
+            "val_macro_recall": 0.2476254778641016,
+            "val_healthy_recall": 0.9422222222222222
+          },
+          {
+            "epoch": 15,
+            "train_loss": 0.9871851801872253,
+            "val_loss": 0.9582958817481995,
+            "val_accuracy": 0.6822429906542056,
+            "val_balanced_accuracy": 0.2469392033542977,
+            "val_macro_f1": 0.21244911804613298,
+            "val_macro_recall": 0.2469392033542977,
+            "val_healthy_recall": 0.9688888888888889
+          },
+          {
+            "epoch": 16,
+            "train_loss": 0.9565407633781433,
+            "val_loss": 0.9918741583824158,
+            "val_accuracy": 0.6448598130841121,
+            "val_balanced_accuracy": 0.24248366013071895,
+            "val_macro_f1": 0.21416184971098265,
+            "val_macro_recall": 0.24248366013071895,
+            "val_healthy_recall": 0.9111111111111111
+          },
+          {
+            "epoch": 17,
+            "train_loss": 0.9679696559906006,
+            "val_loss": 0.9781467318534851,
+            "val_accuracy": 0.6666666666666666,
+            "val_balanced_accuracy": 0.24138364779874213,
+            "val_macro_f1": 0.2100951812423308,
+            "val_macro_recall": 0.24138364779874213,
+            "val_healthy_recall": 0.9466666666666667
+          },
+          {
+            "epoch": 18,
+            "train_loss": 0.9655330777168274,
+            "val_loss": 0.9719272255897522,
+            "val_accuracy": 0.6697819314641744,
+            "val_balanced_accuracy": 0.25497841904057217,
+            "val_macro_f1": 0.2308288221520483,
+            "val_macro_recall": 0.25497841904057217,
+            "val_healthy_recall": 0.9422222222222222
+          },
+          {
+            "epoch": 19,
+            "train_loss": 0.953468918800354,
+            "val_loss": 0.9851941466331482,
+            "val_accuracy": 0.6479750778816199,
+            "val_balanced_accuracy": 0.2508065112837588,
+            "val_macro_f1": 0.23228980322003578,
+            "val_macro_recall": 0.2508065112837588,
+            "val_healthy_recall": 0.9066666666666666
+          },
+          {
+            "epoch": 20,
+            "train_loss": 0.948266863822937,
+            "val_loss": 0.9771236777305603,
+            "val_accuracy": 0.6666666666666666,
+            "val_balanced_accuracy": 0.2538673079294611,
+            "val_macro_f1": 0.2306769897363085,
+            "val_macro_recall": 0.2538673079294611,
+            "val_healthy_recall": 0.9377777777777778
+          }
+        ],
+        "unguarded_best": {
+          "epoch": 6,
+          "val_macro_f1": 0.24277884657188817
+        },
+        "keras_history": {
+          "loss": [
+            1.2969365119934082,
+            1.1292766332626343,
+            1.080946445465088,
+            1.090811848640442,
+            1.0475677251815796,
+            1.0560779571533203,
+            1.0243383646011353,
+            1.0093867778778076,
+            1.0057156085968018,
+            0.9976364374160767,
+            0.9983068704605103,
+            0.9700422286987305,
+            0.999941349029541,
+            0.9928807020187378,
+            0.9871851801872253,
+            0.9565407633781433,
+            0.9679696559906006,
+            0.9655330777168274,
+            0.953468918800354,
+            0.948266863822937
+          ],
+          "sparse_categorical_accuracy": [
+            0.4974838197231293,
+            0.5664989352226257,
+            0.5780014395713806,
+            0.584471583366394,
+            0.6161035299301147,
+            0.6175413131713867,
+            0.6196980476379395,
+            0.6340761780738831,
+            0.6204169392585754,
+            0.6182602643966675,
+            0.6383896470069885,
+            0.6355140209197998,
+            0.6038820743560791,
+            0.6333572864532471,
+            0.6383896470069885,
+            0.6685837507247925,
+            0.6470165252685547,
+            0.644859790802002,
+            0.6362329125404358,
+            0.6498921513557434
+          ],
+          "val_loss": [
+            1.0833483934402466,
+            1.0679222345352173,
+            1.02153742313385,
+            1.029746651649475,
+            1.070218801498413,
+            1.078087329864502,
+            1.0007572174072266,
+            1.0102720260620117,
+            1.0003269910812378,
+            0.97678142786026,
+            0.9957445859909058,
+            0.992420494556427,
+            0.9722890853881836,
+            0.9723535180091858,
+            0.9582958817481995,
+            0.9918741583824158,
+            0.9781467318534851,
+            0.9719272255897522,
+            0.9851941466331482,
+            0.9771236777305603
+          ],
+          "val_sparse_categorical_accuracy": [
+            0.5514018535614014,
+            0.573208749294281,
+            0.6199377179145813,
+            0.6168224215507507,
+            0.6012461185455322,
+            0.5919002890586853,
+            0.6292834877967834,
+            0.6323987245559692,
+            0.6386292576789856,
+            0.6604361534118652,
+            0.6386292576789856,
+            0.6417445540428162,
+            0.6697819232940674,
+            0.6666666865348816,
+            0.6822429895401001,
+            0.644859790802002,
+            0.6666666865348816,
+            0.6697819232940674,
+            0.6479750871658325,
+            0.6666666865348816
+          ],
+          "learning_rate": [
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05,
+            2.499999936844688e-05,
+            2.499999936844688e-05
+          ]
+        },
+        "validation_metrics": {
+          "accuracy": 0.5919003115264797,
+          "balanced_accuracy": 0.2538673079294611,
+          "healthy_recall": 0.8266666666666667,
+          "mean_top_probability": 0.4449087381362915,
+          "predicted_distribution": [
+            267,
+            7,
+            32,
+            15
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.6966292134831461,
+              "recall": 0.8266666666666667,
+              "f1": 0.7560975609756098,
+              "support": 225
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.14285714285714285,
+              "recall": 0.1111111111111111,
+              "f1": 0.125,
+              "support": 9
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0625,
+              "recall": 0.058823529411764705,
+              "f1": 0.06060606060606061,
+              "support": 34
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.06666666666666667,
+              "recall": 0.018867924528301886,
+              "f1": 0.029411764705882353,
+              "support": 53
+            }
+          },
+          "macro": {
+            "precision": 0.24216325575173892,
+            "recall": 0.2538673079294611,
+            "f1": 0.24277884657188817
+          },
+          "weighted": {
+            "precision": 0.5099240518777429,
+            "recall": 0.5919003115264797,
+            "f1": 0.5447550804035204
+          },
+          "confusion_matrix": [
+            [
+              186,
+              4,
+              23,
+              12
+            ],
+            [
+              7,
+              1,
+              1,
+              0
+            ],
+            [
+              29,
+              1,
+              2,
+              2
+            ],
+            [
+              45,
+              1,
+              6,
+              1
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.83      0.76       225\n                stunted       0.14      0.11      0.12         9\nstunted and underweight       0.06      0.06      0.06        34\n            underweight       0.07      0.02      0.03        53\n\n               accuracy                           0.59       321\n              macro avg       0.24      0.25      0.24       321\n           weighted avg       0.51      0.59      0.54       321\n",
+          "total": 321
+        },
+        "tflite_path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.50\\best_model.tflite"
+      },
+      "metrics_by_preprocessing": {
+        "mobilenet": {
+          "accuracy": 0.6013986013986014,
+          "balanced_accuracy": 0.282403984631302,
+          "healthy_recall": 0.8006644518272426,
+          "mean_top_probability": 0.43011966347694397,
+          "predicted_distribution": [
+            329,
+            11,
+            58,
+            31
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7325227963525835,
+              "recall": 0.8006644518272426,
+              "f1": 0.765079365079365,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.1896551724137931,
+              "recall": 0.24444444444444444,
+              "f1": 0.21359223300970873,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.1935483870967742,
+              "recall": 0.08450704225352113,
+              "f1": 0.11764705882352941,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.27893158896578774,
+            "recall": 0.282403984631302,
+            "f1": 0.2740796642281508
+          },
+          "weighted": {
+            "precision": 0.5658875989385066,
+            "recall": 0.6013986013986014,
+            "f1": 0.5786794418433481
+          },
+          "confusion_matrix": [
+            [
+              241,
+              8,
+              31,
+              21
+            ],
+            [
+              9,
+              0,
+              0,
+              3
+            ],
+            [
+              30,
+              3,
+              11,
+              1
+            ],
+            [
+              49,
+              0,
+              16,
+              6
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.73      0.80      0.77       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.19      0.24      0.21        45\n            underweight       0.19      0.08      0.12        71\n\n               accuracy                           0.60       429\n              macro avg       0.28      0.28      0.27       429\n           weighted avg       0.57      0.60      0.58       429\n",
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.6503496503496503,
+          "balanced_accuracy": 0.26473648090090934,
+          "healthy_recall": 0.893687707641196,
+          "mean_top_probability": 0.4624492824077606,
+          "predicted_distribution": [
+            379,
+            2,
+            21,
+            27
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7097625329815304,
+              "recall": 0.893687707641196,
+              "f1": 0.7911764705882353,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.14285714285714285,
+              "recall": 0.06666666666666667,
+              "f1": 0.09090909090909091,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.25925925925925924,
+              "recall": 0.09859154929577464,
+              "f1": 0.14285714285714285,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.27796973377448314,
+            "recall": 0.26473648090090934,
+            "f1": 0.25623567608861725
+          },
+          "weighted": {
+            "precision": 0.5558846183296492,
+            "recall": 0.6503496503496503,
+            "f1": 0.5882934356196388
+          },
+          "confusion_matrix": [
+            [
+              269,
+              1,
+              14,
+              17
+            ],
+            [
+              10,
+              0,
+              0,
+              2
+            ],
+            [
+              40,
+              1,
+              3,
+              1
+            ],
+            [
+              60,
+              0,
+              4,
+              7
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.89      0.79       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.14      0.07      0.09        45\n            underweight       0.26      0.10      0.14        71\n\n               accuracy                           0.65       429\n              macro avg       0.28      0.26      0.26       429\n           weighted avg       0.56      0.65      0.59       429\n",
+          "total": 429
+        }
+      },
+      "primary_metrics": {
+        "accuracy": 0.6013986013986014,
+        "balanced_accuracy": 0.282403984631302,
+        "healthy_recall": 0.8006644518272426,
+        "mean_top_probability": 0.43011966347694397,
+        "predicted_distribution": [
+          329,
+          11,
+          58,
+          31
+        ],
+        "per_class": {
+          "healthy": {
+            "index": 0,
+            "precision": 0.7325227963525835,
+            "recall": 0.8006644518272426,
+            "f1": 0.765079365079365,
+            "support": 301
+          },
+          "stunted": {
+            "index": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12
+          },
+          "stunted and underweight": {
+            "index": 2,
+            "precision": 0.1896551724137931,
+            "recall": 0.24444444444444444,
+            "f1": 0.21359223300970873,
+            "support": 45
+          },
+          "underweight": {
+            "index": 3,
+            "precision": 0.1935483870967742,
+            "recall": 0.08450704225352113,
+            "f1": 0.11764705882352941,
+            "support": 71
+          }
+        },
+        "macro": {
+          "precision": 0.27893158896578774,
+          "recall": 0.282403984631302,
+          "f1": 0.2740796642281508
+        },
+        "weighted": {
+          "precision": 0.5658875989385066,
+          "recall": 0.6013986013986014,
+          "f1": 0.5786794418433481
+        },
+        "confusion_matrix": [
+          [
+            241,
+            8,
+            31,
+            21
+          ],
+          [
+            9,
+            0,
+            0,
+            3
+          ],
+          [
+            30,
+            3,
+            11,
+            1
+          ],
+          [
+            49,
+            0,
+            16,
+            6
+          ]
+        ],
+        "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.73      0.80      0.77       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.19      0.24      0.21        45\n            underweight       0.19      0.08      0.12        71\n\n               accuracy                           0.60       429\n              macro avg       0.28      0.28      0.27       429\n           weighted avg       0.57      0.60      0.58       429\n",
+        "total": 429
+      }
+    },
+    "alpha_0.75": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.75\\best_model.tflite",
+      "primary_preprocessing": "mobilenet",
+      "arm_config": {
+        "alpha": 0.75,
+        "class_weights": {
+          "0": 0.46188210491631515,
+          "1": 5.261537336310738,
+          "2": 1.8978158414241353,
+          "3": 1.3590685701323424
+        },
+        "class_counts": {
+          "healthy": 974,
+          "stunted": 38,
+          "stunted and underweight": 148,
+          "underweight": 231
+        },
+        "selection_note": "best guarded validation macro F1 at epoch 4",
+        "selected_epoch": 4,
+        "epochs_run": 9,
+        "history": [
+          {
+            "epoch": 1,
+            "train_loss": 1.3803807497024536,
+            "val_loss": 1.150033950805664,
+            "val_accuracy": 0.4517133956386293,
+            "val_balanced_accuracy": 0.24765199161425577,
+            "val_macro_f1": 0.21690907613553262,
+            "val_macro_recall": 0.24765199161425577,
+            "val_healthy_recall": 0.5377777777777778
+          },
+          {
+            "epoch": 2,
+            "train_loss": 1.3041260242462158,
+            "val_loss": 1.1477733850479126,
+            "val_accuracy": 0.4517133956386293,
+            "val_balanced_accuracy": 0.23586447157479346,
+            "val_macro_f1": 0.22194224933209983,
+            "val_macro_recall": 0.23586447157479346,
+            "val_healthy_recall": 0.5555555555555556
+          },
+          {
+            "epoch": 3,
+            "train_loss": 1.2687898874282837,
+            "val_loss": 1.0935252904891968,
+            "val_accuracy": 0.49221183800623053,
+            "val_balanced_accuracy": 0.23949130595634482,
+            "val_macro_f1": 0.22838790066168255,
+            "val_macro_recall": 0.23949130595634482,
+            "val_healthy_recall": 0.6266666666666667
+          },
+          {
+            "epoch": 4,
+            "train_loss": 1.2094429731369019,
+            "val_loss": 1.0232888460159302,
+            "val_accuracy": 0.6137071651090342,
+            "val_balanced_accuracy": 0.24052410901467505,
+            "val_macro_f1": 0.22873828335868873,
+            "val_macro_recall": 0.24052410901467505,
+            "val_healthy_recall": 0.8488888888888889
+          },
+          {
+            "epoch": 5,
+            "train_loss": 1.1782047748565674,
+            "val_loss": 1.040517807006836,
+            "val_accuracy": 0.6012461059190031,
+            "val_balanced_accuracy": 0.2833783450487113,
+            "val_macro_f1": 0.27677248068626403,
+            "val_macro_recall": 0.2833783450487113,
+            "val_healthy_recall": 0.7955555555555556
+          },
+          {
+            "epoch": 6,
+            "train_loss": 1.137203335762024,
+            "val_loss": 1.0803195238113403,
+            "val_accuracy": 0.46105919003115264,
+            "val_balanced_accuracy": 0.25431742508324084,
+            "val_macro_f1": 0.24236886654004175,
+            "val_macro_recall": 0.25431742508324084,
+            "val_healthy_recall": 0.56
+          },
+          {
+            "epoch": 7,
+            "train_loss": 1.176966905593872,
+            "val_loss": 1.0648118257522583,
+            "val_accuracy": 0.5358255451713395,
+            "val_balanced_accuracy": 0.25380318165001853,
+            "val_macro_f1": 0.24948923028191322,
+            "val_macro_recall": 0.25380318165001853,
+            "val_healthy_recall": 0.7066666666666667
+          },
+          {
+            "epoch": 8,
+            "train_loss": 1.1456660032272339,
+            "val_loss": 1.041696548461914,
+            "val_accuracy": 0.5763239875389408,
+            "val_balanced_accuracy": 0.25312800591934886,
+            "val_macro_f1": 0.25048753066953267,
+            "val_macro_recall": 0.25312800591934886,
+            "val_healthy_recall": 0.7733333333333333
+          },
+          {
+            "epoch": 9,
+            "train_loss": 1.120164155960083,
+            "val_loss": 1.065163254737854,
+            "val_accuracy": 0.5420560747663551,
+            "val_balanced_accuracy": 0.2622672339376002,
+            "val_macro_f1": 0.25684787773202405,
+            "val_macro_recall": 0.2622672339376002,
+            "val_healthy_recall": 0.7111111111111111
+          }
+        ],
+        "unguarded_best": {
+          "epoch": 5,
+          "val_macro_f1": 0.27677248068626403
+        },
+        "keras_history": {
+          "loss": [
+            1.3803807497024536,
+            1.3041260242462158,
+            1.2687898874282837,
+            1.2094429731369019,
+            1.1782047748565674,
+            1.137203335762024,
+            1.176966905593872,
+            1.1456660032272339,
+            1.120164155960083
+          ],
+          "sparse_categorical_accuracy": [
+            0.4061826169490814,
+            0.4435657858848572,
+            0.4255931079387665,
+            0.47663551568984985,
+            0.48454350233078003,
+            0.5305535793304443,
+            0.49820274114608765,
+            0.4953271150588989,
+            0.5212077498435974
+          ],
+          "val_loss": [
+            1.150033950805664,
+            1.1477733850479126,
+            1.0935252904891968,
+            1.0232888460159302,
+            1.040517807006836,
+            1.0803195238113403,
+            1.0648118257522583,
+            1.041696548461914,
+            1.065163254737854
+          ],
+          "val_sparse_categorical_accuracy": [
+            0.4517133831977844,
+            0.4517133831977844,
+            0.49221184849739075,
+            0.6137071847915649,
+            0.6012461185455322,
+            0.46105918288230896,
+            0.5358255505561829,
+            0.5763239860534668,
+            0.5420560836791992
+          ],
+          "learning_rate": [
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            9.999999747378752e-05,
+            4.999999873689376e-05,
+            4.999999873689376e-05
+          ]
+        },
+        "validation_metrics": {
+          "accuracy": 0.6137071651090342,
+          "balanced_accuracy": 0.24052410901467505,
+          "healthy_recall": 0.8488888888888889,
+          "mean_top_probability": 0.48119375109672546,
+          "predicted_distribution": [
+            272,
+            1,
+            19,
+            29
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7022058823529411,
+              "recall": 0.8488888888888889,
+              "f1": 0.7686116700201208,
+              "support": 225
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 9
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 34
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.20689655172413793,
+              "recall": 0.11320754716981132,
+              "f1": 0.14634146341463414,
+              "support": 53
+            }
+          },
+          "macro": {
+            "precision": 0.22727560851926976,
+            "recall": 0.24052410901467505,
+            "f1": 0.22873828335868873
+          },
+          "weighted": {
+            "precision": 0.5263608746753615,
+            "recall": 0.6137071651090342,
+            "f1": 0.5629087953753981
+          },
+          "confusion_matrix": [
+            [
+              191,
+              1,
+              15,
+              18
+            ],
+            [
+              8,
+              0,
+              0,
+              1
+            ],
+            [
+              30,
+              0,
+              0,
+              4
+            ],
+            [
+              43,
+              0,
+              4,
+              6
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.85      0.77       225\n                stunted       0.00      0.00      0.00         9\nstunted and underweight       0.00      0.00      0.00        34\n            underweight       0.21      0.11      0.15        53\n\n               accuracy                           0.61       321\n              macro avg       0.23      0.24      0.23       321\n           weighted avg       0.53      0.61      0.56       321\n",
+          "total": 321
+        },
+        "tflite_path": "D:\\Final-Year-Project\\Poshaneyemn\\experiments\\image_model_v2\\artifacts\\alpha_0.75\\best_model.tflite"
+      },
+      "metrics_by_preprocessing": {
+        "mobilenet": {
+          "accuracy": 0.6083916083916084,
+          "balanced_accuracy": 0.25654573435444705,
+          "healthy_recall": 0.8305647840531561,
+          "mean_top_probability": 0.47134649753570557,
+          "predicted_distribution": [
+            354,
+            3,
+            19,
+            53
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7062146892655368,
+              "recall": 0.8305647840531561,
+              "f1": 0.7633587786259542,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.2631578947368421,
+              "recall": 0.1111111111111111,
+              "f1": 0.15625,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.11320754716981132,
+              "recall": 0.08450704225352113,
+              "f1": 0.0967741935483871,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.2706450327930475,
+            "recall": 0.25654573435444705,
+            "f1": 0.25409574304358534
+          },
+          "weighted": {
+            "precision": 0.54184257011921,
+            "recall": 0.6083916083916084,
+            "f1": 0.5680028207653793
+          },
+          "confusion_matrix": [
+            [
+              250,
+              1,
+              12,
+              38
+            ],
+            [
+              8,
+              0,
+              0,
+              4
+            ],
+            [
+              33,
+              2,
+              5,
+              5
+            ],
+            [
+              63,
+              0,
+              2,
+              6
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.83      0.76       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.26      0.11      0.16        45\n            underweight       0.11      0.08      0.10        71\n\n               accuracy                           0.61       429\n              macro avg       0.27      0.26      0.25       429\n           weighted avg       0.54      0.61      0.57       429\n",
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.6247086247086248,
+          "balanced_accuracy": 0.2596691258663089,
+          "healthy_recall": 0.8571428571428571,
+          "mean_top_probability": 0.4837949573993683,
+          "predicted_distribution": [
+            364,
+            1,
+            38,
+            26
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7087912087912088,
+              "recall": 0.8571428571428571,
+              "f1": 0.7759398496240602,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.13157894736842105,
+              "recall": 0.1111111111111111,
+              "f1": 0.12048192771084337,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.19230769230769232,
+              "recall": 0.07042253521126761,
+              "f1": 0.10309278350515463,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.25816946211683056,
+            "recall": 0.2596691258663089,
+            "f1": 0.24987864021001452
+          },
+          "weighted": {
+            "precision": 0.5429395166237272,
+            "recall": 0.6247086247086248,
+            "f1": 0.5741239373256318
+          },
+          "confusion_matrix": [
+            [
+              258,
+              0,
+              23,
+              20
+            ],
+            [
+              10,
+              0,
+              1,
+              1
+            ],
+            [
+              39,
+              1,
+              5,
+              0
+            ],
+            [
+              57,
+              0,
+              9,
+              5
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.86      0.78       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.13      0.11      0.12        45\n            underweight       0.19      0.07      0.10        71\n\n               accuracy                           0.62       429\n              macro avg       0.26      0.26      0.25       429\n           weighted avg       0.54      0.62      0.57       429\n",
+          "total": 429
+        }
+      },
+      "primary_metrics": {
+        "accuracy": 0.6083916083916084,
+        "balanced_accuracy": 0.25654573435444705,
+        "healthy_recall": 0.8305647840531561,
+        "mean_top_probability": 0.47134649753570557,
+        "predicted_distribution": [
+          354,
+          3,
+          19,
+          53
+        ],
+        "per_class": {
+          "healthy": {
+            "index": 0,
+            "precision": 0.7062146892655368,
+            "recall": 0.8305647840531561,
+            "f1": 0.7633587786259542,
+            "support": 301
+          },
+          "stunted": {
+            "index": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 12
+          },
+          "stunted and underweight": {
+            "index": 2,
+            "precision": 0.2631578947368421,
+            "recall": 0.1111111111111111,
+            "f1": 0.15625,
+            "support": 45
+          },
+          "underweight": {
+            "index": 3,
+            "precision": 0.11320754716981132,
+            "recall": 0.08450704225352113,
+            "f1": 0.0967741935483871,
+            "support": 71
+          }
+        },
+        "macro": {
+          "precision": 0.2706450327930475,
+          "recall": 0.25654573435444705,
+          "f1": 0.25409574304358534
+        },
+        "weighted": {
+          "precision": 0.54184257011921,
+          "recall": 0.6083916083916084,
+          "f1": 0.5680028207653793
+        },
+        "confusion_matrix": [
+          [
+            250,
+            1,
+            12,
+            38
+          ],
+          [
+            8,
+            0,
+            0,
+            4
+          ],
+          [
+            33,
+            2,
+            5,
+            5
+          ],
+          [
+            63,
+            0,
+            2,
+            6
+          ]
+        ],
+        "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.83      0.76       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.26      0.11      0.16        45\n            underweight       0.11      0.08      0.10        71\n\n               accuracy                           0.61       429\n              macro avg       0.27      0.26      0.25       429\n           weighted avg       0.54      0.61      0.57       429\n",
+        "total": 429
+      }
+    }
+  }
+}

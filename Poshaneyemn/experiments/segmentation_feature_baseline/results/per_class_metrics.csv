@@ -1,0 +1,33 @@
+modality_arm,model_name,split,class_index,class_name,precision,recall,f1_score,support
+Arm A: Measurement-Only,RandomForest_Balanced,test,0,healthy,0.9361,0.9111,0.9234,225
+Arm A: Measurement-Only,RandomForest_Balanced,test,1,underweight,0.5846,0.717,0.6441,53
+Arm A: Measurement-Only,RandomForest_Balanced,test,2,stunted,0.3333,0.3333,0.3333,9
+Arm A: Measurement-Only,RandomForest_Balanced,test,3,stunted and underweight,0.6071,0.5,0.5484,34
+Arm A: Measurement-Only,SVM_RBF_Balanced,test,0,healthy,0.9769,0.7511,0.8492,225
+Arm A: Measurement-Only,SVM_RBF_Balanced,test,1,underweight,0.6389,0.8679,0.736,53
+Arm A: Measurement-Only,SVM_RBF_Balanced,test,2,stunted,0.1364,0.6667,0.2264,9
+Arm A: Measurement-Only,SVM_RBF_Balanced,test,3,stunted and underweight,0.8125,0.7647,0.7879,34
+Arm B: Measurement + CV Landmarks,RandomForest_Balanced,test,0,healthy,0.8894,0.9289,0.9087,225
+Arm B: Measurement + CV Landmarks,RandomForest_Balanced,test,1,underweight,0.5968,0.6981,0.6435,53
+Arm B: Measurement + CV Landmarks,RandomForest_Balanced,test,2,stunted,0.0,0.0,0.0,9
+Arm B: Measurement + CV Landmarks,RandomForest_Balanced,test,3,stunted and underweight,0.5714,0.3529,0.4364,34
+Arm B: Measurement + CV Landmarks,SVM_RBF_Balanced,test,0,healthy,0.9661,0.76,0.8507,225
+Arm B: Measurement + CV Landmarks,SVM_RBF_Balanced,test,1,underweight,0.5195,0.7547,0.6154,53
+Arm B: Measurement + CV Landmarks,SVM_RBF_Balanced,test,2,stunted,0.129,0.4444,0.2,9
+Arm B: Measurement + CV Landmarks,SVM_RBF_Balanced,test,3,stunted and underweight,0.4722,0.5,0.4857,34
+Arm C: Measurement + Segmentation,RandomForest_Balanced,test,0,healthy,0.8734,0.8889,0.8811,225
+Arm C: Measurement + Segmentation,RandomForest_Balanced,test,1,underweight,0.5286,0.6981,0.6016,53
+Arm C: Measurement + Segmentation,RandomForest_Balanced,test,2,stunted,0.0,0.0,0.0,9
+Arm C: Measurement + Segmentation,RandomForest_Balanced,test,3,stunted and underweight,0.55,0.3235,0.4074,34
+Arm C: Measurement + Segmentation,SVM_RBF_Balanced,test,0,healthy,0.96,0.7467,0.84,225
+Arm C: Measurement + Segmentation,SVM_RBF_Balanced,test,1,underweight,0.5342,0.7358,0.619,53
+Arm C: Measurement + Segmentation,SVM_RBF_Balanced,test,2,stunted,0.1111,0.4444,0.1778,9
+Arm C: Measurement + Segmentation,SVM_RBF_Balanced,test,3,stunted and underweight,0.6486,0.7059,0.6761,34
+Arm D: Measurement + CV + Segmentation,RandomForest_Balanced,test,0,healthy,0.8511,0.8889,0.8696,225
+Arm D: Measurement + CV + Segmentation,RandomForest_Balanced,test,1,underweight,0.5333,0.6038,0.5664,53
+Arm D: Measurement + CV + Segmentation,RandomForest_Balanced,test,2,stunted,0.0,0.0,0.0,9
+Arm D: Measurement + CV + Segmentation,RandomForest_Balanced,test,3,stunted and underweight,0.5,0.3529,0.4138,34
+Arm D: Measurement + CV + Segmentation,SVM_RBF_Balanced,test,0,healthy,0.9425,0.7289,0.8221,225
+Arm D: Measurement + CV + Segmentation,SVM_RBF_Balanced,test,1,underweight,0.4675,0.6792,0.5538,53
+Arm D: Measurement + CV + Segmentation,SVM_RBF_Balanced,test,2,stunted,0.1333,0.4444,0.2051,9
+Arm D: Measurement + CV + Segmentation,SVM_RBF_Balanced,test,3,stunted and underweight,0.425,0.5,0.4595,34

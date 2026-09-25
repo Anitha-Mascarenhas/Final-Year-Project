@@ -6,6 +6,8 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.layers import RandomContrast, RandomFlip
 
 from config import BATCH_SIZE, IMAGE_SIZE
 
@@ -30,11 +32,12 @@ def _filter_existing_image_samples(
 
 
 def preprocess_image(image_path: tf.Tensor) -> tf.Tensor:
-    """Read and normalize an image from disk."""
+    """Read and normalize an image from disk using MobileNetV2 preprocessing."""
     image = tf.io.read_file(image_path)
     image = tf.image.decode_image(image, channels=3, expand_animations=False)
     image = tf.image.resize(image, IMAGE_SIZE)
-    image = tf.cast(image, tf.float32) / 255.0
+    image = tf.cast(image, tf.float32)
+    image = preprocess_input(image)  # scales to [-1, 1] matching ImageNet MobileNetV2
     return image
 
 
@@ -43,11 +46,27 @@ def image_path_to_tensor(image_path: tf.Tensor, label: tf.Tensor) -> tuple[tf.Te
     return preprocess_image(image_path), label
 
 
+# Keras preprocessing layers must be instantiated once and reused.
+# Constructing them inside a function mapped over a tf.data.Dataset creates new
+# tf.Variables on every traced call, which tf.function forbids:
+#   "tf.function only supports singleton tf.Variables created on the first call."
+_AUGMENT_RANDOM_FLIP = RandomFlip("horizontal")
+_AUGMENT_RANDOM_CONTRAST = RandomContrast(0.1)
+
+
+def augment_image(image: tf.Tensor) -> tf.Tensor:
+    """Apply light augmentation appropriate for child health photographs."""
+    image = _AUGMENT_RANDOM_FLIP(image)
+    image = _AUGMENT_RANDOM_CONTRAST(image)
+    return image
+
+
 def build_image_dataset(
     image_paths: Iterable[str],
     labels: Iterable[int],
     batch_size: int = BATCH_SIZE,
     shuffle: bool = True,
+    augment: bool = False,
 ) -> tf.data.Dataset:
     """Create a tf.data dataset for supervised image classification."""
     paths, labels = _filter_existing_image_samples(image_paths, labels)
@@ -60,6 +79,11 @@ def build_image_dataset(
     if shuffle:
         dataset = dataset.shuffle(buffer_size=len(paths), seed=42)
     dataset = dataset.map(image_path_to_tensor, num_parallel_calls=tf.data.AUTOTUNE)
+    if augment:
+        dataset = dataset.map(
+            lambda x, y: (augment_image(x), y),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
     dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return dataset
 

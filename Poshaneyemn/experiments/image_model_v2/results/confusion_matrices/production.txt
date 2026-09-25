@@ -1,0 +1,20 @@
+production (preprocessing: div255)
+accuracy: 0.6993  balanced_accuracy: 0.2572  macro_f1: 0.2247
+
+                         precision    recall  f1-score   support
+
+                healthy       0.71      0.99      0.82       301
+                stunted       0.00      0.00      0.00        12
+stunted and underweight       0.00      0.00      0.00        45
+            underweight       0.38      0.04      0.08        71
+
+               accuracy                           0.70       429
+              macro avg       0.27      0.26      0.22       429
+           weighted avg       0.56      0.70      0.59       429
+
+confusion matrix (rows=true, cols=pred):
+[[297   0   0   4]
+ [ 11   0   0   1]
+ [ 45   0   0   0]
+ [ 68   0   0   3]]
+class index order: ['healthy', 'stunted', 'stunted and underweight', 'underweight']

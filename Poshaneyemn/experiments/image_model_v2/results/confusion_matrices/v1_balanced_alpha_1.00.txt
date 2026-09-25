@@ -1,0 +1,20 @@
+v1_balanced_alpha_1.00 (preprocessing: mobilenet)
+accuracy: 0.5012  balanced_accuracy: 0.2548  macro_f1: 0.2576
+
+                         precision    recall  f1-score   support
+
+                healthy       0.71      0.65      0.68       301
+                stunted       0.00      0.00      0.00        12
+stunted and underweight       0.18      0.24      0.21        45
+            underweight       0.17      0.13      0.15        71
+
+               accuracy                           0.50       429
+              macro avg       0.27      0.25      0.26       429
+           weighted avg       0.55      0.50      0.52       429
+
+confusion matrix (rows=true, cols=pred):
+[[195  30  40  36]
+ [  7   0   2   3]
+ [ 25   5  11   4]
+ [ 47   6   9   9]]
+class index order: ['healthy', 'stunted', 'stunted and underweight', 'underweight']

@@ -1,0 +1,4 @@
+split,total_children,total_images,class_healthy,class_underweight,class_stunted,class_stunted and underweight
+train,1496,1496,1048,248,41,159
+validation,321,321,224,54,9,34
+test,321,321,225,53,9,34

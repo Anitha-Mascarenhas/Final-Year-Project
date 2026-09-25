@@ -1,0 +1,22 @@
+modality,feature,missing_count,missing_pct,available_count
+Measurement,Height,0,0.0,2138
+Measurement,Weight,0,0.0,2138
+Measurement,MUAC,0,0.0,2138
+Measurement,HC,0,0.0,2138
+Measurement,Age,0,0.0,2138
+Measurement,BMI,0,0.0,2138
+Computer Vision,face_width,1,0.05,2137
+Computer Vision,face_height,1,0.05,2137
+Computer Vision,eye_distance,1,0.05,2137
+Computer Vision,mouth_width,1,0.05,2137
+Computer Vision,jaw_width,1,0.05,2137
+Computer Vision,face_ratio,1,0.05,2137
+Computer Vision,eye_ratio,1,0.05,2137
+Computer Vision,mouth_ratio,1,0.05,2137
+Computer Vision,shoulder_width,0,0.0,2138
+Computer Vision,left_upper_arm_length,3,0.14,2135
+Computer Vision,left_forearm_length,136,6.36,2002
+Computer Vision,left_total_arm_length,136,6.36,2002
+Computer Vision,right_upper_arm_length,9,0.42,2129
+Computer Vision,right_forearm_length,122,5.71,2016
+Computer Vision,right_total_arm_length,122,5.71,2016

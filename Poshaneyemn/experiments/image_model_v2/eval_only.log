@@ -1,0 +1,80 @@
+2026-09-18 19:38:06.735686: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-09-18 19:38:12.381702: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-09-18 19:38:39.870966: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+TensorFlow 2.19.1 | seed 42 | epochs 25
+Outputs -> D:\Final-Year-Project\Poshaneyemn\experiments\image_model_v2\results
+
+=== AUTHORITATIVE CLASS ORDER (fitted LabelEncoder) ===
+  0 -> healthy
+  1 -> stunted
+  2 -> stunted and underweight
+  3 -> underweight
+
+=== SPLIT ===
+  train       n=1391  {'healthy': 974, 'stunted': 38, 'stunted and underweight': 148, 'underweight': 231}
+  validation  n=321   {'healthy': 225, 'stunted': 9, 'stunted and underweight': 34, 'underweight': 53}
+  test        n=429   {'healthy': 301, 'stunted': 12, 'stunted and underweight': 45, 'underweight': 71}
+
+=== ARM alpha_0.25 (alpha=0.25) [eval-only: reusing saved artifacts] ===
+  saved validation: acc=0.6978 balanced_acc=0.2489 macroF1=0.2066 healthy_recall=0.9956 (best guarded validation macro F1 at epoch 12)
+
+=== ARM alpha_0.50 (alpha=0.5) [eval-only: reusing saved artifacts] ===
+  saved validation: acc=0.5919 balanced_acc=0.2539 macroF1=0.2428 healthy_recall=0.8267 (best guarded validation macro F1 at epoch 6)
+
+=== ARM alpha_0.75 (alpha=0.75) [eval-only: reusing saved artifacts] ===
+  saved validation: acc=0.6137 balanced_acc=0.2405 macroF1=0.2287 healthy_recall=0.8489 (best guarded validation macro F1 at epoch 4)
+
+=== SELECTED ARM (validation macro_f1=0.2428, healthy-recall floor 0.8): alpha_0.50 ===
+
+Decoding/resizing test images once for TFLite evaluation ...
+D:\Final-Year-Project\.venv\Lib\site-packages\tensorflow\lite\python\interpreter.py:457: UserWarning:     Warning: tf.lite.Interpreter is deprecated and is scheduled for deletion in
+    TF 2.20. Please use the LiteRT interpreter from the ai_edge_litert package.
+    See the [migration guide](https://ai.google.dev/edge/litert/migration)
+    for details.
+    
+  warnings.warn(_INTERPRETER_DELETION_WARNING)
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[TFLite] production: best_model.tflite input [1, 224, 224, 3] float32 | output [1, 4] float32
+[TFLite] v1_balanced_alpha_1.00: best_model.tflite input [1, 224, 224, 3] float32 | output [1, 4] float32
+[TFLite] alpha_0.25: best_model.tflite input [1, 224, 224, 3] float32 | output [1, 4] float32
+[TFLite] alpha_0.50: best_model.tflite input [1, 224, 224, 3] float32 | output [1, 4] float32
+[TFLite] alpha_0.75: best_model.tflite input [1, 224, 224, 3] float32 | output [1, 4] float32
+  predicting: production / mobilenet ...
+  predicting: production / div255 ...
+  predicting: v1_balanced_alpha_1.00 / mobilenet ...
+  predicting: v1_balanced_alpha_1.00 / div255 ...
+  predicting: alpha_0.25 / mobilenet ...
+  predicting: alpha_0.25 / div255 ...
+  predicting: alpha_0.50 / mobilenet ...
+  predicting: alpha_0.50 / div255 ...
+  predicting: alpha_0.75 / mobilenet ...
+  predicting: alpha_0.75 / div255 ...
+
+======================================================================================================================
+Model                        Preproc      Acc   BalAcc   MacroP   MacroR  MacroF1    WtdF1  HealthyR
+----------------------------------------------------------------------------------------------------------------------
+production                    div255   0.6993   0.2572   0.2701   0.2572   0.2247   0.5898    0.9867
+v1_balanced_alpha_1.00     mobilenet   0.5012   0.2548   0.2655   0.2548   0.2576   0.5217    0.6478
+alpha_0.25                 mobilenet   0.6970   0.2483   0.1751   0.2483   0.2054   0.5763    0.9934
+alpha_0.50                 mobilenet   0.6014   0.2824   0.2789   0.2824   0.2741   0.5787    0.8007
+alpha_0.75                 mobilenet   0.6084   0.2565   0.2706   0.2565   0.2541   0.5680    0.8306
+======================================================================================================================
+
+Per-class recall (test):
+Model                              healthy         stunted  stunted and un     underweight
+production                          0.9867          0.0000          0.0000          0.0423
+v1_balanced_alpha_1.00              0.6478          0.0000          0.2444          0.1268
+alpha_0.25                          0.9934          0.0000          0.0000          0.0000
+alpha_0.50                          0.8007          0.0000          0.2444          0.0845
+alpha_0.75                          0.8306          0.0000          0.1111          0.0845
+
+Cross-preprocessing sanity check (accuracy):
+  production                mobilenet=0.6946  div255=0.6993
+  v1_balanced_alpha_1.00    mobilenet=0.5012  div255=0.5012
+  alpha_0.25                mobilenet=0.6970  div255=0.6970
+  alpha_0.50                mobilenet=0.6014  div255=0.6503
+  alpha_0.75                mobilenet=0.6084  div255=0.6247
+
+Artifacts: D:\Final-Year-Project\Poshaneyemn\experiments\image_model_v2\artifacts
+Reports:   D:\Final-Year-Project\Poshaneyemn\experiments\image_model_v2\results

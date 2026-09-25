@@ -10,6 +10,8 @@ import '../models/child_profile.dart';
 import '../models/prediction_result.dart';
 import '../models/vital_record.dart';
 import '../services/api_service.dart';
+import '../services/hybrid_landmark_bridge.dart';
+import '../services/hybrid_prediction_orchestrator.dart';
 import '../theme/app_theme.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -274,29 +276,47 @@ class _ScanScreenState extends State<ScanScreen> {
     });
 
     try {
-      // Build child data from existing profile and vitals
-      final childData = {
-        'height': widget.vitals.height,
-        'weight': widget.vitals.weight,
-        'age': widget.child.ageYears * 12 + widget.child.ageMonths,
-        'muac': widget.vitals.muac,
-        'hc': 0.0, // Head circumference not in VitalRecord yet
-      };
+      // ── OFFLINE production hybrid inference ─────────────────────────
+      // Full multi-stage pipeline (NO image-only fallback):
+      //   image -> MediaPipe CV features + DeepLabV3+ segmentation features
+      //         + MobileNetV2 image embedding + anthropometrics
+      //         -> identical preprocessing -> portable RBF-SVM -> 4 classes
+      final landmarks = await HybridLandmarkBridge.extractLandmarks(_capturedImageBytes!);
 
-      // Determine filename based on source
-      final fileName = _imageSource == 'upload' ? 'uploaded_image.jpg' : 'captured_image.jpg';
-
-      final result = await ApiService.predict(
+      final prediction = await HybridPredictionOrchestrator.instance.predict(
         imageBytes: _capturedImageBytes!,
-        fileName: fileName,
-        childData: childData,
+        anthropometrics: {
+          'ageMonths': (widget.child.ageYears * 12 + widget.child.ageMonths).toDouble(),
+          'genderMale': widget.child.gender.toLowerCase().startsWith('m') ? 1.0 : 0.0,
+          'heightCm': widget.vitals.height,
+          'weightKg': widget.vitals.weight,
+          'headCircumferenceCm': widget.vitals.headCircumference ?? double.nan,
+          'waistCm': widget.vitals.waistCircumference ?? double.nan,
+          'muacCm': widget.vitals.muac,
+        },
+        faceLandmarks: landmarks.face,
+        poseLandmarks: landmarks.pose,
+        poseVisibility: landmarks.poseVisibility,
       );
 
       if (mounted) {
         setState(() => _isAnalyzing = false);
-        widget.onAnalysisComplete(result);
+        widget.onAnalysisComplete(PredictionResult(
+          prediction: prediction.prediction,
+          confidence: 1.0, // SVM vote-based; per-class scores are not probabilities
+          probabilities: {prediction.prediction: 1.0},
+          scanTimestamp: DateTime.now(),
+        ));
       }
-    } on ApiException catch (e) {
+    } on HybridLandmarkException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _analysisError = e.message;
+        });
+      }
+      debugPrint('Landmark detection message: ${e.message}');
+    } on HybridInferenceException catch (e) {
       if (mounted) {
         setState(() {
           _isAnalyzing = false;
@@ -307,9 +327,14 @@ class _ScanScreenState extends State<ScanScreen> {
       if (mounted) {
         setState(() {
           _isAnalyzing = false;
-          _analysisError = 'Could not connect to the analysis server. Please check your connection and try again.';
+          // The pipeline is fully offline: any failure here is a local
+          // inference/model problem, never a network/server problem.
+          _analysisError =
+              'Local analysis failed. Could not run the on-device model. '
+              'Please retake the photo and try again.';
         });
       }
+      debugPrint('Local inference error: $e');
     }
   }
 

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from config import LABELS_FILENAME, MODEL_DIR, OUTPUT_DIR, CLASS_NAMES
+from config import LABELS_FILENAME, MODEL_DIR, OUTPUT_DIR
 from data_loader import DatasetLoader
 from evaluation import Evaluation
 from features import CVFeaturePipeline, MeasurementFeaturePipeline
@@ -67,7 +67,10 @@ def main() -> None:
     preprocessor = DataPreprocessor()
 
     print("[Evaluation] Building datasets...")
-    train_df, validation_df, test_df = PipelineDataBuilder().build_datasets()
+    data_builder = PipelineDataBuilder()
+    train_df, validation_df, test_df = data_builder.build_datasets()
+    # Authoritative numeric-to-class mapping for every report and response below.
+    class_names = data_builder.preprocessor.get_class_names()
 
     cv_features, cv_source = loader.discover_and_load_cv_features(search_root=Path("dataset"))
     if cv_features.empty:
@@ -127,8 +130,10 @@ def main() -> None:
     metrics["accuracy"] = float(test_accuracy)
     evaluator.save_metrics(metrics, "hybrid_evaluation_metrics.json")
 
-    evaluator.save_classification_report(y_true, y_pred, "hybrid_classification_report.txt")
-    evaluator.save_confusion_matrix(y_true, y_pred, "hybrid_confusion_matrix.png")
+    evaluator.save_classification_report(
+        y_true, y_pred, "hybrid_classification_report.txt", class_names
+    )
+    evaluator.save_confusion_matrix(y_true, y_pred, "hybrid_confusion_matrix.png", class_names)
 
     print("[Evaluation] Computing train and validation endpoint metrics...")
     train_eval = model.evaluate(train_dataset, verbose=0)
@@ -146,7 +151,7 @@ def main() -> None:
         models_dir / "hybrid_loss_comparison.png",
     )
 
-    exporter.save_label_map(CLASS_NAMES, models_dir / LABELS_FILENAME)
+    exporter.save_label_map(class_names, models_dir / LABELS_FILENAME)
 
     sample_row = merged_test.iloc[[0]]
     image_path = sample_row["image_path"].iloc[0]
@@ -154,7 +159,7 @@ def main() -> None:
     image_tensor = np.expand_dims(image_tensor, axis=0)
     sample_measurement = sample_row[measurement_pipeline.feature_columns]
     sample_cv = sample_row[cv_pipeline.get_feature_columns()]
-    predictor = HybridPredictor(measurement_pipeline, cv_pipeline)
+    predictor = HybridPredictor(measurement_pipeline, cv_pipeline, class_names)
     sample_result = predictor.predict_hybrid(image_tensor, sample_measurement, sample_cv, model)
     import json
 
@@ -226,9 +231,12 @@ class HybridPredictor:
         self,
         measurement_pipeline: MeasurementFeaturePipeline,
         cv_pipeline: CVFeaturePipeline,
+        class_names: list[str],
     ):
         self.measurement_pipeline = measurement_pipeline
         self.cv_pipeline = cv_pipeline
+        # Encoded-label order (index -> name); pass DataPreprocessor.get_class_names().
+        self.class_names = list(class_names)
 
     def predict_hybrid(
         self,
@@ -251,9 +259,12 @@ class HybridPredictor:
         )
         best_index = int(np.argmax(probabilities[0]))
         return {
-            "prediction": CLASS_NAMES[best_index],
+            "prediction": self.class_names[best_index],
             "confidence": float(probabilities[0][best_index]),
-            "probabilities": {CLASS_NAMES[i]: float(probabilities[0][i]) for i in range(len(CLASS_NAMES))},
+            "probabilities": {
+                self.class_names[i]: float(probabilities[0][i])
+                for i in range(len(self.class_names))
+            },
         }
 
 

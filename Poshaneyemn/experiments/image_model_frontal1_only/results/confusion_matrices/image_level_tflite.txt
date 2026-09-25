@@ -1,0 +1,9 @@
+image_level_tflite
+n=1527  accuracy=0.5265  balanced_accuracy=0.5259
+precision[malnourished]=0.5299  recall[malnourished]=0.4203  F1[malnourished]=0.4688
+recall[healthy]=0.6315
+
+confusion matrix (rows=true, cols=predicted)
+            pred healthy  pred malnourished
+true healthy          485                283
+true malnourish       440                319
