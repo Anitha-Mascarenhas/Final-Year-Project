@@ -1,0 +1,8 @@
+model_name,modality_arm,split,accuracy,balanced_accuracy,macro_precision,macro_recall,macro_f1,weighted_precision,weighted_recall,weighted_f1
+RandomForest_Balanced,Arm A: Measurement-Only,test,0.8193,0.6154,0.6153,0.6154,0.6123,0.8263,0.8193,0.821
+SVM_RBF_Balanced,Arm A: Measurement-Only,test,0.7695,0.7626,0.6412,0.7626,0.6499,0.8801,0.7695,0.8066
+RandomForest_Balanced,Arm B: CV-Only,test,0.5981,0.2931,0.2935,0.2931,0.293,0.5791,0.5981,0.5882
+SVM_RBF_Balanced,Arm B: CV-Only,test,0.4143,0.3001,0.2858,0.3001,0.2691,0.5779,0.4143,0.4646
+RandomForest_Balanced,Arm C: Measurement + CV,test,0.8037,0.495,0.5144,0.495,0.4971,0.7824,0.8037,0.7894
+SVM_RBF_Balanced,Arm C: Measurement + CV,test,0.7227,0.6148,0.5217,0.6148,0.538,0.8166,0.7227,0.755
+MobileNetV2_TFLite,Diagnostic Arm D: Image-Only (Existing),test,0.6978,0.2756,0.302,0.2756,0.2519,0.5102,0.6978,0.584

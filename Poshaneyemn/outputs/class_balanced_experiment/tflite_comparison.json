@@ -1,0 +1,550 @@
+{
+  "generated_at": "2026-09-16T04:49:53.742358+00:00",
+  "primary_preprocessing": {
+    "old": "div255",
+    "new": "mobilenet"
+  },
+  "test_set": {
+    "total": 429,
+    "class_counts": {
+      "healthy": 301,
+      "stunted": 12,
+      "stunted and underweight": 45,
+      "underweight": 71
+    },
+    "source": "DataPreprocessor.split_dataset (stratified, RANDOM_STATE=42)"
+  },
+  "label_mapping": {
+    "encoder_classes": [
+      "healthy",
+      "stunted",
+      "stunted and underweight",
+      "underweight"
+    ],
+    "config_class_names": [
+      "healthy",
+      "underweight",
+      "stunted",
+      "stunted and underweight"
+    ],
+    "label_map_json_artifact": {
+      "0": "healthy",
+      "1": "underweight",
+      "2": "stunted",
+      "3": "stunted and underweight"
+    },
+    "consistent": false,
+    "note": "Model output indices follow the sklearn LabelEncoder order. outputs/*/label_map.json is written from config.CLASS_NAMES order, so index 1/2/3 names in that artifact do not match the model. The FastAPI backend builds class names from label_encoder.pkl (encoder order), so served predictions are unaffected."
+  },
+  "models": {
+    "old": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\models\\best_model.tflite",
+      "sha256": "e197b198f5aca581ddb08f357a8c483725b464592d5892e675f0641911d2ff1a",
+      "bytes": 2676824,
+      "primary_preprocessing": "div255",
+      "metrics": {
+        "mobilenet": {
+          "accuracy": 0.6946386946386947,
+          "mean_top_probability": 0.6990494728088379,
+          "mean_entropy_nats": 0.8306874632835388,
+          "predicted_distribution": [
+            423,
+            0,
+            0,
+            6
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7021276595744681,
+              "recall": 0.9867109634551495,
+              "f1": 0.8204419889502762,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.16666666666666666,
+              "recall": 0.014084507042253521,
+              "f1": 0.025974025974025976,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.21719858156028368,
+            "recall": 0.2501988676243508,
+            "f1": 0.21160400373107555
+          },
+          "weighted": {
+            "precision": 0.5202185521334458,
+            "recall": 0.6946386946386947,
+            "f1": 0.5799468403687389
+          },
+          "confusion_matrix": [
+            [
+              297,
+              0,
+              0,
+              4
+            ],
+            [
+              11,
+              0,
+              0,
+              1
+            ],
+            [
+              45,
+              0,
+              0,
+              0
+            ],
+            [
+              70,
+              0,
+              0,
+              1
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.70      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.17      0.01      0.03        71\n\n               accuracy                           0.69       429\n              macro avg       0.22      0.25      0.21       429\n           weighted avg       0.52      0.69      0.58       429\n",
+          "correct": 298,
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.6993006993006993,
+          "mean_top_probability": 0.6712275147438049,
+          "mean_entropy_nats": 0.8794743418693542,
+          "predicted_distribution": [
+            421,
+            0,
+            0,
+            8
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7054631828978623,
+              "recall": 0.9867109634551495,
+              "f1": 0.8227146814404432,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.375,
+              "recall": 0.04225352112676056,
+              "f1": 0.0759493670886076,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.27011579572446553,
+            "recall": 0.25724112114547754,
+            "f1": 0.2246660121322627
+          },
+          "weighted": {
+            "precision": 0.5570382705180805,
+            "recall": 0.6993006993006993,
+            "f1": 0.589812410668682
+          },
+          "confusion_matrix": [
+            [
+              297,
+              0,
+              0,
+              4
+            ],
+            [
+              11,
+              0,
+              0,
+              1
+            ],
+            [
+              45,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              0,
+              3
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.38      0.04      0.08        71\n\n               accuracy                           0.70       429\n              macro avg       0.27      0.26      0.22       429\n           weighted avg       0.56      0.70      0.59       429\n",
+          "correct": 300,
+          "total": 429
+        }
+      }
+    },
+    "new": {
+      "path": "D:\\Final-Year-Project\\Poshaneyemn\\models\\class_balanced_experiment\\best_model.tflite",
+      "sha256": "5187f4e335e91f948d83f800b1dc99bfa9ca5d87e713f4d4f02070ef82187992",
+      "bytes": 2676824,
+      "primary_preprocessing": "mobilenet",
+      "metrics": {
+        "mobilenet": {
+          "accuracy": 0.5011655011655012,
+          "mean_top_probability": 0.44055411219596863,
+          "mean_entropy_nats": 1.232635736465454,
+          "predicted_distribution": [
+            274,
+            41,
+            62,
+            52
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.7116788321167883,
+              "recall": 0.6478405315614618,
+              "f1": 0.6782608695652174,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.1774193548387097,
+              "recall": 0.24444444444444444,
+              "f1": 0.205607476635514,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.17307692307692307,
+              "recall": 0.1267605633802817,
+              "f1": 0.14634146341463414,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.26554377750810526,
+            "recall": 0.254761384846547,
+            "f1": 0.2575524524038414
+          },
+          "weighted": {
+            "precision": 0.5465912843201789,
+            "recall": 0.5011655011655012,
+            "f1": 0.5216762286484092
+          },
+          "confusion_matrix": [
+            [
+              195,
+              30,
+              40,
+              36
+            ],
+            [
+              7,
+              0,
+              2,
+              3
+            ],
+            [
+              25,
+              5,
+              11,
+              4
+            ],
+            [
+              47,
+              6,
+              9,
+              9
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.65      0.68       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.18      0.24      0.21        45\n            underweight       0.17      0.13      0.15        71\n\n               accuracy                           0.50       429\n              macro avg       0.27      0.25      0.26       429\n           weighted avg       0.55      0.50      0.52       429\n",
+          "correct": 215,
+          "total": 429
+        },
+        "div255": {
+          "accuracy": 0.5011655011655012,
+          "mean_top_probability": 0.4503302276134491,
+          "mean_entropy_nats": 1.2169442176818848,
+          "predicted_distribution": [
+            259,
+            22,
+            84,
+            64
+          ],
+          "per_class": {
+            "healthy": {
+              "index": 0,
+              "precision": 0.722007722007722,
+              "recall": 0.6212624584717608,
+              "f1": 0.6678571428571428,
+              "support": 301
+            },
+            "stunted": {
+              "index": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support": 12
+            },
+            "stunted and underweight": {
+              "index": 2,
+              "precision": 0.15476190476190477,
+              "recall": 0.28888888888888886,
+              "f1": 0.20155038759689922,
+              "support": 45
+            },
+            "underweight": {
+              "index": 3,
+              "precision": 0.234375,
+              "recall": 0.2112676056338028,
+              "f1": 0.2222222222222222,
+              "support": 71
+            }
+          },
+          "macro": {
+            "precision": 0.2777861566924067,
+            "recall": 0.2803547382486131,
+            "f1": 0.27290743816906604
+          },
+          "weighted": {
+            "precision": 0.5616066084816085,
+            "recall": 0.5011655011655012,
+            "f1": 0.5265094294164061
+          },
+          "confusion_matrix": [
+            [
+              187,
+              18,
+              57,
+              39
+            ],
+            [
+              7,
+              0,
+              3,
+              2
+            ],
+            [
+              22,
+              2,
+              13,
+              8
+            ],
+            [
+              43,
+              2,
+              11,
+              15
+            ]
+          ],
+          "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.72      0.62      0.67       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.15      0.29      0.20        45\n            underweight       0.23      0.21      0.22        71\n\n               accuracy                           0.50       429\n              macro avg       0.28      0.28      0.27       429\n           weighted avg       0.56      0.50      0.53       429\n",
+          "correct": 215,
+          "total": 429
+        }
+      }
+    }
+  },
+  "comparison": {
+    "old": {
+      "accuracy": 0.6993006993006993,
+      "mean_top_probability": 0.6712275147438049,
+      "mean_entropy_nats": 0.8794743418693542,
+      "predicted_distribution": [
+        421,
+        0,
+        0,
+        8
+      ],
+      "per_class": {
+        "healthy": {
+          "index": 0,
+          "precision": 0.7054631828978623,
+          "recall": 0.9867109634551495,
+          "f1": 0.8227146814404432,
+          "support": 301
+        },
+        "stunted": {
+          "index": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 12
+        },
+        "stunted and underweight": {
+          "index": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 45
+        },
+        "underweight": {
+          "index": 3,
+          "precision": 0.375,
+          "recall": 0.04225352112676056,
+          "f1": 0.0759493670886076,
+          "support": 71
+        }
+      },
+      "macro": {
+        "precision": 0.27011579572446553,
+        "recall": 0.25724112114547754,
+        "f1": 0.2246660121322627
+      },
+      "weighted": {
+        "precision": 0.5570382705180805,
+        "recall": 0.6993006993006993,
+        "f1": 0.589812410668682
+      },
+      "confusion_matrix": [
+        [
+          297,
+          0,
+          0,
+          4
+        ],
+        [
+          11,
+          0,
+          0,
+          1
+        ],
+        [
+          45,
+          0,
+          0,
+          0
+        ],
+        [
+          68,
+          0,
+          0,
+          3
+        ]
+      ],
+      "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.99      0.82       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.00      0.00      0.00        45\n            underweight       0.38      0.04      0.08        71\n\n               accuracy                           0.70       429\n              macro avg       0.27      0.26      0.22       429\n           weighted avg       0.56      0.70      0.59       429\n",
+      "correct": 300,
+      "total": 429
+    },
+    "new": {
+      "accuracy": 0.5011655011655012,
+      "mean_top_probability": 0.44055411219596863,
+      "mean_entropy_nats": 1.232635736465454,
+      "predicted_distribution": [
+        274,
+        41,
+        62,
+        52
+      ],
+      "per_class": {
+        "healthy": {
+          "index": 0,
+          "precision": 0.7116788321167883,
+          "recall": 0.6478405315614618,
+          "f1": 0.6782608695652174,
+          "support": 301
+        },
+        "stunted": {
+          "index": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 12
+        },
+        "stunted and underweight": {
+          "index": 2,
+          "precision": 0.1774193548387097,
+          "recall": 0.24444444444444444,
+          "f1": 0.205607476635514,
+          "support": 45
+        },
+        "underweight": {
+          "index": 3,
+          "precision": 0.17307692307692307,
+          "recall": 0.1267605633802817,
+          "f1": 0.14634146341463414,
+          "support": 71
+        }
+      },
+      "macro": {
+        "precision": 0.26554377750810526,
+        "recall": 0.254761384846547,
+        "f1": 0.2575524524038414
+      },
+      "weighted": {
+        "precision": 0.5465912843201789,
+        "recall": 0.5011655011655012,
+        "f1": 0.5216762286484092
+      },
+      "confusion_matrix": [
+        [
+          195,
+          30,
+          40,
+          36
+        ],
+        [
+          7,
+          0,
+          2,
+          3
+        ],
+        [
+          25,
+          5,
+          11,
+          4
+        ],
+        [
+          47,
+          6,
+          9,
+          9
+        ]
+      ],
+      "classification_report_text": "                         precision    recall  f1-score   support\n\n                healthy       0.71      0.65      0.68       301\n                stunted       0.00      0.00      0.00        12\nstunted and underweight       0.18      0.24      0.21        45\n            underweight       0.17      0.13      0.15        71\n\n               accuracy                           0.50       429\n              macro avg       0.27      0.25      0.26       429\n           weighted avg       0.55      0.50      0.52       429\n",
+      "correct": 215,
+      "total": 429
+    },
+    "delta": {
+      "accuracy": -0.1981351981351981,
+      "macro_f1": 0.03288644027157869,
+      "weighted_f1": -0.06813618202027272,
+      "per_class_f1": {
+        "healthy": -0.14445381187522588,
+        "stunted": 0.0,
+        "stunted and underweight": 0.205607476635514,
+        "underweight": 0.07039209632602654
+      }
+    }
+  }
+}

@@ -1,0 +1,311 @@
+{
+  "generated_at": "2026-09-22T06:26:55.393564+00:00",
+  "experiment": "child-level balanced binary healthy vs malnourished (AnthroVision only, frontal1 only) - fine-tuned MobileNetV2",
+  "dataset_source": "dataset/ANTHROVISION (AnthroVision only; ARAN not used)",
+  "unit_of_splitting": "child (CSV tag; exactly one frontal1 image per child)",
+  "class_definition": {
+    "healthy": "multiclass_label == 'healthy'",
+    "malnourished": "multiclass_label in ['underweight', 'stunted', 'stunted and underweight']"
+  },
+  "split_source": "reused verbatim from experiments/image_model_frontal1_only/frontal1_manifest.json",
+  "split_reused_from": "image_model_frontal1_only\\frontal1_manifest.json",
+  "augmentation": {
+    "random_flip": "horizontal",
+    "random_contrast": 0.1,
+    "random_translation_height": 0.05,
+    "random_translation_width": 0.05,
+    "random_zoom_height": 0.05,
+    "random_zoom_width": 0.05
+  },
+  "augmentation_note": "training images only; validation/test never augmented",
+  "preprocessing": "keras.applications.mobilenet_v2.preprocess_input ([-1, 1]) for training and TFLite",
+  "fine_tuning": {
+    "base_weights": "imagenet",
+    "head_phase_epochs": 12,
+    "head_lr": 0.001,
+    "fine_tune_phase_epochs": 20,
+    "fine_tune_lr": 1e-05,
+    "backbone_unfrozen_from_top": 30,
+    "early_stopping_patience": 4,
+    "lr_patience": 3,
+    "lr_factor": 0.5,
+    "min_delta": 0.0001
+  },
+  "threshold_selection": {
+    "metric": "balanced_accuracy",
+    "healthy_recall_floor": 0.45,
+    "candidates": [
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7
+    ],
+    "selected_threshold": 0.3
+  },
+  "children_overall": {
+    "children_with_images": 1282,
+    "unique_tags": 1282,
+    "images": 1282,
+    "subgroups": {
+      "healthy": 641,
+      "underweight": 355,
+      "stunted and underweight": 227,
+      "stunted": 59
+    }
+  },
+  "children_after_balancing": {
+    "healthy": 641,
+    "malnourished": 641,
+    "total": 1282
+  },
+  "splits": {
+    "train": {
+      "children": 897,
+      "children_by_class": {
+        "healthy": 448,
+        "malnourished": 449
+      },
+      "children_by_subgroup": {
+        "healthy": 448,
+        "underweight": 237,
+        "stunted and underweight": 167,
+        "stunted": 45
+      },
+      "images": 897,
+      "note": "exactly one frontal1 image per child"
+    },
+    "validation": {
+      "children": 192,
+      "children_by_class": {
+        "healthy": 96,
+        "malnourished": 96
+      },
+      "children_by_subgroup": {
+        "healthy": 96,
+        "underweight": 61,
+        "stunted and underweight": 28,
+        "stunted": 7
+      },
+      "images": 192,
+      "note": "exactly one frontal1 image per child"
+    },
+    "test": {
+      "children": 193,
+      "children_by_class": {
+        "healthy": 97,
+        "malnourished": 96
+      },
+      "children_by_subgroup": {
+        "stunted and underweight": 32,
+        "underweight": 57,
+        "healthy": 97,
+        "stunted": 7
+      },
+      "images": 193,
+      "note": "exactly one frontal1 image per child"
+    }
+  },
+  "split_overlap_check": {
+    "train_inter_validation": 0,
+    "train_inter_test": 0,
+    "validation_inter_test": 0
+  },
+  "best_epoch": {
+    "epoch": 3,
+    "val_loss": 0.6970810890197754,
+    "val_balanced_accuracy": 0.65625,
+    "val_recall_healthy": 0.5208333333333334,
+    "val_recall_malnourished": 0.7916666666666666,
+    "val_threshold_used": 0.3
+  },
+  "test": {
+    "image_level_keras": {
+      "threshold": 0.3,
+      "accuracy": 0.5181347150259067,
+      "balanced_accuracy": 0.5189540378006873,
+      "precision_malnourished": 0.5118110236220472,
+      "recall_malnourished": 0.6770833333333334,
+      "f1_malnourished": 0.5829596412556054,
+      "recall_healthy": 0.36082474226804123,
+      "precision_healthy": 0.5303030303030303,
+      "roc_auc": 0.5602448453608248,
+      "confusion_matrix": {
+        "tn": 35,
+        "fp": 62,
+        "fn": 31,
+        "tp": 65,
+        "_rows": "true",
+        "_cols": "predicted"
+      },
+      "confusion_matrix_array": [
+        [
+          35,
+          62
+        ],
+        [
+          31,
+          65
+        ]
+      ],
+      "predicted_malnourished": 127,
+      "n": 193,
+      "mean_probability": 0.35346174240112305,
+      "mean_probability_malnourished": 0.36792364716529846,
+      "mean_probability_healthy": 0.33914896845817566
+    },
+    "image_level_tflite": {
+      "threshold": 0.3,
+      "accuracy": 0.5492227979274611,
+      "balanced_accuracy": 0.5502577319587629,
+      "precision_malnourished": 0.5333333333333333,
+      "recall_malnourished": 0.75,
+      "f1_malnourished": 0.6233766233766234,
+      "recall_healthy": 0.35051546391752575,
+      "precision_healthy": 0.5862068965517241,
+      "roc_auc": 0.5708762886597939,
+      "confusion_matrix": {
+        "tn": 34,
+        "fp": 63,
+        "fn": 24,
+        "tp": 72,
+        "_rows": "true",
+        "_cols": "predicted"
+      },
+      "confusion_matrix_array": [
+        [
+          34,
+          63
+        ],
+        [
+          24,
+          72
+        ]
+      ],
+      "predicted_malnourished": 135,
+      "n": 193,
+      "mean_probability": 0.370057864008481,
+      "mean_probability_malnourished": 0.387870433817928,
+      "mean_probability_healthy": 0.3524289289393376
+    },
+    "child_level_keras": {
+      "threshold": 0.3,
+      "accuracy": 0.5181347150259067,
+      "balanced_accuracy": 0.5189540378006873,
+      "precision_malnourished": 0.5118110236220472,
+      "recall_malnourished": 0.6770833333333334,
+      "f1_malnourished": 0.5829596412556054,
+      "recall_healthy": 0.36082474226804123,
+      "precision_healthy": 0.5303030303030303,
+      "roc_auc": 0.5602448453608248,
+      "confusion_matrix": {
+        "tn": 35,
+        "fp": 62,
+        "fn": 31,
+        "tp": 65,
+        "_rows": "true",
+        "_cols": "predicted"
+      },
+      "confusion_matrix_array": [
+        [
+          35,
+          62
+        ],
+        [
+          31,
+          65
+        ]
+      ],
+      "predicted_malnourished": 127,
+      "n": 193,
+      "mean_probability": 0.35346174301878774,
+      "mean_probability_malnourished": NaN,
+      "mean_probability_healthy": NaN
+    },
+    "child_level_tflite": {
+      "threshold": 0.3,
+      "accuracy": 0.5492227979274611,
+      "balanced_accuracy": 0.5502577319587629,
+      "precision_malnourished": 0.5333333333333333,
+      "recall_malnourished": 0.75,
+      "f1_malnourished": 0.6233766233766234,
+      "recall_healthy": 0.35051546391752575,
+      "precision_healthy": 0.5862068965517241,
+      "roc_auc": 0.5708762886597939,
+      "confusion_matrix": {
+        "tn": 34,
+        "fp": 63,
+        "fn": 24,
+        "tp": 72,
+        "_rows": "true",
+        "_cols": "predicted"
+      },
+      "confusion_matrix_array": [
+        [
+          34,
+          63
+        ],
+        [
+          24,
+          72
+        ]
+      ],
+      "predicted_malnourished": 135,
+      "n": 193,
+      "mean_probability": 0.370057864008481,
+      "mean_probability_malnourished": NaN,
+      "mean_probability_healthy": NaN
+    },
+    "metrics_note": "image_level counts every child's frontal1 image as a sample; child_level is identical here because each child has exactly one image. Reported separately for consistency with the baseline.",
+    "threshold_used": 0.3
+  },
+  "test_subgroups": {
+    "subgroups": [
+      {
+        "subgroup": "underweight",
+        "test_children": 57,
+        "test_images": 57,
+        "image_level_keras_recall": 0.6842105263157895,
+        "image_level_tflite_recall": 0.7368421052631579,
+        "image_level_keras_mean_probability": 0.36320576071739197,
+        "image_level_tflite_mean_probability": 0.38855455750436113
+      },
+      {
+        "subgroup": "stunted",
+        "test_children": 7,
+        "test_images": 7,
+        "image_level_keras_recall": 0.7142857142857143,
+        "image_level_tflite_recall": 0.8571428571428571,
+        "image_level_keras_mean_probability": 0.36575403809547424,
+        "image_level_tflite_mean_probability": 0.374258639557021
+      },
+      {
+        "subgroup": "stunted and underweight",
+        "test_children": 32,
+        "test_images": 32,
+        "image_level_keras_recall": 0.65625,
+        "image_level_tflite_recall": 0.75,
+        "image_level_keras_mean_probability": 0.37680190801620483,
+        "image_level_tflite_mean_probability": 0.3896294184960425
+      }
+    ]
+  },
+  "keras_vs_tflite": {
+    "image_level": {
+      "accuracy_diff": -0.031088082901554404,
+      "balanced_accuracy_diff": -0.03130369415807566,
+      "recall_malnourished_diff": -0.07291666666666663,
+      "roc_auc_diff": -0.010631443298969145
+    },
+    "child_level": {
+      "accuracy_diff": -0.031088082901554404,
+      "balanced_accuracy_diff": -0.03130369415807566,
+      "recall_malnourished_diff": -0.07291666666666663,
+      "roc_auc_diff": -0.010631443298969145
+    }
+  }
+}

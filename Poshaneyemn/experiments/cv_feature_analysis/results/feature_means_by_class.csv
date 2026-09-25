@@ -1,0 +1,5 @@
+Class,shoulder_width,left_upper_arm_length,right_upper_arm_length,face_width,face_height,Height,Weight,MUAC,HC,Age,BMI
+healthy,501.86,415.15,425.59,247.81,297.67,138.84,32.9,19.33,51.24,122.35,16.32
+stunted,484.03,397.72,402.64,248.05,296.87,127.44,30.17,19.35,50.98,123.15,17.9
+stunted and underweight,469.68,387.34,401.05,239.85,287.88,126.59,23.8,17.19,49.44,134.55,14.41
+underweight,483.34,406.35,418.65,240.3,290.36,136.49,26.26,16.98,50.21,136.4,13.66

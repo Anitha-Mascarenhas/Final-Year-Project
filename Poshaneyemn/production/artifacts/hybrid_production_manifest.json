@@ -1,0 +1,62 @@
+{
+  "model_family": "SVC(kernel='rbf', C=1.0, class_weight='balanced') [existing repo classifier]",
+  "fusion_order": [
+    "image (MobileNetV2 128-d embedding)",
+    "cv (MediaPipe 21 features)",
+    "segmentation (DeepLabV3+ 11 features)",
+    "anthropometric (8 features)"
+  ],
+  "total_feature_dim": 168,
+  "group_slices": {
+    "image": [
+      0,
+      128
+    ],
+    "cv": [
+      128,
+      149
+    ],
+    "segmentation": [
+      149,
+      160
+    ],
+    "anthropometric": [
+      160,
+      168
+    ]
+  },
+  "classifier_artifacts": [
+    "hybrid_production_svm.joblib",
+    "hybrid_production_svm_portable.json"
+  ],
+  "preprocessor": "hybrid_production_preprocessor.json",
+  "image_feature_extractor": {
+    "source_model": "models/image_best.h5 (legacy, read-only)",
+    "layer_used": "image_dense (penultimate Dense(128, relu))",
+    "legacy_head_discarded": "Dense(4, softmax) NOT used",
+    "tflite": "hybrid_production_image_feature_extractor.tflite",
+    "input_shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "output_shape": [
+      1,
+      128
+    ]
+  },
+  "splits": {
+    "train_children": 1496,
+    "validation_children": 321,
+    "test_children": 321,
+    "child_level": true,
+    "frozen_from": "experiments/cv_multimodal_baseline/split_indices.json"
+  },
+  "label_map": {
+    "0": "healthy",
+    "1": "underweight",
+    "2": "stunted",
+    "3": "stunted and underweight"
+  }
+}

@@ -1,0 +1,378 @@
+2026-09-18 22:57:55.015989: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-09-18 22:57:55.828878: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-09-18 22:58:00.472773: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-09-18 23:01:00.274676: I tensorflow/core/framework/local_rendezvous.cc:407] Local rendezvous is aborting with status: OUT_OF_RANGE: End of sequence
+2026-09-18 23:01:38.364556: I tensorflow/core/framework/local_rendezvous.cc:407] Local rendezvous is aborting with status: OUT_OF_RANGE: End of sequence
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+TensorFlow 2.19.1 | seed 42 | epochs 25
+Artifacts -> D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_only\artifacts
+Results   -> D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_only\results
+
+================================================================================================
+CHILD-LEVEL DATASET (AnthroVision only, one row per child)
+================================================================================================
+  children with at least one usable image : 2141
+  children by subgroup                    : {'healthy': 1500, 'underweight': 355, 'stunted and underweight': 227, 'stunted': 59}
+  total images (all views, all children)  : 16937
+
+AFTER CHILD-LEVEL BALANCING (no duplication, no synthetic children)
+  healthy children      : 641
+  malnourished children : 641
+  total children        : 1282
+  malnourished subgroups: {'underweight': 355, 'stunted and underweight': 227, 'stunted': 59}
+
+================================================================================================
+SPLIT (child level, stratified by binary class, seed 42, ZERO child overlap)
+================================================================================================
+split        children  healthy malnourished   images  img/child
+---------------------------------------------------------------
+train             897      448          449     7103       7.92
+validation        192       96           96     1519       7.91
+test              193       97           96     1527       7.91
+  train subgroups: {'healthy': 448, 'underweight': 237, 'stunted and underweight': 167, 'stunted': 45}
+  validation subgroups: {'healthy': 96, 'underweight': 61, 'stunted and underweight': 28, 'stunted': 7}
+  test subgroups: {'healthy': 97, 'underweight': 57, 'stunted and underweight': 32, 'stunted': 7}
+
+  child overlap between splits: {'train_inter_validation': 0, 'train_inter_test': 0, 'validation_inter_test': 0}
+  image overlap between splits: {'train_inter_validation': 0, 'train_inter_test': 0, 'validation_inter_test': 0}
+  [cache] train: wrote 7103 images in 170.8s -> train_images.npy
+  [cache] validation: wrote 1519 images in 37.3s -> validation_images.npy
+  [cache] test: wrote 1527 images in 37.2s -> test_images.npy
+
+  train class weights (balanced dataset -> ~1.0): {0: 0.9962131837307153, 1: 1.003815715093273}
+  epoch  1/25: train_loss=0.7113 val_loss=0.6809 acc=0.5616 bal_acc=0.5611 F1=0.4962 recall[mal]=0.4333 recall[healthy]=0.6890 child_bal_acc=0.5781 (235.2s)  <- best
+  epoch  2/25: train_loss=0.6598 val_loss=0.6932 acc=0.5365 bal_acc=0.5354 F1=0.3057 recall[mal]=0.2048 recall[healthy]=0.8661 child_bal_acc=0.5208 (273.1s)
+  epoch  3/25: train_loss=0.6358 val_loss=0.6974 acc=0.5398 bal_acc=0.5388 F1=0.3362 recall[mal]=0.2338 recall[healthy]=0.8438 child_bal_acc=0.5312 (303.8s)
+    [lr] reduced to 5.00e-05
+  epoch  4/25: train_loss=0.6322 val_loss=0.7262 acc=0.5227 bal_acc=0.5214 F1=0.2128 recall[mal]=0.1295 recall[healthy]=0.9134 child_bal_acc=0.5104 (242.6s)
+  epoch  5/25: train_loss=0.6227 val_loss=0.6832 acc=0.5504 bal_acc=0.5497 F1=0.4360 recall[mal]=0.3487 recall[healthy]=0.7507 child_bal_acc=0.5469 (174.7s)
+  epoch  6/25: train_loss=0.6137 val_loss=0.7143 acc=0.5313 bal_acc=0.5300 F1=0.2521 recall[mal]=0.1585 recall[healthy]=0.9016 child_bal_acc=0.5052 (186.7s)
+
+  early stopping: val_loss has not improved for 5 epochs
+Saved artifact at 'C:\Users\Apeksha\AppData\Local\Temp\tmpzhi8qmm2'. The following endpoints are available:
+
+* Endpoint 'serve'
+  args_0 (POSITIONAL_ONLY): TensorSpec(shape=(None, 224, 224, 3), dtype=tf.float32, name='image_input')
+Output Type:
+  TensorSpec(shape=(None, 1), dtype=tf.float32, name=None)
+Captures:
+  1891158589072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392784: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297383952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297383376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297384144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297390864: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387984: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297389136: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297386064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297383760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297384336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387216: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297391632: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387408: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297386256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297389328: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297385872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297378384: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297379920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297378576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297378768: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297379152: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297384528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297380112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297380304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297380496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297385104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297381072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387600: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297380880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297379344: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297378960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297381648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297379728: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297381264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297381456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297385680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297380688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297393360: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297391824: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297383568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392208: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297379536: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297386448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297393936: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297394128: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297394320: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297381840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297388176: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297386832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297393744: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297387024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297382800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297389904: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297394512: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297388752: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297388944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297393168: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297390672: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297389520: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297388368: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297391056: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297386640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392016: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297391440: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297389712: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297384720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297388560: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392400: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297391248: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392976: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297390096: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297392592: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297390480: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297390288: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406055184: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406053648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406054224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406056144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406055568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406055760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406055952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406053840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406057104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406056528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406056720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406056912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406053456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406058064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406057488: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406057680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406057872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406055376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406058448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406058640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406058832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406056336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059984: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059408: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059600: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406057296: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406060944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406060368: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406060560: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406060752: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406058256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406061904: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406061328: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406061520: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406061712: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406059216: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406062864: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406062288: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406062480: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406062672: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406060176: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406063824: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406063248: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406063440: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406063632: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406061136: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064784: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064208: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064400: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064592: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406062096: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406065744: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406065168: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406065360: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406065552: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406063056: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406066704: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406066128: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406066320: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406066512: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064016: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406067664: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406067088: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406067280: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406067472: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406064976: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406068624: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406068048: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406068240: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406069008: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406065936: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406069584: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406068432: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406069200: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406066896: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406069392: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406068816: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406067856: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406660816: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406660624: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406660240: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406661392: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406659856: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406661008: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406661200: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406660432: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406662352: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406661776: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406661968: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406662160: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406660048: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406663312: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891297393552: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891158588880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891158589264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1889953136912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1889953138640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406662544: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406663888: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406664080: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406663504: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406664464: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406663696: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406665040: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406664848: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406663120: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406665616: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406662736: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406665232: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406665424: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406664656: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666192: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666384: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406664272: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406667536: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406667152: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406667344: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406662928: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406668496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406667920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406668112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406668304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406665808: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406669456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406668880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406669072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406669264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406666768: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406669840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406667728: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406671376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406671184: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406668688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406672336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406671760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406671952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406672144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406669648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406673296: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406672720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406672912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406673104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406670608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406674256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406673680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406673872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406674064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406671568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406675216: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406674640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406674832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406675408: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406675792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406674448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406673488: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406675024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407266832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406675600: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891406672528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407267024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407266064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407265872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407266448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407267984: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407268368: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407268176: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407268944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  1891407267792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1789754182.677451   21996 tf_tfl_flatbuffer_helpers.cc:365] Ignored output_format.
+W0000 00:00:1789754182.678766   21996 tf_tfl_flatbuffer_helpers.cc:368] Ignored drop_control_dependency.
+2026-09-18 23:26:22.681159: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: C:\Users\Apeksha\AppData\Local\Temp\tmpzhi8qmm2
+2026-09-18 23:26:22.707433: I tensorflow/cc/saved_model/reader.cc:52] Reading meta graph with tags { serve }
+2026-09-18 23:26:22.707673: I tensorflow/cc/saved_model/reader.cc:147] Reading SavedModel debug info (if present) from: C:\Users\Apeksha\AppData\Local\Temp\tmpzhi8qmm2
+I0000 00:00:1789754182.942309   21996 mlir_graph_optimization_pass.cc:425] MLIR V1 optimization pass is not enabled
+2026-09-18 23:26:22.977806: I tensorflow/cc/saved_model/loader.cc:236] Restoring SavedModel bundle.
+2026-09-18 23:26:24.644825: I tensorflow/cc/saved_model/loader.cc:220] Running initialization op on SavedModel bundle at path: C:\Users\Apeksha\AppData\Local\Temp\tmpzhi8qmm2
+2026-09-18 23:26:24.915640: I tensorflow/cc/saved_model/loader.cc:471] SavedModel load for tags { serve }; Status: success: OK. Took 2234728 microseconds.
+2026-09-18 23:26:25.242182: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+D:\Final-Year-Project\.venv\Lib\site-packages\tensorflow\lite\python\interpreter.py:457: UserWarning:     Warning: tf.lite.Interpreter is deprecated and is scheduled for deletion in
+    TF 2.20. Please use the LiteRT interpreter from the ai_edge_litert package.
+    See the [migration guide](https://ai.google.dev/edge/litert/migration)
+    for details.
+    
+  warnings.warn(_INTERPRETER_DELETION_WARNING)
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+
+best guarded validation balanced_accuracy at epoch 1
+TFLite exported -> D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_only\artifacts\binary_child_level.tflite (9.53 MB)
+    [tflite] 512/1527 images (6s)
+    [tflite] 1024/1527 images (173s)
+  [tflite] scored 1527 images in 181.1s
+
+================================================================================================
+HELD-OUT TEST (untouched children)
+================================================================================================
+level                        n      acc   balAcc  prec[mal]  rec[mal]  F1[mal]  rec[healthy]     AUC
+image (Keras)             1527   0.5265   0.5259     0.5299    0.4203   0.4688        0.6315  0.5516
+child (Keras)              193   0.5130   0.5124     0.5132    0.4062   0.4535        0.6186  0.5534
+image (TFLite)            1527   0.5265   0.5259     0.5299    0.4203   0.4688        0.6315  0.5516
+
+confusion (image level, rows=true, cols=pred): [[485, 283], [440, 319]]
+confusion (child level)                     : [[60, 37], [57, 39]]
+
+per-subgroup recall on held-out children:
+  underweight                children=  57 child_recall=0.3333333333333333 image_recall=0.36283185840707965 mean_prob=0.4682
+  stunted                    children=   7 child_recall=0.5714285714285714 image_recall=0.5294117647058824 mean_prob=0.5273
+  stunted and underweight    children=  32 child_recall=0.5 image_recall=0.5 mean_prob=0.501
+  healthy (control)          children=  97 mean_prob=0.4579
+
+Artifacts: D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_only\artifacts
+Reports:   D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_only\results

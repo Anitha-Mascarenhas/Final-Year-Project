@@ -1,0 +1,3 @@
+Image,Ground Truth,Image Model Prediction,Image Model Confidence,CV Model Prediction,CV Model Confidence
+IMG_20221103_113616_3_frontal1.jpg,healthy,healthy,0.7166,healthy,0.6400
+IMG_20221124_124641_39_frontal1.jpg,stunted and underweight,healthy,0.6889,healthy,0.4000

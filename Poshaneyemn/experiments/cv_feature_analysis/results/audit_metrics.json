@@ -1,0 +1,28 @@
+{
+  "pc1_correlations": {
+    "shoulder_width": 0.9531799162589916,
+    "face_width": 0.9081188836338067,
+    "left_upper_arm_length": 0.9536800924127338,
+    "right_upper_arm_length": 0.9468261590059105,
+    "image_scale_proxy": 0.9623078329175772
+  },
+  "pc1_explained_variance": 0.713536579498042,
+  "max_centroid_distance": 0.9855322355265188,
+  "pc1_std": 3.2715514198114963,
+  "anova_pc1_f": 7.047234431892472,
+  "anova_pc1_p": 0.00010315383517029156,
+  "majority_acc": 0.7009345794392523,
+  "majority_bacc": 0.25,
+  "uniform_random_bacc": 0.25,
+  "redundant_pairs_checked": {
+    "left_upper_arm_length_vs_right_upper_arm_length": 0.9764,
+    "left_forearm_length_vs_right_forearm_length": 0.9532,
+    "left_total_arm_length_vs_right_total_arm_length": 0.9811,
+    "face_width_vs_jaw_width": 0.9993,
+    "face_width_vs_face_height": 0.976,
+    "face_width_vs_eye_distance": 0.9843,
+    "shoulder_width_vs_left_upper_arm_length": 0.9259,
+    "shoulder_width_vs_right_upper_arm_length": 0.9208,
+    "shoulder_width_vs_face_width": 0.8903
+  }
+}

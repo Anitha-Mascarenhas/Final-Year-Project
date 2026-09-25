@@ -1,0 +1,10 @@
+TFLite - test image level
+
+rows = true label, cols = predicted label
+0 = healthy, 1 = malnourished
+
+TN=34  FP=63
+FN=24  TP=72
+
+[[34, 63],
+ [24, 72]]

@@ -55,6 +55,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       height: 92.5,
       muac: 14.5,
       headCircumference: null, // Not yet recorded
+      waistCircumference: null, // Reserved hybrid-model slot; median-imputed offline
       date: 'Updated 2 days ago',
       bmi: 16.2,
       percentile: '75th',

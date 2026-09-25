@@ -1,0 +1,114 @@
+AttributeError: 'MessageFactory' object has no attribute 'GetPrototype'
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790061036.725459    6792 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790061039.445565    6792 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+images to process: 17324  ({'back': 2127, 'frontal1': 2158, 'frontal2': 2142, 'frontal3': 2129, 'frontal4': 2067, 'handswide': 249, 'lateralleft': 2145, 'lateralright': 2148, 'selfie': 2159})
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1790061041.766331   11080 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.794975   11080 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.797384   14484 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.797556   12312 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.798991   11080 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.812126   11080 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.832967   14484 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1790061041.835029   12312 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+  250/17324  rows=250  28s  ETA 32.2 min
+  500/17324  rows=500  55s  ETA 30.9 min
+  750/17324  rows=750  88s  ETA 32.2 min
+  1000/17324  rows=1000  120s  ETA 32.6 min
+  1250/17324  rows=1250  171s  ETA 36.7 min
+  1500/17324  rows=1500  267s  ETA 47.0 min
+  1750/17324  rows=1750  366s  ETA 54.2 min
+  2000/17324  rows=2000  449s  ETA 57.4 min
+  2250/17324  rows=2250  502s  ETA 56.0 min
+  2500/17324  rows=2500  540s  ETA 53.4 min
+  2750/17324  rows=2750  584s  ETA 51.5 min
+  3000/17324  rows=3000  632s  ETA 50.3 min
+  3250/17324  rows=3250  5844s  ETA 421.8 min
+  3500/17324  rows=3500  5894s  ETA 388.0 min
+  3750/17324  rows=3750  5943s  ETA 358.5 min
+  4000/17324  rows=4000  6068s  ETA 336.9 min
+  4250/17324  rows=4250  6163s  ETA 316.0 min
+  4500/17324  rows=4500  6241s  ETA 296.4 min
+  4750/17324  rows=4750  6306s  ETA 278.2 min
+  5000/17324  rows=5000  6394s  ETA 262.7 min
+  5250/17324  rows=5250  6489s  ETA 248.7 min
+  5500/17324  rows=5500  6616s  ETA 237.1 min
+  5750/17324  rows=5750  6728s  ETA 225.7 min
+  6000/17324  rows=6000  6827s  ETA 214.8 min
+  6250/17324  rows=6250  6923s  ETA 204.4 min
+  6500/17324  rows=6500  7019s  ETA 194.8 min
+  6750/17324  rows=6750  7113s  ETA 185.7 min
+  7000/17324  rows=7000  7329s  ETA 180.2 min
+  7250/17324  rows=7250  7595s  ETA 175.9 min
+  7500/17324  rows=7500  7847s  ETA 171.3 min
+  7750/17324  rows=7750  8096s  ETA 166.7 min
+  8000/17324  rows=8000  8467s  ETA 164.5 min
+  8250/17324  rows=8250  8826s  ETA 161.8 min
+  8500/17324  rows=8500  9045s  ETA 156.5 min
+  8750/17324  rows=8750  9250s  ETA 151.1 min
+  9000/17324  rows=9000  9445s  ETA 145.6 min
+  9250/17324  rows=9250  9651s  ETA 140.4 min
+  9500/17324  rows=9500  9828s  ETA 134.9 min
+  9750/17324  rows=9750  9999s  ETA 129.5 min
+  10000/17324  rows=10000  10153s  ETA 123.9 min
+  10250/17324  rows=10250  10282s  ETA 118.3 min
+  10500/17324  rows=10500  10406s  ETA 112.7 min
+  10750/17324  rows=10750  10522s  ETA 107.2 min
+  11000/17324  rows=11000  10633s  ETA 101.9 min
+  11250/17324  rows=11250  10740s  ETA 96.6 min
+  11500/17324  rows=11500  10866s  ETA 91.7 min
+  11750/17324  rows=11750  11002s  ETA 87.0 min
+  12000/17324  rows=12000  11138s  ETA 82.4 min
+  12250/17324  rows=12250  11271s  ETA 77.8 min
+  12500/17324  rows=12500  11501s  ETA 74.0 min
+  12750/17324  rows=12750  11627s  ETA 69.5 min
+  13000/17324  rows=13000  11754s  ETA 65.2 min
+  13250/17324  rows=13250  11866s  ETA 60.8 min
+  13500/17324  rows=13500  11980s  ETA 56.6 min
+  13750/17324  rows=13750  12111s  ETA 52.5 min
+  14000/17324  rows=14000  12247s  ETA 48.5 min
+  14250/17324  rows=14250  12385s  ETA 44.5 min
+  14500/17324  rows=14500  12477s  ETA 40.5 min
+  14750/17324  rows=14750  12570s  ETA 36.6 min
+  15000/17324  rows=15000  12664s  ETA 32.7 min
+  15250/17324  rows=15250  12755s  ETA 28.9 min
+  15500/17324  rows=15500  12827s  ETA 25.2 min
+  15750/17324  rows=15750  12908s  ETA 21.5 min
+  16000/17324  rows=16000  12998s  ETA 17.9 min
+  16250/17324  rows=16250  13130s  ETA 14.5 min
+  16500/17324  rows=16500  13216s  ETA 11.0 min
+  16750/17324  rows=16750  13304s  ETA 7.6 min
+  17000/17324  rows=17000  13388s  ETA 4.3 min
+  17250/17324  rows=17250  13473s  ETA 1.0 min
+wrote D:\Final-Year-Project\Poshaneyemn\experiments\cv_features_clean\results\cv_features_clean.csv  rows=17324
+unique children (tags): 17314
+ratio features outside plausible [0.05, 1.2] band: {'left_upper_arm_to_shoulder_ratio': 2176, 'right_upper_arm_to_shoulder_ratio': 2154, 'left_forearm_to_shoulder_ratio': 2173, 'right_forearm_to_shoulder_ratio': 2145, 'left_total_arm_to_shoulder_ratio': 10617, 'right_total_arm_to_shoulder_ratio': 10642}
+Traceback (most recent call last):
+  File "C:\Users\Apeksha\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\compat\_optional.py", line 158, in import_optional_dependency
+    module = importlib.import_module(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Apeksha\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1142, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'tabulate'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Final-Year-Project\poshaneyemn\experiments\cv_features_clean\run_experiment.py", line 247, in <module>
+    main()
+  File "D:\Final-Year-Project\poshaneyemn\experiments\cv_features_clean\run_experiment.py", line 240, in main
+    lines.append(stats_df.to_markdown())
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Apeksha\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\core\frame.py", line 2983, in to_markdown
+    tabulate = import_optional_dependency("tabulate")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Apeksha\AppData\Local\Programs\Python\Python311\Lib\site-packages\pandas\compat\_optional.py", line 161, in import_optional_dependency
+    raise ImportError(msg) from err
+ImportError: `Import tabulate` failed.  Use pip or conda to install the tabulate package.

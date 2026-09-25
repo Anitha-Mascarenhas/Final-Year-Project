@@ -1,0 +1,501 @@
+{
+  "generated_at": "2026-09-18T16:57:38.357629+00:00",
+  "experiment": "child-level balanced binary healthy vs malnourished (AnthroVision only)",
+  "dataset_source": "dataset/ANTHROVISION (AnthroVision only; ARAN not used)",
+  "unit_of_splitting": "child (CSV tag; the two duplicated tags are treated as two children each)",
+  "class_definition": {
+    "healthy": "multiclass_label == 'healthy'",
+    "malnourished": "multiclass_label in ['underweight', 'stunted', 'stunted and underweight']"
+  },
+  "augmentation": {
+    "random_flip": "horizontal",
+    "random_contrast": 0.1,
+    "random_translation_height": 0.05,
+    "random_translation_width": 0.05,
+    "random_zoom_height": 0.05,
+    "random_zoom_width": 0.05
+  },
+  "augmentation_note": "training images only; validation/test never augmented",
+  "preprocessing": "keras.applications.mobilenet_v2.preprocess_input ([-1, 1]) for training and TFLite",
+  "class_weights": {
+    "0": 0.9962131837307153,
+    "1": 1.003815715093273
+  },
+  "class_weighting_note": "the dataset is balanced on children, so weights are ~1.0; balancing comes from the dataset, not the loss",
+  "selection": {
+    "metric": "balanced_accuracy",
+    "healthy_recall_floor": 0.5,
+    "chosen": {
+      "score": 0.5476020830949632,
+      "epoch": 1,
+      "healthy_recall": 0.7860892388451444,
+      "val_loss": 0.68678218126297
+    },
+    "note": "best guarded validation balanced_accuracy at epoch 1"
+  },
+  "children_overall": {
+    "children_with_images": 2141,
+    "unique_tags": 2139,
+    "images": 16937,
+    "subgroups": {
+      "healthy": 1500,
+      "underweight": 355,
+      "stunted and underweight": 227,
+      "stunted": 59
+    }
+  },
+  "children_after_balancing": {
+    "healthy": 641,
+    "malnourished": 641,
+    "total": 1282
+  },
+  "splits": {
+    "train": {
+      "children": 897,
+      "children_by_class": {
+        "healthy": 448,
+        "malnourished": 449
+      },
+      "children_by_subgroup": {
+        "healthy": 448,
+        "underweight": 237,
+        "stunted and underweight": 167,
+        "stunted": 45
+      },
+      "images": 7103,
+      "images_per_child_mean": 7.92,
+      "images_per_child_min": 3,
+      "images_per_child_max": 8
+    },
+    "validation": {
+      "children": 192,
+      "children_by_class": {
+        "healthy": 96,
+        "malnourished": 96
+      },
+      "children_by_subgroup": {
+        "healthy": 96,
+        "underweight": 61,
+        "stunted and underweight": 28,
+        "stunted": 7
+      },
+      "images": 1519,
+      "images_per_child_mean": 7.91,
+      "images_per_child_min": 4,
+      "images_per_child_max": 8
+    },
+    "test": {
+      "children": 193,
+      "children_by_class": {
+        "healthy": 97,
+        "malnourished": 96
+      },
+      "children_by_subgroup": {
+        "healthy": 97,
+        "underweight": 57,
+        "stunted and underweight": 32,
+        "stunted": 7
+      },
+      "images": 1527,
+      "images_per_child_mean": 7.91,
+      "images_per_child_min": 4,
+      "images_per_child_max": 8
+    }
+  },
+  "split_overlap_check": {
+    "train_inter_validation": 0,
+    "train_inter_test": 0,
+    "validation_inter_test": 0
+  },
+  "epoch_history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.7086224555969238,
+      "val_loss": 0.68678218126297,
+      "val_accuracy": 0.5483870967741935,
+      "val_balanced_accuracy": 0.5476020830949632,
+      "val_f1_malnourished": 0.4055459272097054,
+      "val_f1_macro": 0.5207135156218379,
+      "val_recall_malnourished": 0.309114927344782,
+      "val_recall_healthy": 0.7860892388451444,
+      "val_child_balanced_accuracy": 0.53125,
+      "val_child_accuracy": 0.53125,
+      "learning_rate": 9.999999747378752e-05,
+      "seconds": 230.4
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.6599178910255432,
+      "val_loss": 0.6965571641921997,
+      "val_accuracy": 0.5418038183015141,
+      "val_balanced_accuracy": 0.5406416750746315,
+      "val_f1_malnourished": 0.2897959183673469,
+      "val_f1_macro": 0.47580174927113705,
+      "val_recall_malnourished": 0.18758256274768825,
+      "val_recall_healthy": 0.8937007874015748,
+      "val_child_balanced_accuracy": 0.53125,
+      "val_child_accuracy": 0.53125,
+      "learning_rate": 9.999999747378752e-05,
+      "seconds": 163.0
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.6411048173904419,
+      "val_loss": 0.7026234865188599,
+      "val_accuracy": 0.5358788676761027,
+      "val_balanced_accuracy": 0.5346798212310647,
+      "val_f1_malnourished": 0.26791277258566976,
+      "val_f1_macro": 0.4640768682205457,
+      "val_recall_malnourished": 0.17040951122853368,
+      "val_recall_healthy": 0.8989501312335958,
+      "val_child_balanced_accuracy": 0.515625,
+      "val_child_accuracy": 0.515625,
+      "learning_rate": 9.999999747378752e-05,
+      "seconds": 206.8
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.6322339773178101,
+      "val_loss": 0.7230608463287354,
+      "val_accuracy": 0.5253456221198156,
+      "val_balanced_accuracy": 0.5240467794894198,
+      "val_f1_malnourished": 0.21374045801526717,
+      "val_f1_macro": 0.43690323230796363,
+      "val_recall_malnourished": 0.12945838837516513,
+      "val_recall_healthy": 0.9186351706036745,
+      "val_child_balanced_accuracy": 0.515625,
+      "val_child_accuracy": 0.515625,
+      "learning_rate": 9.999999747378752e-05,
+      "seconds": 242.7
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.6235333681106567,
+      "val_loss": 0.6866191625595093,
+      "val_accuracy": 0.543778801843318,
+      "val_balanced_accuracy": 0.5430175752469515,
+      "val_f1_malnourished": 0.4051502145922747,
+      "val_f1_macro": 0.5175777768102857,
+      "val_recall_malnourished": 0.31175693527080584,
+      "val_recall_healthy": 0.7742782152230971,
+      "val_child_balanced_accuracy": 0.5572916666666666,
+      "val_child_accuracy": 0.5572916666666666,
+      "learning_rate": 4.999999873689376e-05,
+      "seconds": 303.1
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.6151813864707947,
+      "val_loss": 0.7117730379104614,
+      "val_accuracy": 0.5345622119815668,
+      "val_balanced_accuracy": 0.533402157293086,
+      "val_f1_malnourished": 0.2793068297655454,
+      "val_f1_macro": 0.4678012029236088,
+      "val_recall_malnourished": 0.1809775429326288,
+      "val_recall_healthy": 0.8858267716535433,
+      "val_child_balanced_accuracy": 0.5364583333333334,
+      "val_child_accuracy": 0.5364583333333334,
+      "learning_rate": 4.999999873689376e-05,
+      "seconds": 384.1
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.6137272715568542,
+      "val_loss": 0.7071316242218018,
+      "val_accuracy": 0.5398288347597103,
+      "val_balanced_accuracy": 0.5387381811751735,
+      "val_f1_malnourished": 0.3099703849950642,
+      "val_f1_macro": 0.48239259990493955,
+      "val_recall_malnourished": 0.2073976221928666,
+      "val_recall_healthy": 0.8700787401574803,
+      "val_child_balanced_accuracy": 0.53125,
+      "val_child_accuracy": 0.53125,
+      "learning_rate": 4.999999873689376e-05,
+      "seconds": 525.1
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.6131669282913208,
+      "val_loss": 0.7217949032783508,
+      "val_accuracy": 0.5273206056616195,
+      "val_balanced_accuracy": 0.5260976294739907,
+      "val_f1_malnourished": 0.24579831932773108,
+      "val_f1_macro": 0.4507994472956968,
+      "val_recall_malnourished": 0.154557463672391,
+      "val_recall_healthy": 0.8976377952755905,
+      "val_child_balanced_accuracy": 0.5104166666666666,
+      "val_child_accuracy": 0.5104166666666666,
+      "learning_rate": 4.999999873689376e-05,
+      "seconds": 485.3
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.6110633015632629,
+      "val_loss": 0.7179201245307922,
+      "val_accuracy": 0.5253456221198156,
+      "val_balanced_accuracy": 0.5241551295520028,
+      "val_f1_malnourished": 0.2543950361944157,
+      "val_f1_macro": 0.4531270207529297,
+      "val_recall_malnourished": 0.16248348745046234,
+      "val_recall_healthy": 0.8858267716535433,
+      "val_child_balanced_accuracy": 0.5364583333333333,
+      "val_child_accuracy": 0.5364583333333334,
+      "learning_rate": 2.499999936844688e-05,
+      "seconds": 5433.1
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.6039483547210693,
+      "val_loss": 0.6984090805053711,
+      "val_accuracy": 0.5404871626069783,
+      "val_balanced_accuracy": 0.5396023812743355,
+      "val_f1_malnourished": 0.3700361010830325,
+      "val_f1_macro": 0.5041890349974748,
+      "val_recall_malnourished": 0.27080581241743723,
+      "val_recall_healthy": 0.8083989501312336,
+      "val_child_balanced_accuracy": 0.5572916666666666,
+      "val_child_accuracy": 0.5572916666666666,
+      "learning_rate": 2.499999936844688e-05,
+      "seconds": 295.7
+    }
+  ],
+  "validation": {
+    "image_level": {
+      "n": 1519,
+      "accuracy": 0.5483870967741935,
+      "balanced_accuracy": 0.5476020830949632,
+      "precision_malnourished": 0.5894206549118388,
+      "recall_malnourished": 0.309114927344782,
+      "f1_malnourished": 0.4055459272097054,
+      "precision_macro": 0.5616443738017305,
+      "recall_macro": 0.5476020830949632,
+      "f1_macro": 0.5207135156218379,
+      "recall_healthy": 0.7860892388451444,
+      "mean_probability": 0.4224866731257875,
+      "mean_probability_malnourished": 0.44617097893707663,
+      "mean_probability_healthy": 0.3989577761452811,
+      "predicted_malnourished": 397,
+      "confusion_matrix": {
+        "tn": 599,
+        "fp": 163,
+        "fn": 523,
+        "tp": 234,
+        "_rows": "true",
+        "_cols": "predicted",
+        "labels": [
+          [
+            "healthy",
+            "malnourished"
+          ]
+        ]
+      },
+      "confusion_matrix_array": [
+        [
+          599,
+          163
+        ],
+        [
+          523,
+          234
+        ]
+      ],
+      "roc_auc": 0.5953151166540114
+    },
+    "child_level": {
+      "n": 192,
+      "accuracy": 0.53125,
+      "balanced_accuracy": 0.53125,
+      "precision_malnourished": 0.5833333333333334,
+      "recall_malnourished": 0.21875,
+      "f1_malnourished": 0.3181818181818182,
+      "precision_macro": 0.5512820512820513,
+      "recall_macro": 0.53125,
+      "f1_macro": 0.48051948051948057,
+      "recall_healthy": 0.84375,
+      "mean_probability": 0.42392884629468125,
+      "mean_probability_malnourished": 0.44834283165012795,
+      "mean_probability_healthy": 0.3995148609392345,
+      "predicted_malnourished": 36,
+      "confusion_matrix": {
+        "tn": 81,
+        "fp": 15,
+        "fn": 75,
+        "tp": 21,
+        "_rows": "true",
+        "_cols": "predicted",
+        "labels": [
+          [
+            "healthy",
+            "malnourished"
+          ]
+        ]
+      },
+      "confusion_matrix_array": [
+        [
+          81,
+          15
+        ],
+        [
+          75,
+          21
+        ]
+      ],
+      "roc_auc": 0.615017361111111,
+      "aggregation": "mean per-child probability over that child's views"
+    }
+  },
+  "test": {
+    "image_level_keras": {
+      "n": 1527,
+      "accuracy": 0.5114603798297315,
+      "balanced_accuracy": 0.5102236701251647,
+      "precision_malnourished": 0.5146726862302483,
+      "recall_malnourished": 0.30039525691699603,
+      "f1_malnourished": 0.3793677204658902,
+      "precision_macro": 0.5124101438531315,
+      "recall_macro": 0.5102236701251647,
+      "f1_macro": 0.4882799725439602,
+      "recall_healthy": 0.7200520833333334,
+      "mean_probability": 0.43558655937337065,
+      "mean_probability_malnourished": 0.44663561924761935,
+      "mean_probability_healthy": 0.4246669806695233,
+      "predicted_malnourished": 443,
+      "confusion_matrix": {
+        "tn": 553,
+        "fp": 215,
+        "fn": 531,
+        "tp": 228,
+        "_rows": "true",
+        "_cols": "predicted",
+        "labels": [
+          [
+            "healthy",
+            "malnourished"
+          ]
+        ]
+      },
+      "confusion_matrix_array": [
+        [
+          553,
+          215
+        ],
+        [
+          531,
+          228
+        ]
+      ],
+      "roc_auc": 0.544142168972332
+    },
+    "image_level_tflite": {
+      "n": 1527,
+      "accuracy": 0.5114603798297315,
+      "balanced_accuracy": 0.5102236701251647,
+      "precision_malnourished": 0.5146726862302483,
+      "recall_malnourished": 0.30039525691699603,
+      "f1_malnourished": 0.3793677204658902,
+      "precision_macro": 0.5124101438531315,
+      "recall_macro": 0.5102236701251647,
+      "f1_macro": 0.4882799725439602,
+      "recall_healthy": 0.7200520833333334,
+      "mean_probability": 0.43558677226871,
+      "mean_probability_malnourished": 0.4466358232698422,
+      "mean_probability_healthy": 0.4246672023339973,
+      "predicted_malnourished": 443,
+      "confusion_matrix": {
+        "tn": 553,
+        "fp": 215,
+        "fn": 531,
+        "tp": 228,
+        "_rows": "true",
+        "_cols": "predicted",
+        "labels": [
+          [
+            "healthy",
+            "malnourished"
+          ]
+        ]
+      },
+      "confusion_matrix_array": [
+        [
+          553,
+          215
+        ],
+        [
+          531,
+          228
+        ]
+      ],
+      "roc_auc": 0.5441430267347387
+    },
+    "child_level_keras": {
+      "n": 193,
+      "accuracy": 0.49740932642487046,
+      "balanced_accuracy": 0.4961340206185567,
+      "precision_malnourished": 0.4897959183673469,
+      "recall_malnourished": 0.25,
+      "f1_malnourished": 0.3310344827586207,
+      "precision_macro": 0.49489795918367346,
+      "recall_macro": 0.4961340206185567,
+      "f1_macro": 0.46427242810130204,
+      "recall_healthy": 0.7422680412371134,
+      "mean_probability": 0.4366160026640472,
+      "mean_probability_malnourished": 0.4475356247276068,
+      "mean_probability_healthy": 0.4258089540238233,
+      "predicted_malnourished": 49,
+      "confusion_matrix": {
+        "tn": 72,
+        "fp": 25,
+        "fn": 72,
+        "tp": 24,
+        "_rows": "true",
+        "_cols": "predicted",
+        "labels": [
+          [
+            "healthy",
+            "malnourished"
+          ]
+        ]
+      },
+      "confusion_matrix_array": [
+        [
+          72,
+          25
+        ],
+        [
+          72,
+          24
+        ]
+      ],
+      "roc_auc": 0.5519759450171822,
+      "aggregation": "mean per-child probability over that child's views"
+    },
+    "metrics_note": "image_level counts every view as a sample; child_level averages a child's views first"
+  },
+  "test_subgroups": {
+    "underweight": {
+      "subgroup": "underweight",
+      "test_children": 57,
+      "test_images": 452,
+      "child_level_recall": 0.19298245614035087,
+      "child_level_mean_probability": 0.4306740420952178,
+      "image_level_recall": 0.23672566371681417
+    },
+    "stunted": {
+      "subgroup": "stunted",
+      "test_children": 7,
+      "test_images": 51,
+      "child_level_recall": 0.42857142857142855,
+      "child_level_mean_probability": 0.4882837874548776,
+      "image_level_recall": 0.4117647058823529
+    },
+    "stunted and underweight": {
+      "subgroup": "stunted and underweight",
+      "test_children": 32,
+      "test_images": 256,
+      "child_level_recall": 0.3125,
+      "child_level_mean_probability": 0.46865665819495916,
+      "image_level_recall": 0.390625
+    }
+  },
+  "test_healthy_child_mean_probability": 0.4258089540238233
+}

@@ -1,0 +1,5 @@
+subgroup,test_children,test_images,child_level_recall,image_level_recall,child_level_mean_probability
+underweight,57,452,0.3333333333333333,0.36283185840707965,0.4681575219882162
+stunted,7,51,0.5714285714285714,0.5294117647058824,0.527270896094186
+stunted and underweight,32,256,0.5,0.5,0.5009979205206037
+healthy,97,768,,,0.45794783670877676

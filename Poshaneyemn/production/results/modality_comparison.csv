@@ -1,0 +1,15 @@
+arm,model,accuracy,balanced_accuracy,macro_precision,macro_recall,macro_f1,weighted_f1
+1_anthropometric_only,SVM_RBF_Balanced,0.7352,0.736,0.5981,0.736,0.6128,0.7755
+1_anthropometric_only [RF reference],RandomForest_Balanced,0.8224,0.5872,0.617,0.5872,0.5949,0.8199
+2_cv_only,SVM_RBF_Balanced,0.4143,0.3261,0.2923,0.3261,0.2746,0.4594
+2_cv_only [RF reference],RandomForest_Balanced,0.6075,0.2892,0.2862,0.2892,0.2867,0.5902
+3_segmentation_only,SVM_RBF_Balanced,0.3863,0.3484,0.3391,0.3484,0.2836,0.4619
+3_segmentation_only [RF reference],RandomForest_Balanced,0.5545,0.2631,0.2563,0.2631,0.259,0.555
+4_image_only_features,SVM_RBF_Balanced,0.5358,0.4085,0.3935,0.4085,0.37,0.5719
+4_image_only_features [RF reference],RandomForest_Balanced,0.6511,0.2736,0.2805,0.2736,0.2671,0.5971
+5_anthro_plus_cv,SVM_RBF_Balanced,0.6916,0.5573,0.4889,0.5573,0.5005,0.7198
+5_anthro_plus_cv [RF reference],RandomForest_Balanced,0.7695,0.4897,0.536,0.4897,0.4974,0.7595
+6_anthro_plus_cv_plus_seg,SVM_RBF_Balanced,0.6947,0.5966,0.5027,0.5966,0.5274,0.7193
+6_anthro_plus_cv_plus_seg [RF reference],RandomForest_Balanced,0.7539,0.4457,0.476,0.4457,0.4508,0.7374
+7_full_image_plus_cv_plus_seg_plus_anthro,SVM_RBF_Balanced,0.676,0.466,0.5211,0.466,0.4571,0.6874
+7_full_image_plus_cv_plus_seg_plus_anthro [RF reference],RandomForest_Balanced,0.7134,0.3758,0.3999,0.3758,0.3762,0.6851

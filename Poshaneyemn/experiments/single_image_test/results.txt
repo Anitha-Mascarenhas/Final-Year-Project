@@ -1,0 +1,101 @@
+POSHANEYE: SINGLE IMAGE TEST RESULTS
+===========================================================================
+
+1. SELECTED IMAGES:
+Category:           Healthy Child
+Image Filename:     IMG_20221103_113616_3_frontal1.jpg
+Child ID:           3
+Ground Truth:       healthy
+View:               frontal1
+Physical Path:      D:\Final-Year-Project\Poshaneyemn\dataset\ANTHROVISION\frontal1\IMG_20221103_113616_3_frontal1.jpg
+Measurements:       {'Height': 129.5, 'Weight': 23.3, 'Age': 103, 'MUAC': 17.6, 'HC': 53.0, 'BMI': 13.89}
+
+Category:           Malnourished Child
+Image Filename:     IMG_20221124_124641_39_frontal1.jpg
+Child ID:           39
+Ground Truth:       stunted and underweight
+View:               frontal1
+Physical Path:      D:\Final-Year-Project\Poshaneyemn\dataset\ANTHROVISION\frontal1\IMG_20221124_124641_39_frontal1.jpg
+Measurements:       {'Height': 102.0, 'Weight': 14.6, 'Age': 69, 'MUAC': 13.5, 'HC': 49.0, 'BMI': 14.03}
+
+2. EXTRACTED CV FEATURES:
+[Healthy Child - IMG_20221103_113616_3_frontal1.jpg]
+  face_width                    : 298.77556704366583
+  face_height                   : 372.90684134451436
+  eye_distance                  : 189.89616892391493
+  mouth_width                   : 107.23723642955919
+  jaw_width                     : 301.5757262256155
+  face_ratio                    : 0.8012069876927748
+  eye_ratio                     : 0.6355813187902402
+  mouth_ratio                   : 0.35892237605187627
+  shoulder_width                : 582.235610193321
+  left_upper_arm_length         : 482.16003483680066
+  left_forearm_length           : 410.36354561239057
+  left_total_arm_length         : 892.5235804491913
+  right_upper_arm_length        : 489.4350641553026
+  right_forearm_length          : 395.437989541817
+  right_total_arm_length        : 884.8730536971195
+
+[Malnourished Child - IMG_20221124_124641_39_frontal1.jpg]
+  face_width                    : 259.2433563262944
+  face_height                   : 304.1089888919605
+  eye_distance                  : 173.12104947533217
+  mouth_width                   : 81.61891920651192
+  jaw_width                     : 266.1426320893741
+  face_ratio                    : 0.8524685747398104
+  eye_ratio                     : 0.667793581785891
+  mouth_ratio                   : 0.3148351431763712
+  shoulder_width                : 418.3418030336718
+  left_upper_arm_length         : 307.845468371174
+  left_forearm_length           : 270.5139377426962
+  left_total_arm_length         : 578.3594061138701
+  right_upper_arm_length        : 313.0344780556392
+  right_forearm_length          : 279.70949220185764
+  right_total_arm_length        : 592.7439702574968
+
+3. PREDICTIONS COMPARISON TABLE:
+                              Image            Ground Truth Image Model Prediction Image Model Confidence CV Model Prediction CV Model Confidence
+ IMG_20221103_113616_3_frontal1.jpg                 healthy                healthy                 0.7166             healthy              0.6400
+IMG_20221124_124641_39_frontal1.jpg stunted and underweight                healthy                 0.6889             healthy              0.4000
+
+4. DETAILED CLASS PROBABILITIES:
+[Healthy Child - IMG_20221103_113616_3_frontal1.jpg]
+  Image Model Probabilities:
+    healthy                  : 0.7166
+    stunted                  : 0.0199
+    stunted and underweight  : 0.1083
+    underweight              : 0.1553
+  CV Model Probabilities:
+    healthy                  : 0.6400
+    underweight              : 0.1600
+    stunted                  : 0.1267
+    stunted and underweight  : 0.0733
+
+[Malnourished Child - IMG_20221124_124641_39_frontal1.jpg]
+  Image Model Probabilities:
+    healthy                  : 0.6889
+    stunted                  : 0.0516
+    stunted and underweight  : 0.1073
+    underweight              : 0.1522
+  CV Model Probabilities:
+    healthy                  : 0.4000
+    underweight              : 0.3200
+    stunted                  : 0.0467
+    stunted and underweight  : 0.2333
+
+5. FACTUAL INTERPRETATION:
+
+### Factual Interpretation:
+
+1. Healthy Image (IMG_20221103_113616_3_frontal1.jpg):
+   - Ground Truth: healthy
+   - Image Model: Predicted 'healthy' with confidence 71.66%. (MATCH)
+   - CV Model: Predicted 'healthy' with confidence 64.00%. (MATCH)
+   - Outcome: Both models correctly identified the child as healthy.
+
+2. Malnourished Image (IMG_20221124_124641_39_frontal1.jpg):
+   - Ground Truth: stunted and underweight
+   - Image Model: Predicted 'healthy' with confidence 68.89%. (MISMATCH: false negative - collapsed to majority class)
+   - CV Model: Predicted 'healthy' with confidence 40.00%. (MISMATCH: predicted healthy, though giving 23.33% weight to stunted and underweight and 32.00% to underweight)
+   - Outcome: The raw image model collapsed entirely into predicting 'healthy' (71.69% probability), failing to detect the malnutrition state. The CV model also predicted 'healthy' as its top class, reflecting the difficulty of detecting stunting/wasting purely from 2D pixel-space proportions without physical scale calibration.
+

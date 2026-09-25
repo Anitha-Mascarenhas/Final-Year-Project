@@ -1,0 +1,856 @@
+2026-09-22 11:56:23.825423: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-09-22 11:56:30.282985: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+
+========================================================================
+  SPLIT VERIFICATION (reused from frontal1_manifest.json)
+========================================================================
+  total balanced children: 1282  (healthy 641, malnourished 641)
+  train: 897 children / 897 frontal1 images  (healthy 448, malnourished 449)
+  validation: 192 children / 192 frontal1 images  (healthy 96, malnourished 96)
+  test: 193 children / 193 frontal1 images  (healthy 97, malnourished 96)
+  zero child overlap: train AND val=0, train AND test=0, val AND test=0 (verified in manifest)
+  smoke=False  head_epochs=12  fine_epochs=20  patience=4
+2026-09-22 11:56:55.430791: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+
+[TRAINING] Phase 1: head training (backbone frozen) - 12 epochs
+D:\Final-Year-Project\.venv\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/12
+
+[1m 1/29[0m [37m====================[0m [1m6:38[0m 14s/step - auc: 0.4729 - binary_accuracy: 0.5312 - loss: 0.7645
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m48s[0m 2s/step - auc: 0.4525 - binary_accuracy: 0.5156 - loss: 0.7996  
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m51s[0m 2s/step - auc: 0.3747 - binary_accuracy: 0.4271 - loss: 0.9468
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m53s[0m 2s/step - auc: 0.3691 - binary_accuracy: 0.4453 - loss: 0.9772
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m52s[0m 2s/step - auc: 0.3883 - binary_accuracy: 0.4625 - loss: 0.9458
+[1m 6/29[0m [32m====[0m[37m================[0m [1m49s[0m 2s/step - auc: 0.4122 - binary_accuracy: 0.4531 - loss: 0.9362
+[1m 7/29[0m [32m====[0m[37m================[0m [1m48s[0m 2s/step - auc: 0.4121 - binary_accuracy: 0.4420 - loss: 0.9327
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m46s[0m 2s/step - auc: 0.4405 - binary_accuracy: 0.4609 - loss: 0.9137
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m44s[0m 2s/step - auc: 0.4363 - binary_accuracy: 0.4549 - loss: 0.9279
+[1m10/29[0m [32m======[0m[37m==============[0m [1m41s[0m 2s/step - auc: 0.4395 - binary_accuracy: 0.4563 - loss: 0.9247
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m36s[0m 2s/step - auc: 0.4228 - binary_accuracy: 0.4403 - loss: 0.9338
+[1m12/29[0m [32m========[0m[37m============[0m [1m32s[0m 2s/step - auc: 0.4283 - binary_accuracy: 0.4427 - loss: 0.9221
+[1m13/29[0m [32m========[0m[37m============[0m [1m29s[0m 2s/step - auc: 0.4376 - binary_accuracy: 0.4543 - loss: 0.9083
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m26s[0m 2s/step - auc: 0.4433 - binary_accuracy: 0.4621 - loss: 0.9032
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m23s[0m 2s/step - auc: 0.4488 - binary_accuracy: 0.4625 - loss: 0.8933
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m21s[0m 2s/step - auc: 0.4671 - binary_accuracy: 0.4727 - loss: 0.8763
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m18s[0m 2s/step - auc: 0.4643 - binary_accuracy: 0.4669 - loss: 0.8740
+[1m18/29[0m [32m============[0m[37m========[0m [1m16s[0m 2s/step - auc: 0.4537 - binary_accuracy: 0.4601 - loss: 0.8799
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m14s[0m 1s/step - auc: 0.4484 - binary_accuracy: 0.4572 - loss: 0.8812
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m12s[0m 1s/step - auc: 0.4513 - binary_accuracy: 0.4594 - loss: 0.8803
+[1m21/29[0m [32m==============[0m[37m======[0m [1m11s[0m 1s/step - auc: 0.4547 - binary_accuracy: 0.4658 - loss: 0.8745
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m9s[0m 1s/step - auc: 0.4590 - binary_accuracy: 0.4688 - loss: 0.8724 
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m8s[0m 1s/step - auc: 0.4594 - binary_accuracy: 0.4715 - loss: 0.8734
+[1m24/29[0m [32m================[0m[37m====[0m [1m6s[0m 1s/step - auc: 0.4554 - binary_accuracy: 0.4674 - loss: 0.8741
+[1m25/29[0m [32m=================[0m[37m===[0m [1m5s[0m 1s/step - auc: 0.4523 - binary_accuracy: 0.4675 - loss: 0.8771
+[1m26/29[0m [32m=================[0m[37m===[0m [1m3s[0m 1s/step - auc: 0.4554 - binary_accuracy: 0.4700 - loss: 0.8737
+[1m27/29[0m [32m==================[0m[37m==[0m [1m2s[0m 1s/step - auc: 0.4592 - binary_accuracy: 0.4757 - loss: 0.8706
+[1m28/29[0m [32m===================[0m[37m=[0m [1m1s[0m 1s/step - auc: 0.4639 - binary_accuracy: 0.4799 - loss: 0.8661
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 1s/step - auc: 0.4631 - binary_accuracy: 0.4794 - loss: 0.8667
+Epoch 1: val_loss improved from None to 0.70673, saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\head_best.keras
+
+Epoch 1: finished saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\head_best.keras
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m54s[0m 1s/step - auc: 0.4631 - binary_accuracy: 0.4794 - loss: 0.8667 - val_auc: 0.5792 - val_binary_accuracy: 0.5312 - val_loss: 0.7067 - learning_rate: 0.0010
+Epoch 2/12
+
+[1m 1/29[0m [37m====================[0m [1m32s[0m 1s/step - auc: 0.5471 - binary_accuracy: 0.5625 - loss: 0.7653
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m18s[0m 680ms/step - auc: 0.5455 - binary_accuracy: 0.5469 - loss: 0.7627
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m18s[0m 697ms/step - auc: 0.5638 - binary_accuracy: 0.5521 - loss: 0.7392
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m17s[0m 691ms/step - auc: 0.5506 - binary_accuracy: 0.5469 - loss: 0.7346
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m16s[0m 702ms/step - auc: 0.5197 - binary_accuracy: 0.5312 - loss: 0.7747
+[1m 6/29[0m [32m====[0m[37m================[0m [1m16s[0m 705ms/step - auc: 0.5643 - binary_accuracy: 0.5521 - loss: 0.7395
+[1m 7/29[0m [32m====[0m[37m================[0m [1m15s[0m 694ms/step - auc: 0.5435 - binary_accuracy: 0.5268 - loss: 0.7576
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m14s[0m 688ms/step - auc: 0.5427 - binary_accuracy: 0.5273 - loss: 0.7727
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m13s[0m 683ms/step - auc: 0.5369 - binary_accuracy: 0.5278 - loss: 0.7754
+[1m10/29[0m [32m======[0m[37m==============[0m [1m12s[0m 682ms/step - auc: 0.5363 - binary_accuracy: 0.5312 - loss: 0.7825
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m12s[0m 682ms/step - auc: 0.5439 - binary_accuracy: 0.5369 - loss: 0.7736
+[1m12/29[0m [32m========[0m[37m============[0m [1m11s[0m 680ms/step - auc: 0.5480 - binary_accuracy: 0.5365 - loss: 0.7706
+[1m13/29[0m [32m========[0m[37m============[0m [1m10s[0m 678ms/step - auc: 0.5507 - binary_accuracy: 0.5409 - loss: 0.7701
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m10s[0m 673ms/step - auc: 0.5540 - binary_accuracy: 0.5446 - loss: 0.7702
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m9s[0m 673ms/step - auc: 0.5533 - binary_accuracy: 0.5417 - loss: 0.7674 
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m8s[0m 671ms/step - auc: 0.5562 - binary_accuracy: 0.5430 - loss: 0.7641
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m8s[0m 667ms/step - auc: 0.5634 - binary_accuracy: 0.5441 - loss: 0.7622
+[1m18/29[0m [32m============[0m[37m========[0m [1m7s[0m 663ms/step - auc: 0.5669 - binary_accuracy: 0.5469 - loss: 0.7604
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m6s[0m 664ms/step - auc: 0.5675 - binary_accuracy: 0.5493 - loss: 0.7589
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m5s[0m 665ms/step - auc: 0.5669 - binary_accuracy: 0.5453 - loss: 0.7600
+[1m21/29[0m [32m==============[0m[37m======[0m [1m5s[0m 667ms/step - auc: 0.5671 - binary_accuracy: 0.5476 - loss: 0.7583
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 666ms/step - auc: 0.5757 - binary_accuracy: 0.5511 - loss: 0.7520
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m3s[0m 667ms/step - auc: 0.5762 - binary_accuracy: 0.5557 - loss: 0.7498
+[1m24/29[0m [32m================[0m[37m====[0m [1m3s[0m 665ms/step - auc: 0.5764 - binary_accuracy: 0.5560 - loss: 0.7504
+[1m25/29[0m [32m=================[0m[37m===[0m [1m2s[0m 663ms/step - auc: 0.5756 - binary_accuracy: 0.5575 - loss: 0.7519
+[1m26/29[0m [32m=================[0m[37m===[0m [1m1s[0m 655ms/step - auc: 0.5752 - binary_accuracy: 0.5565 - loss: 0.7519
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 649ms/step - auc: 0.5795 - binary_accuracy: 0.5590 - loss: 0.7475
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 642ms/step - auc: 0.5803 - binary_accuracy: 0.5614 - loss: 0.7473
+Epoch 2: val_loss did not improve from 0.70673
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m22s[0m 761ms/step - auc: 0.5810 - binary_accuracy: 0.5619 - loss: 0.7468 - val_auc: 0.6106 - val_binary_accuracy: 0.4948 - val_loss: 0.7354 - learning_rate: 0.0010
+Epoch 3/12
+
+[1m 1/29[0m [37m====================[0m [1m33s[0m 1s/step - auc: 0.7679 - binary_accuracy: 0.6562 - loss: 0.6058
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m19s[0m 717ms/step - auc: 0.6835 - binary_accuracy: 0.6094 - loss: 0.6552
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m18s[0m 707ms/step - auc: 0.6624 - binary_accuracy: 0.6354 - loss: 0.6744
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m17s[0m 691ms/step - auc: 0.6319 - binary_accuracy: 0.6328 - loss: 0.7211
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m16s[0m 693ms/step - auc: 0.6236 - binary_accuracy: 0.6313 - loss: 0.7212
+[1m 6/29[0m [32m====[0m[37m================[0m [1m16s[0m 702ms/step - auc: 0.5978 - binary_accuracy: 0.6146 - loss: 0.7457
+[1m 7/29[0m [32m====[0m[37m================[0m [1m15s[0m 691ms/step - auc: 0.5836 - binary_accuracy: 0.6027 - loss: 0.7574
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m14s[0m 683ms/step - auc: 0.5864 - binary_accuracy: 0.5938 - loss: 0.7510
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m13s[0m 676ms/step - auc: 0.5840 - binary_accuracy: 0.5903 - loss: 0.7503
+[1m10/29[0m [32m======[0m[37m==============[0m [1m12s[0m 669ms/step - auc: 0.5872 - binary_accuracy: 0.5844 - loss: 0.7495
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m12s[0m 670ms/step - auc: 0.5861 - binary_accuracy: 0.5852 - loss: 0.7439
+[1m12/29[0m [32m========[0m[37m============[0m [1m11s[0m 668ms/step - auc: 0.5892 - binary_accuracy: 0.5859 - loss: 0.7416
+[1m13/29[0m [32m========[0m[37m============[0m [1m10s[0m 667ms/step - auc: 0.5896 - binary_accuracy: 0.5889 - loss: 0.7400
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m9s[0m 663ms/step - auc: 0.5800 - binary_accuracy: 0.5804 - loss: 0.7487 
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m9s[0m 663ms/step - auc: 0.5769 - binary_accuracy: 0.5771 - loss: 0.7530
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m8s[0m 661ms/step - auc: 0.5838 - binary_accuracy: 0.5840 - loss: 0.7468
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m7s[0m 658ms/step - auc: 0.5893 - binary_accuracy: 0.5846 - loss: 0.7415
+[1m18/29[0m [32m============[0m[37m========[0m [1m7s[0m 654ms/step - auc: 0.5918 - binary_accuracy: 0.5833 - loss: 0.7383
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m6s[0m 658ms/step - auc: 0.5898 - binary_accuracy: 0.5789 - loss: 0.7404
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m5s[0m 656ms/step - auc: 0.5866 - binary_accuracy: 0.5719 - loss: 0.7404
+[1m21/29[0m [32m==============[0m[37m======[0m [1m5s[0m 655ms/step - auc: 0.5872 - binary_accuracy: 0.5729 - loss: 0.7405
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 655ms/step - auc: 0.5820 - binary_accuracy: 0.5668 - loss: 0.7456
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m3s[0m 654ms/step - auc: 0.5768 - binary_accuracy: 0.5625 - loss: 0.7501
+[1m24/29[0m [32m================[0m[37m====[0m [1m3s[0m 656ms/step - auc: 0.5791 - binary_accuracy: 0.5625 - loss: 0.7485
+[1m25/29[0m [32m=================[0m[37m===[0m [1m2s[0m 694ms/step - auc: 0.5787 - binary_accuracy: 0.5600 - loss: 0.7485
+[1m26/29[0m [32m=================[0m[37m===[0m [1m2s[0m 699ms/step - auc: 0.5799 - binary_accuracy: 0.5625 - loss: 0.7463
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 694ms/step - auc: 0.5801 - binary_accuracy: 0.5625 - loss: 0.7457
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 692ms/step - auc: 0.5782 - binary_accuracy: 0.5592 - loss: 0.7467
+Epoch 3: val_loss improved from 0.70673 to 0.69708, saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\head_best.keras
+
+Epoch 3: finished saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\head_best.keras
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m33s[0m 1s/step - auc: 0.5782 - binary_accuracy: 0.5596 - loss: 0.7466 - val_auc: 0.6214 - val_binary_accuracy: 0.5208 - val_loss: 0.6971 - learning_rate: 0.0010
+Epoch 4/12
+
+[1m 1/29[0m [37m====================[0m [1m1:26[0m 3s/step - auc: 0.5471 - binary_accuracy: 0.5000 - loss: 0.7287
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m56s[0m 2s/step - auc: 0.5670 - binary_accuracy: 0.5000 - loss: 0.7469 
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m40s[0m 2s/step - auc: 0.6383 - binary_accuracy: 0.5729 - loss: 0.6884
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m32s[0m 1s/step - auc: 0.6315 - binary_accuracy: 0.5625 - loss: 0.6913
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m28s[0m 1s/step - auc: 0.5919 - binary_accuracy: 0.5437 - loss: 0.7323
+[1m 6/29[0m [32m====[0m[37m================[0m [1m25s[0m 1s/step - auc: 0.5819 - binary_accuracy: 0.5312 - loss: 0.7449
+[1m 7/29[0m [32m====[0m[37m================[0m [1m23s[0m 1s/step - auc: 0.5916 - binary_accuracy: 0.5491 - loss: 0.7298
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m21s[0m 1s/step - auc: 0.5940 - binary_accuracy: 0.5586 - loss: 0.7267
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m19s[0m 976ms/step - auc: 0.6031 - binary_accuracy: 0.5660 - loss: 0.7241
+[1m10/29[0m [32m======[0m[37m==============[0m [1m17s[0m 946ms/step - auc: 0.6239 - binary_accuracy: 0.5750 - loss: 0.7114
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m16s[0m 917ms/step - auc: 0.6217 - binary_accuracy: 0.5739 - loss: 0.7171
+[1m12/29[0m [32m========[0m[37m============[0m [1m15s[0m 893ms/step - auc: 0.6213 - binary_accuracy: 0.5807 - loss: 0.7125
+[1m13/29[0m [32m========[0m[37m============[0m [1m14s[0m 877ms/step - auc: 0.6002 - binary_accuracy: 0.5721 - loss: 0.7307
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m12s[0m 863ms/step - auc: 0.5863 - binary_accuracy: 0.5625 - loss: 0.7428
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m11s[0m 853ms/step - auc: 0.5855 - binary_accuracy: 0.5625 - loss: 0.7419
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 842ms/step - auc: 0.5782 - binary_accuracy: 0.5605 - loss: 0.7465
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 842ms/step - auc: 0.5854 - binary_accuracy: 0.5680 - loss: 0.7407
+[1m18/29[0m [32m============[0m[37m========[0m [1m10s[0m 940ms/step - auc: 0.5864 - binary_accuracy: 0.5694 - loss: 0.7411
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m9s[0m 996ms/step - auc: 0.5957 - binary_accuracy: 0.5789 - loss: 0.7333 
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m9s[0m 1s/step - auc: 0.6009 - binary_accuracy: 0.5844 - loss: 0.7292   
+[1m21/29[0m [32m==============[0m[37m======[0m [1m8s[0m 1s/step - auc: 0.6000 - binary_accuracy: 0.5804 - loss: 0.7277
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m7s[0m 1s/step - auc: 0.5963 - binary_accuracy: 0.5781 - loss: 0.7343
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m6s[0m 1s/step - auc: 0.5942 - binary_accuracy: 0.5747 - loss: 0.7336
+[1m24/29[0m [32m================[0m[37m====[0m [1m5s[0m 1s/step - auc: 0.5949 - binary_accuracy: 0.5729 - loss: 0.7340
+[1m25/29[0m [32m=================[0m[37m===[0m [1m4s[0m 1s/step - auc: 0.5963 - binary_accuracy: 0.5763 - loss: 0.7324
+[1m26/29[0m [32m=================[0m[37m===[0m [1m3s[0m 1s/step - auc: 0.5903 - binary_accuracy: 0.5709 - loss: 0.7397
+[1m27/29[0m [32m==================[0m[37m==[0m [1m2s[0m 1s/step - auc: 0.5885 - binary_accuracy: 0.5671 - loss: 0.7425
+[1m28/29[0m [32m===================[0m[37m=[0m [1m1s[0m 1s/step - auc: 0.5927 - binary_accuracy: 0.5692 - loss: 0.7379
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 1s/step - auc: 0.5933 - binary_accuracy: 0.5697 - loss: 0.7374
+Epoch 4: val_loss did not improve from 0.69708
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m45s[0m 1s/step - auc: 0.5933 - binary_accuracy: 0.5697 - loss: 0.7374 - val_auc: 0.6245 - val_binary_accuracy: 0.5104 - val_loss: 0.7020 - learning_rate: 0.0010
+Epoch 5/12
+
+[1m 1/29[0m [37m====================[0m [1m1:42[0m 4s/step - auc: 0.6126 - binary_accuracy: 0.5938 - loss: 0.8086
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m31s[0m 1s/step - auc: 0.5250 - binary_accuracy: 0.5156 - loss: 0.8458 
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m25s[0m 979ms/step - auc: 0.5079 - binary_accuracy: 0.5000 - loss: 0.8299
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m23s[0m 942ms/step - auc: 0.5064 - binary_accuracy: 0.4844 - loss: 0.8088
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m21s[0m 905ms/step - auc: 0.5171 - binary_accuracy: 0.4938 - loss: 0.8060
+[1m 6/29[0m [32m====[0m[37m================[0m [1m20s[0m 882ms/step - auc: 0.5394 - binary_accuracy: 0.5104 - loss: 0.7779
+[1m 7/29[0m [32m====[0m[37m================[0m [1m19s[0m 874ms/step - auc: 0.5381 - binary_accuracy: 0.5089 - loss: 0.7764
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m18s[0m 873ms/step - auc: 0.5612 - binary_accuracy: 0.5312 - loss: 0.7529
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m17s[0m 853ms/step - auc: 0.5783 - binary_accuracy: 0.5486 - loss: 0.7433
+[1m10/29[0m [32m======[0m[37m==============[0m [1m15s[0m 836ms/step - auc: 0.5704 - binary_accuracy: 0.5437 - loss: 0.7526
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m14s[0m 823ms/step - auc: 0.5673 - binary_accuracy: 0.5341 - loss: 0.7532
+[1m12/29[0m [32m========[0m[37m============[0m [1m13s[0m 819ms/step - auc: 0.5680 - binary_accuracy: 0.5391 - loss: 0.7609
+[1m13/29[0m [32m========[0m[37m============[0m [1m12s[0m 807ms/step - auc: 0.5627 - binary_accuracy: 0.5337 - loss: 0.7655
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m12s[0m 812ms/step - auc: 0.5640 - binary_accuracy: 0.5402 - loss: 0.7654
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m11s[0m 805ms/step - auc: 0.5594 - binary_accuracy: 0.5333 - loss: 0.7656
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 802ms/step - auc: 0.5562 - binary_accuracy: 0.5352 - loss: 0.7676
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m9s[0m 797ms/step - auc: 0.5555 - binary_accuracy: 0.5349 - loss: 0.7699 
+[1m18/29[0m [32m============[0m[37m========[0m [1m8s[0m 789ms/step - auc: 0.5648 - binary_accuracy: 0.5451 - loss: 0.7623
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m7s[0m 780ms/step - auc: 0.5587 - binary_accuracy: 0.5428 - loss: 0.7675
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m6s[0m 772ms/step - auc: 0.5686 - binary_accuracy: 0.5500 - loss: 0.7588
+[1m21/29[0m [32m==============[0m[37m======[0m [1m6s[0m 767ms/step - auc: 0.5786 - binary_accuracy: 0.5595 - loss: 0.7510
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m5s[0m 761ms/step - auc: 0.5877 - binary_accuracy: 0.5653 - loss: 0.7424
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 760ms/step - auc: 0.5949 - binary_accuracy: 0.5720 - loss: 0.7353
+[1m24/29[0m [32m================[0m[37m====[0m [1m3s[0m 755ms/step - auc: 0.6015 - binary_accuracy: 0.5755 - loss: 0.7294
+[1m25/29[0m [32m=================[0m[37m===[0m [1m2s[0m 742ms/step - auc: 0.6107 - binary_accuracy: 0.5813 - loss: 0.7214
+[1m26/29[0m [32m=================[0m[37m===[0m [1m2s[0m 732ms/step - auc: 0.6085 - binary_accuracy: 0.5793 - loss: 0.7233
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 723ms/step - auc: 0.6171 - binary_accuracy: 0.5868 - loss: 0.7153
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 713ms/step - auc: 0.6129 - binary_accuracy: 0.5859 - loss: 0.7196
+Epoch 5: val_loss did not improve from 0.69708
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m27s[0m 848ms/step - auc: 0.6133 - binary_accuracy: 0.5864 - loss: 0.7193 - val_auc: 0.6270 - val_binary_accuracy: 0.5104 - val_loss: 0.8117 - learning_rate: 0.0010
+Epoch 6/12
+
+[1m 1/29[0m [37m====================[0m [1m33s[0m 1s/step - auc: 0.7146 - binary_accuracy: 0.6562 - loss: 0.5787
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m18s[0m 680ms/step - auc: 0.6637 - binary_accuracy: 0.6094 - loss: 0.6858
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m17s[0m 690ms/step - auc: 0.6717 - binary_accuracy: 0.6042 - loss: 0.6759
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m17s[0m 708ms/step - auc: 0.6481 - binary_accuracy: 0.5781 - loss: 0.7049
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m16s[0m 707ms/step - auc: 0.6165 - binary_accuracy: 0.5500 - loss: 0.7497
+[1m 6/29[0m [32m====[0m[37m================[0m [1m16s[0m 702ms/step - auc: 0.6072 - binary_accuracy: 0.5417 - loss: 0.7543
+[1m 7/29[0m [32m====[0m[37m================[0m [1m15s[0m 690ms/step - auc: 0.6077 - binary_accuracy: 0.5580 - loss: 0.7432
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m14s[0m 683ms/step - auc: 0.6124 - binary_accuracy: 0.5469 - loss: 0.7422
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m15s[0m 762ms/step - auc: 0.6106 - binary_accuracy: 0.5590 - loss: 0.7438
+[1m10/29[0m [32m======[0m[37m==============[0m [1m16s[0m 871ms/step - auc: 0.6171 - binary_accuracy: 0.5562 - loss: 0.7395
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m17s[0m 983ms/step - auc: 0.6157 - binary_accuracy: 0.5625 - loss: 0.7394
+[1m12/29[0m [32m========[0m[37m============[0m [1m19s[0m 1s/step - auc: 0.6115 - binary_accuracy: 0.5625 - loss: 0.7330   
+[1m13/29[0m [32m========[0m[37m============[0m [1m19s[0m 1s/step - auc: 0.6092 - binary_accuracy: 0.5721 - loss: 0.7301
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m22s[0m 2s/step - auc: 0.6072 - binary_accuracy: 0.5692 - loss: 0.7358
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m22s[0m 2s/step - auc: 0.6083 - binary_accuracy: 0.5688 - loss: 0.7328
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m20s[0m 2s/step - auc: 0.6134 - binary_accuracy: 0.5742 - loss: 0.7265
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m19s[0m 2s/step - auc: 0.6105 - binary_accuracy: 0.5735 - loss: 0.7284
+[1m18/29[0m [32m============[0m[37m========[0m [1m18s[0m 2s/step - auc: 0.6094 - binary_accuracy: 0.5712 - loss: 0.7264
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m17s[0m 2s/step - auc: 0.6019 - binary_accuracy: 0.5691 - loss: 0.7326
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m16s[0m 2s/step - auc: 0.6090 - binary_accuracy: 0.5734 - loss: 0.7275
+[1m21/29[0m [32m==============[0m[37m======[0m [1m14s[0m 2s/step - auc: 0.6118 - binary_accuracy: 0.5759 - loss: 0.7239
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m13s[0m 2s/step - auc: 0.6156 - binary_accuracy: 0.5781 - loss: 0.7197
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m11s[0m 2s/step - auc: 0.6147 - binary_accuracy: 0.5774 - loss: 0.7197
+[1m24/29[0m [32m================[0m[37m====[0m [1m9s[0m 2s/step - auc: 0.6186 - binary_accuracy: 0.5781 - loss: 0.7155 
+[1m25/29[0m [32m=================[0m[37m===[0m [1m8s[0m 2s/step - auc: 0.6154 - binary_accuracy: 0.5738 - loss: 0.7174
+[1m26/29[0m [32m=================[0m[37m===[0m [1m6s[0m 2s/step - auc: 0.6117 - binary_accuracy: 0.5697 - loss: 0.7207
+[1m27/29[0m [32m==================[0m[37m==[0m [1m4s[0m 2s/step - auc: 0.6048 - binary_accuracy: 0.5660 - loss: 0.7278
+[1m28/29[0m [32m===================[0m[37m=[0m [1m2s[0m 2s/step - auc: 0.6040 - binary_accuracy: 0.5658 - loss: 0.7277
+Epoch 6: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+
+Epoch 6: val_loss did not improve from 0.69708
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m69s[0m 2s/step - auc: 0.6048 - binary_accuracy: 0.5663 - loss: 0.7271 - val_auc: 0.6291 - val_binary_accuracy: 0.5208 - val_loss: 0.7462 - learning_rate: 0.0010
+Epoch 7/12
+
+[1m 1/29[0m [37m====================[0m [1m1:44[0m 4s/step - auc: 0.7560 - binary_accuracy: 0.6250 - loss: 0.5851
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m1:02[0m 2s/step - auc: 0.6855 - binary_accuracy: 0.5938 - loss: 0.6612
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m1:01[0m 2s/step - auc: 0.6244 - binary_accuracy: 0.5521 - loss: 0.6963
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m58s[0m 2s/step - auc: 0.6324 - binary_accuracy: 0.5703 - loss: 0.6967 
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m55s[0m 2s/step - auc: 0.5947 - binary_accuracy: 0.5437 - loss: 0.7289
+[1m 6/29[0m [32m====[0m[37m================[0m [1m52s[0m 2s/step - auc: 0.6187 - binary_accuracy: 0.5573 - loss: 0.7106
+[1m 7/29[0m [32m====[0m[37m================[0m [1m50s[0m 2s/step - auc: 0.6334 - binary_accuracy: 0.5670 - loss: 0.6922
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m48s[0m 2s/step - auc: 0.6438 - binary_accuracy: 0.5820 - loss: 0.6895
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m46s[0m 2s/step - auc: 0.6469 - binary_accuracy: 0.5868 - loss: 0.6875
+[1m10/29[0m [32m======[0m[37m==============[0m [1m44s[0m 2s/step - auc: 0.6428 - binary_accuracy: 0.5906 - loss: 0.6936
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m41s[0m 2s/step - auc: 0.6583 - binary_accuracy: 0.6023 - loss: 0.6801
+[1m12/29[0m [32m========[0m[37m============[0m [1m39s[0m 2s/step - auc: 0.6608 - binary_accuracy: 0.6094 - loss: 0.6787
+[1m13/29[0m [32m========[0m[37m============[0m [1m36s[0m 2s/step - auc: 0.6567 - binary_accuracy: 0.6106 - loss: 0.6848
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m34s[0m 2s/step - auc: 0.6557 - binary_accuracy: 0.6049 - loss: 0.6843
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m32s[0m 2s/step - auc: 0.6551 - binary_accuracy: 0.6104 - loss: 0.6832
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m29s[0m 2s/step - auc: 0.6601 - binary_accuracy: 0.6152 - loss: 0.6769
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m27s[0m 2s/step - auc: 0.6530 - binary_accuracy: 0.6103 - loss: 0.6835
+[1m18/29[0m [32m============[0m[37m========[0m [1m25s[0m 2s/step - auc: 0.6532 - binary_accuracy: 0.6128 - loss: 0.6832
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m22s[0m 2s/step - auc: 0.6564 - binary_accuracy: 0.6168 - loss: 0.6809
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m20s[0m 2s/step - auc: 0.6456 - binary_accuracy: 0.6062 - loss: 0.6922
+[1m21/29[0m [32m==============[0m[37m======[0m [1m18s[0m 2s/step - auc: 0.6444 - binary_accuracy: 0.6027 - loss: 0.6925
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m15s[0m 2s/step - auc: 0.6428 - binary_accuracy: 0.5994 - loss: 0.6938
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m13s[0m 2s/step - auc: 0.6428 - binary_accuracy: 0.6005 - loss: 0.6941
+[1m24/29[0m [32m================[0m[37m====[0m [1m10s[0m 2s/step - auc: 0.6440 - binary_accuracy: 0.6042 - loss: 0.6935
+[1m25/29[0m [32m=================[0m[37m===[0m [1m8s[0m 2s/step - auc: 0.6496 - binary_accuracy: 0.6075 - loss: 0.6883 
+[1m26/29[0m [32m=================[0m[37m===[0m [1m6s[0m 2s/step - auc: 0.6478 - binary_accuracy: 0.6058 - loss: 0.6901
+[1m27/29[0m [32m==================[0m[37m==[0m [1m3s[0m 2s/step - auc: 0.6512 - binary_accuracy: 0.6088 - loss: 0.6871
+[1m28/29[0m [32m===================[0m[37m=[0m [1m1s[0m 2s/step - auc: 0.6532 - binary_accuracy: 0.6127 - loss: 0.6846
+Epoch 7: val_loss did not improve from 0.69708
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m60s[0m 2s/step - auc: 0.6539 - binary_accuracy: 0.6132 - loss: 0.6839 - val_auc: 0.6293 - val_binary_accuracy: 0.5052 - val_loss: 0.7853 - learning_rate: 5.0000e-04
+Epoch 7: early stopping
+Restoring model weights from the end of the best epoch: 3.
+
+[FINE-TUNE] Phase 2: fine-tuning top 30 backbone layers - 20 epochs
+Epoch 1/20
+
+[1m 1/29[0m [37m====================[0m [1m5:14[0m 11s/step - auc: 0.5833 - binary_accuracy: 0.5312 - loss: 0.7026
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m25s[0m 927ms/step - auc: 0.5342 - binary_accuracy: 0.5000 - loss: 0.7922
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m23s[0m 922ms/step - auc: 0.5443 - binary_accuracy: 0.5104 - loss: 0.8015
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m21s[0m 876ms/step - auc: 0.5580 - binary_accuracy: 0.5312 - loss: 0.7819
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m20s[0m 848ms/step - auc: 0.5355 - binary_accuracy: 0.5000 - loss: 0.7985
+[1m 6/29[0m [32m====[0m[37m================[0m [1m19s[0m 831ms/step - auc: 0.4951 - binary_accuracy: 0.4844 - loss: 0.8193
+[1m 7/29[0m [32m====[0m[37m================[0m [1m18s[0m 821ms/step - auc: 0.4969 - binary_accuracy: 0.4821 - loss: 0.8251
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m17s[0m 813ms/step - auc: 0.5080 - binary_accuracy: 0.5000 - loss: 0.8134
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m16s[0m 810ms/step - auc: 0.4945 - binary_accuracy: 0.4861 - loss: 0.8267
+[1m10/29[0m [32m======[0m[37m==============[0m [1m15s[0m 807ms/step - auc: 0.4970 - binary_accuracy: 0.4812 - loss: 0.8286
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m14s[0m 807ms/step - auc: 0.5090 - binary_accuracy: 0.4915 - loss: 0.8140
+[1m12/29[0m [32m========[0m[37m============[0m [1m13s[0m 804ms/step - auc: 0.5225 - binary_accuracy: 0.4948 - loss: 0.8030
+[1m13/29[0m [32m========[0m[37m============[0m [1m12s[0m 799ms/step - auc: 0.5355 - binary_accuracy: 0.5048 - loss: 0.7873
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m11s[0m 795ms/step - auc: 0.5325 - binary_accuracy: 0.5089 - loss: 0.7827
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m11s[0m 792ms/step - auc: 0.5361 - binary_accuracy: 0.5146 - loss: 0.7830
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 789ms/step - auc: 0.5487 - binary_accuracy: 0.5293 - loss: 0.7671
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m9s[0m 787ms/step - auc: 0.5431 - binary_accuracy: 0.5239 - loss: 0.7734 
+[1m18/29[0m [32m============[0m[37m========[0m [1m8s[0m 784ms/step - auc: 0.5514 - binary_accuracy: 0.5278 - loss: 0.7666
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m7s[0m 783ms/step - auc: 0.5581 - binary_accuracy: 0.5329 - loss: 0.7614
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m7s[0m 783ms/step - auc: 0.5565 - binary_accuracy: 0.5359 - loss: 0.7615
+[1m21/29[0m [32m==============[0m[37m======[0m [1m6s[0m 783ms/step - auc: 0.5561 - binary_accuracy: 0.5327 - loss: 0.7623
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m5s[0m 782ms/step - auc: 0.5615 - binary_accuracy: 0.5398 - loss: 0.7578
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 781ms/step - auc: 0.5577 - binary_accuracy: 0.5367 - loss: 0.7597
+[1m24/29[0m [32m================[0m[37m====[0m [1m3s[0m 781ms/step - auc: 0.5562 - binary_accuracy: 0.5312 - loss: 0.7623
+[1m25/29[0m [32m=================[0m[37m===[0m [1m3s[0m 781ms/step - auc: 0.5610 - binary_accuracy: 0.5350 - loss: 0.7586
+[1m26/29[0m [32m=================[0m[37m===[0m [1m2s[0m 772ms/step - auc: 0.5602 - binary_accuracy: 0.5361 - loss: 0.7590
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 765ms/step - auc: 0.5608 - binary_accuracy: 0.5359 - loss: 0.7570
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 759ms/step - auc: 0.5597 - binary_accuracy: 0.5391 - loss: 0.7572
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 735ms/step - auc: 0.5600 - binary_accuracy: 0.5385 - loss: 0.7572
+Epoch 1: val_loss improved from None to 0.72188, saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\finetune_best.keras
+
+Epoch 1: finished saving model to D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\finetune_best.keras
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m38s[0m 962ms/step - auc: 0.5600 - binary_accuracy: 0.5385 - loss: 0.7572 - val_auc: 0.6248 - val_binary_accuracy: 0.5156 - val_loss: 0.7219 - learning_rate: 1.0000e-05
+Epoch 2/20
+
+[1m 1/29[0m [37m====================[0m [1m41s[0m 1s/step - auc: 0.6353 - binary_accuracy: 0.5938 - loss: 0.6639
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m23s[0m 868ms/step - auc: 0.6891 - binary_accuracy: 0.6406 - loss: 0.6396
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m22s[0m 869ms/step - auc: 0.6541 - binary_accuracy: 0.6146 - loss: 0.6537
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m20s[0m 835ms/step - auc: 0.6512 - binary_accuracy: 0.6094 - loss: 0.6658
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m19s[0m 815ms/step - auc: 0.6336 - binary_accuracy: 0.6000 - loss: 0.6770
+[1m 6/29[0m [32m====[0m[37m================[0m [1m18s[0m 802ms/step - auc: 0.6130 - binary_accuracy: 0.5781 - loss: 0.6904
+[1m 7/29[0m [32m====[0m[37m================[0m [1m17s[0m 792ms/step - auc: 0.6263 - binary_accuracy: 0.5893 - loss: 0.6836
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m16s[0m 794ms/step - auc: 0.6244 - binary_accuracy: 0.5781 - loss: 0.6900
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m15s[0m 792ms/step - auc: 0.6327 - binary_accuracy: 0.5868 - loss: 0.6827
+[1m10/29[0m [32m======[0m[37m==============[0m [1m14s[0m 789ms/step - auc: 0.6383 - binary_accuracy: 0.5938 - loss: 0.6799
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m14s[0m 786ms/step - auc: 0.6291 - binary_accuracy: 0.5824 - loss: 0.6885
+[1m12/29[0m [32m========[0m[37m============[0m [1m13s[0m 784ms/step - auc: 0.6250 - binary_accuracy: 0.5781 - loss: 0.6894
+[1m13/29[0m [32m========[0m[37m============[0m [1m12s[0m 781ms/step - auc: 0.6177 - binary_accuracy: 0.5697 - loss: 0.6971
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m11s[0m 779ms/step - auc: 0.6218 - binary_accuracy: 0.5781 - loss: 0.6955
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m10s[0m 779ms/step - auc: 0.6233 - binary_accuracy: 0.5792 - loss: 0.6947
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 779ms/step - auc: 0.6149 - binary_accuracy: 0.5703 - loss: 0.6989
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m9s[0m 779ms/step - auc: 0.6091 - binary_accuracy: 0.5662 - loss: 0.7046 
+[1m18/29[0m [32m============[0m[37m========[0m [1m8s[0m 778ms/step - auc: 0.6076 - binary_accuracy: 0.5642 - loss: 0.7041
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m7s[0m 779ms/step - auc: 0.6088 - binary_accuracy: 0.5674 - loss: 0.7049
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m6s[0m 778ms/step - auc: 0.6132 - binary_accuracy: 0.5734 - loss: 0.7016
+[1m21/29[0m [32m==============[0m[37m======[0m [1m6s[0m 778ms/step - auc: 0.6079 - binary_accuracy: 0.5685 - loss: 0.7089
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m5s[0m 777ms/step - auc: 0.6100 - binary_accuracy: 0.5682 - loss: 0.7083
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 777ms/step - auc: 0.6142 - binary_accuracy: 0.5747 - loss: 0.7055
+[1m24/29[0m [32m================[0m[37m====[0m [1m3s[0m 777ms/step - auc: 0.6130 - binary_accuracy: 0.5729 - loss: 0.7062
+[1m25/29[0m [32m=================[0m[37m===[0m [1m3s[0m 776ms/step - auc: 0.6169 - binary_accuracy: 0.5775 - loss: 0.7031
+[1m26/29[0m [32m=================[0m[37m===[0m [1m2s[0m 770ms/step - auc: 0.6238 - binary_accuracy: 0.5805 - loss: 0.6969
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 765ms/step - auc: 0.6218 - binary_accuracy: 0.5775 - loss: 0.6989
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 760ms/step - auc: 0.6233 - binary_accuracy: 0.5759 - loss: 0.6999
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 735ms/step - auc: 0.6238 - binary_accuracy: 0.5764 - loss: 0.6997
+Epoch 2: val_loss did not improve from 0.72188
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m26s[0m 879ms/step - auc: 0.6238 - binary_accuracy: 0.5764 - loss: 0.6997 - val_auc: 0.6255 - val_binary_accuracy: 0.5208 - val_loss: 0.7559 - learning_rate: 1.0000e-05
+Epoch 3/20
+
+[1m 1/29[0m [37m====================[0m [1m36s[0m 1s/step - auc: 0.6039 - binary_accuracy: 0.5312 - loss: 0.7048
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m24s[0m 905ms/step - auc: 0.5660 - binary_accuracy: 0.5312 - loss: 0.7290
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m23s[0m 885ms/step - auc: 0.5462 - binary_accuracy: 0.5417 - loss: 0.7664
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m21s[0m 872ms/step - auc: 0.5713 - binary_accuracy: 0.5547 - loss: 0.7423
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m20s[0m 852ms/step - auc: 0.5640 - binary_accuracy: 0.5437 - loss: 0.7481
+[1m 6/29[0m [32m====[0m[37m================[0m [1m19s[0m 832ms/step - auc: 0.5870 - binary_accuracy: 0.5521 - loss: 0.7258
+[1m 7/29[0m [32m====[0m[37m================[0m [1m18s[0m 826ms/step - auc: 0.5885 - binary_accuracy: 0.5491 - loss: 0.7207
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m17s[0m 817ms/step - auc: 0.5999 - binary_accuracy: 0.5664 - loss: 0.7053
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m16s[0m 811ms/step - auc: 0.6031 - binary_accuracy: 0.5660 - loss: 0.7054
+[1m10/29[0m [32m======[0m[37m==============[0m [1m15s[0m 808ms/step - auc: 0.6011 - binary_accuracy: 0.5594 - loss: 0.7094
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m14s[0m 806ms/step - auc: 0.6096 - binary_accuracy: 0.5682 - loss: 0.7061
+[1m12/29[0m [32m========[0m[37m============[0m [1m13s[0m 804ms/step - auc: 0.6020 - binary_accuracy: 0.5651 - loss: 0.7143
+[1m13/29[0m [32m========[0m[37m============[0m [1m12s[0m 803ms/step - auc: 0.6023 - binary_accuracy: 0.5625 - loss: 0.7148
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m12s[0m 801ms/step - auc: 0.6006 - binary_accuracy: 0.5580 - loss: 0.7157
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m11s[0m 799ms/step - auc: 0.5971 - binary_accuracy: 0.5562 - loss: 0.7148
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m10s[0m 800ms/step - auc: 0.5980 - binary_accuracy: 0.5527 - loss: 0.7105
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m9s[0m 801ms/step - auc: 0.5982 - binary_accuracy: 0.5551 - loss: 0.7123 
+[1m18/29[0m [32m============[0m[37m========[0m [1m8s[0m 804ms/step - auc: 0.6054 - binary_accuracy: 0.5590 - loss: 0.7074
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m8s[0m 803ms/step - auc: 0.6074 - binary_accuracy: 0.5609 - loss: 0.7048
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m7s[0m 803ms/step - auc: 0.6120 - binary_accuracy: 0.5609 - loss: 0.7004
+[1m21/29[0m [32m==============[0m[37m======[0m [1m6s[0m 802ms/step - auc: 0.6171 - binary_accuracy: 0.5640 - loss: 0.6961
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m5s[0m 802ms/step - auc: 0.6162 - binary_accuracy: 0.5625 - loss: 0.6976
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m4s[0m 801ms/step - auc: 0.6255 - binary_accuracy: 0.5707 - loss: 0.6905
+[1m24/29[0m [32m================[0m[37m====[0m [1m4s[0m 801ms/step - auc: 0.6160 - binary_accuracy: 0.5638 - loss: 0.6990
+[1m25/29[0m [32m=================[0m[37m===[0m [1m3s[0m 799ms/step - auc: 0.6174 - binary_accuracy: 0.5650 - loss: 0.6985
+[1m26/29[0m [32m=================[0m[37m===[0m [1m2s[0m 790ms/step - auc: 0.6200 - binary_accuracy: 0.5661 - loss: 0.6971
+[1m27/29[0m [32m==================[0m[37m==[0m [1m1s[0m 783ms/step - auc: 0.6209 - binary_accuracy: 0.5683 - loss: 0.6969
+[1m28/29[0m [32m===================[0m[37m=[0m [1m0s[0m 774ms/step - auc: 0.6216 - binary_accuracy: 0.5681 - loss: 0.6966
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 749ms/step - auc: 0.6218 - binary_accuracy: 0.5686 - loss: 0.6964
+Epoch 3: val_loss did not improve from 0.72188
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m26s[0m 897ms/step - auc: 0.6218 - binary_accuracy: 0.5686 - loss: 0.6964 - val_auc: 0.6241 - val_binary_accuracy: 0.5104 - val_loss: 0.7833 - learning_rate: 1.0000e-05
+Epoch 4/20
+
+[1m 1/29[0m [37m====================[0m [1m44s[0m 2s/step - auc: 0.7814 - binary_accuracy: 0.7188 - loss: 0.6652
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m24s[0m 900ms/step - auc: 0.7045 - binary_accuracy: 0.6719 - loss: 0.6937
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m21s[0m 845ms/step - auc: 0.6869 - binary_accuracy: 0.6562 - loss: 0.6769
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m20s[0m 817ms/step - auc: 0.6732 - binary_accuracy: 0.6328 - loss: 0.6791
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m19s[0m 812ms/step - auc: 0.6760 - binary_accuracy: 0.6438 - loss: 0.6669
+[1m 6/29[0m [32m====[0m[37m================[0m [1m18s[0m 805ms/step - auc: 0.6523 - binary_accuracy: 0.6250 - loss: 0.6742
+[1m 7/29[0m [32m====[0m[37m================[0m [1m17s[0m 800ms/step - auc: 0.6405 - binary_accuracy: 0.6161 - loss: 0.6869
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m16s[0m 793ms/step - auc: 0.6455 - binary_accuracy: 0.6172 - loss: 0.6813
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m15s[0m 795ms/step - auc: 0.6347 - binary_accuracy: 0.6007 - loss: 0.6865
+[1m10/29[0m [32m======[0m[37m==============[0m [1m15s[0m 827ms/step - auc: 0.6359 - binary_accuracy: 0.6000 - loss: 0.6862
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m17s[0m 972ms/step - auc: 0.6391 - binary_accuracy: 0.6051 - loss: 0.6834
+[1m12/29[0m [32m========[0m[37m============[0m [1m18s[0m 1s/step - auc: 0.6383 - binary_accuracy: 0.6042 - loss: 0.6851   
+[1m13/29[0m [32m========[0m[37m============[0m [1m19s[0m 1s/step - auc: 0.6351 - binary_accuracy: 0.5962 - loss: 0.6879
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m19s[0m 1s/step - auc: 0.6383 - binary_accuracy: 0.5982 - loss: 0.6842
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m19s[0m 1s/step - auc: 0.6503 - binary_accuracy: 0.6000 - loss: 0.6746
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m18s[0m 1s/step - auc: 0.6436 - binary_accuracy: 0.5918 - loss: 0.6796
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m18s[0m 2s/step - auc: 0.6533 - binary_accuracy: 0.6011 - loss: 0.6725
+[1m18/29[0m [32m============[0m[37m========[0m [1m17s[0m 2s/step - auc: 0.6553 - binary_accuracy: 0.6007 - loss: 0.6693
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m15s[0m 2s/step - auc: 0.6549 - binary_accuracy: 0.5970 - loss: 0.6693
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m14s[0m 2s/step - auc: 0.6535 - binary_accuracy: 0.6000 - loss: 0.6712
+[1m21/29[0m [32m==============[0m[37m======[0m [1m13s[0m 2s/step - auc: 0.6473 - binary_accuracy: 0.5938 - loss: 0.6756
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m11s[0m 2s/step - auc: 0.6497 - binary_accuracy: 0.5966 - loss: 0.6748
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m10s[0m 2s/step - auc: 0.6416 - binary_accuracy: 0.5910 - loss: 0.6803
+[1m24/29[0m [32m================[0m[37m====[0m [1m8s[0m 2s/step - auc: 0.6353 - binary_accuracy: 0.5859 - loss: 0.6844 
+[1m25/29[0m [32m=================[0m[37m===[0m [1m7s[0m 2s/step - auc: 0.6349 - binary_accuracy: 0.5863 - loss: 0.6849
+[1m26/29[0m [32m=================[0m[37m===[0m [1m5s[0m 2s/step - auc: 0.6370 - binary_accuracy: 0.5901 - loss: 0.6831
+[1m27/29[0m [32m==================[0m[37m==[0m [1m3s[0m 2s/step - auc: 0.6427 - binary_accuracy: 0.5949 - loss: 0.6786
+[1m28/29[0m [32m===================[0m[37m=[0m [1m1s[0m 2s/step - auc: 0.6401 - binary_accuracy: 0.5949 - loss: 0.6797
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 2s/step - auc: 0.6401 - binary_accuracy: 0.5953 - loss: 0.6797
+Epoch 4: ReduceLROnPlateau reducing learning rate to 4.999999873689376e-06.
+
+Epoch 4: val_loss did not improve from 0.72188
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m63s[0m 2s/step - auc: 0.6401 - binary_accuracy: 0.5953 - loss: 0.6797 - val_auc: 0.6296 - val_binary_accuracy: 0.5104 - val_loss: 0.8297 - learning_rate: 1.0000e-05
+Epoch 5/20
+
+[1m 1/29[0m [37m====================[0m [1m2:34[0m 6s/step - auc: 0.7753 - binary_accuracy: 0.5312 - loss: 0.6262
+[1m 2/29[0m [32m=[0m[37m===================[0m [1m59s[0m 2s/step - auc: 0.7282 - binary_accuracy: 0.5781 - loss: 0.6535 
+[1m 3/29[0m [32m==[0m[37m==================[0m [1m1:02[0m 2s/step - auc: 0.7074 - binary_accuracy: 0.5938 - loss: 0.6420
+[1m 4/29[0m [32m==[0m[37m==================[0m [1m1:00[0m 2s/step - auc: 0.6893 - binary_accuracy: 0.6172 - loss: 0.6452
+[1m 5/29[0m [32m===[0m[37m=================[0m [1m1:04[0m 3s/step - auc: 0.6910 - binary_accuracy: 0.6250 - loss: 0.6441
+[1m 6/29[0m [32m====[0m[37m================[0m [1m1:01[0m 3s/step - auc: 0.6998 - binary_accuracy: 0.6250 - loss: 0.6343
+[1m 7/29[0m [32m====[0m[37m================[0m [1m58s[0m 3s/step - auc: 0.7046 - binary_accuracy: 0.6295 - loss: 0.6285 
+[1m 8/29[0m [32m=====[0m[37m===============[0m [1m55s[0m 3s/step - auc: 0.7009 - binary_accuracy: 0.6328 - loss: 0.6335
+[1m 9/29[0m [32m======[0m[37m==============[0m [1m53s[0m 3s/step - auc: 0.7053 - binary_accuracy: 0.6424 - loss: 0.6291
+[1m10/29[0m [32m======[0m[37m==============[0m [1m50s[0m 3s/step - auc: 0.6950 - binary_accuracy: 0.6281 - loss: 0.6400
+[1m11/29[0m [32m=======[0m[37m=============[0m [1m45s[0m 3s/step - auc: 0.6954 - binary_accuracy: 0.6335 - loss: 0.6360
+[1m12/29[0m [32m========[0m[37m============[0m [1m40s[0m 2s/step - auc: 0.6889 - binary_accuracy: 0.6302 - loss: 0.6403
+[1m13/29[0m [32m========[0m[37m============[0m [1m36s[0m 2s/step - auc: 0.6855 - binary_accuracy: 0.6250 - loss: 0.6440
+[1m14/29[0m [32m=========[0m[37m===========[0m [1m32s[0m 2s/step - auc: 0.6714 - binary_accuracy: 0.6094 - loss: 0.6533
+[1m15/29[0m [32m==========[0m[37m==========[0m [1m29s[0m 2s/step - auc: 0.6708 - binary_accuracy: 0.6042 - loss: 0.6546
+[1m16/29[0m [32m===========[0m[37m=========[0m [1m25s[0m 2s/step - auc: 0.6685 - binary_accuracy: 0.6035 - loss: 0.6556
+[1m17/29[0m [32m===========[0m[37m=========[0m [1m23s[0m 2s/step - auc: 0.6759 - binary_accuracy: 0.6048 - loss: 0.6486
+[1m18/29[0m [32m============[0m[37m========[0m [1m20s[0m 2s/step - auc: 0.6776 - binary_accuracy: 0.6076 - loss: 0.6486
+[1m19/29[0m [32m=============[0m[37m=======[0m [1m17s[0m 2s/step - auc: 0.6739 - binary_accuracy: 0.6069 - loss: 0.6499
+[1m20/29[0m [32m=============[0m[37m=======[0m [1m15s[0m 2s/step - auc: 0.6763 - binary_accuracy: 0.6109 - loss: 0.6485
+[1m21/29[0m [32m==============[0m[37m======[0m [1m13s[0m 2s/step - auc: 0.6726 - binary_accuracy: 0.6086 - loss: 0.6515
+[1m22/29[0m [32m===============[0m[37m=====[0m [1m11s[0m 2s/step - auc: 0.6719 - binary_accuracy: 0.6094 - loss: 0.6511
+[1m23/29[0m [32m===============[0m[37m=====[0m [1m9s[0m 2s/step - auc: 0.6693 - binary_accuracy: 0.6073 - loss: 0.6525 
+[1m24/29[0m [32m================[0m[37m====[0m [1m7s[0m 2s/step - auc: 0.6765 - binary_accuracy: 0.6120 - loss: 0.6467
+[1m25/29[0m [32m=================[0m[37m===[0m [1m6s[0m 2s/step - auc: 0.6717 - binary_accuracy: 0.6062 - loss: 0.6508
+[1m26/29[0m [32m=================[0m[37m===[0m [1m4s[0m 2s/step - auc: 0.6786 - binary_accuracy: 0.6142 - loss: 0.6450
+[1m27/29[0m [32m==================[0m[37m==[0m [1m3s[0m 2s/step - auc: 0.6788 - binary_accuracy: 0.6100 - loss: 0.6451
+[1m28/29[0m [32m===================[0m[37m=[0m [1m1s[0m 2s/step - auc: 0.6752 - binary_accuracy: 0.6071 - loss: 0.6480
+[1m29/29[0m [32m====================[0m[37m[0m [1m0s[0m 1s/step - auc: 0.6746 - binary_accuracy: 0.6065 - loss: 0.6485
+Epoch 5: val_loss did not improve from 0.72188
+
+[1m29/29[0m [32m====================[0m[37m[0m [1m54s[0m 2s/step - auc: 0.6746 - binary_accuracy: 0.6065 - loss: 0.6485 - val_auc: 0.6303 - val_binary_accuracy: 0.5052 - val_loss: 0.8416 - learning_rate: 5.0000e-06
+Epoch 5: early stopping
+Restoring model weights from the end of the best epoch: 1.
+
+[1m1/6[0m [32m===[0m[37m=================[0m [1m13s[0m 3s/step
+[1m2/6[0m [32m======[0m[37m==============[0m [1m2s[0m 668ms/step
+[1m3/6[0m [32m==========[0m[37m==========[0m [1m1s[0m 666ms/step
+[1m4/6[0m [32m=============[0m[37m=======[0m [1m1s[0m 595ms/step
+[1m5/6[0m [32m================[0m[37m====[0m [1m0s[0m 573ms/step
+[1m6/6[0m [32m====================[0m[37m[0m [1m0s[0m 610ms/step
+[1m6/6[0m [32m====================[0m[37m[0m [1m6s[0m 613ms/step
+
+========================================================================
+  THRESHOLD SELECTION (validation set only)
+========================================================================
+  selected threshold = 0.300
+  validation balanced_accuracy@threshold = 0.6562
+  validation healthy_recall = 0.5208
+  validation malnourished_recall = 0.7917
+  validation roc_auc = 0.6245
+  fine_tune_phase_completed = True
+
+[TEST INFERENCE] Keras prediction on untouched test set
+
+[1m1/7[0m [32m==[0m[37m==================[0m [1m18s[0m 3s/step
+[1m2/7[0m [32m=====[0m[37m===============[0m [1m10s[0m 2s/step
+[1m3/7[0m [32m========[0m[37m============[0m [1m6s[0m 2s/step 
+[1m4/7[0m [32m===========[0m[37m=========[0m [1m3s[0m 1s/step
+[1m5/7[0m [32m==============[0m[37m======[0m [1m2s[0m 1s/step
+[1m6/7[0m [32m=================[0m[37m===[0m [1m0s[0m 960ms/step
+[1m7/7[0m [32m====================[0m[37m[0m [1m0s[0m 1s/step   
+[1m7/7[0m [32m====================[0m[37m[0m [1m9s[0m 1s/step
+
+[TFLITE] Converting finetuned model
+Saved artifact at 'C:\Users\Apeksha\AppData\Local\Temp\tmpb9hj5acb'. The following endpoints are available:
+
+* Endpoint 'serve'
+  args_0 (POSITIONAL_ONLY): TensorSpec(shape=(None, 224, 224, 3), dtype=tf.float32, name='input_image')
+Output Type:
+  TensorSpec(shape=(None, 1), dtype=tf.float32, name=None)
+Captures:
+  2765146922576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146922768: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146925264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146924112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146924880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146921616: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146922000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146924496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146925456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146924304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146924688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146923344: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146922960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146922192: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146925072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146925840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146923920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146927184: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146923536: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146928144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146927568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146927760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146927952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146925648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146929104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146928528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146928720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146928912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146926416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146930064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146929488: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146929680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146930448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146927376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146931024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146929872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146930640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146928336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146930832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146930256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765146929296: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431345232: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431345424: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431344656: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431344080: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431343888: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431345040: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431344848: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431344464: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346384: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431345808: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346192: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431343696: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431347344: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346768: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431347152: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431344272: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431348304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431347728: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431347920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431348112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431345616: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431349264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431348688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431348880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431349072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431346576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431349648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431349840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431347536: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431351184: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431348496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431352144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431351568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431351760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431351952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431349456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431353104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431352528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431352720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431352912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431350416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431354064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431353488: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431353680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431353872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431351376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431354448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431354640: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431354832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431352336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355984: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355408: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355600: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431353296: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431356944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431356368: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431356560: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431356752: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431354256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431357904: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431357328: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431357520: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431357712: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431355216: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431358864: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431358288: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431358480: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431359248: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431356176: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431359824: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431358672: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431359440: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431357136: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431359632: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431359056: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764431358096: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253150288: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253150480: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253149712: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253149136: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253148944: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253150096: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253149904: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253149520: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253151440: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253150864: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253151056: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253151248: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253148752: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152400: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253151824: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152016: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152208: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253149328: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253153360: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152784: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152976: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253153168: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253150672: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253154320: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253153744: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253153936: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253154128: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253151632: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253155280: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253154704: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253154896: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253155088: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253152592: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253156240: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253155664: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253155856: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253156048: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253153552: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157200: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253156624: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253156816: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157008: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253154512: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253158160: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157584: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157776: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157968: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253155472: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253159120: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253158544: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253158736: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253158928: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253156432: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253160080: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253159504: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253159696: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253159888: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253157392: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253161040: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253160464: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253160656: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253160848: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253158352: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162000: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253161424: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253161616: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253161808: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253159312: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162960: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162384: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162576: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162768: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253160272: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253163920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253163344: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253163536: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253164304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253161232: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253164880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253163728: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253164496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253162192: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253164688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253164112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2765253163152: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286117456: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286117648: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286116880: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286116304: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286116112: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286117264: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286117072: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286116688: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118608: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118032: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118224: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118416: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286115920: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286119568: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118992: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286119184: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286119376: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286116496: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286120528: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286119952: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286120144: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286120336: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286117840: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286121488: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286120912: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286121104: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286121296: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286118800: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286122448: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286121872: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286122064: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286122256: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286119760: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286123408: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286122832: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286123024: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286123216: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286120720: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286124368: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286123792: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286123984: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286124176: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286121680: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286125328: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286125712: TensorSpec(shape=(), dtype=tf.resource, name=None)
+  2764286125520: TensorSpec(shape=(), dtype=tf.resource, name=None)
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1790058966.629806    8424 tf_tfl_flatbuffer_helpers.cc:365] Ignored output_format.
+W0000 00:00:1790058966.631124    8424 tf_tfl_flatbuffer_helpers.cc:368] Ignored drop_control_dependency.
+2026-09-22 12:06:06.633433: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: C:\Users\Apeksha\AppData\Local\Temp\tmpb9hj5acb
+2026-09-22 12:06:06.653265: I tensorflow/cc/saved_model/reader.cc:52] Reading meta graph with tags { serve }
+2026-09-22 12:06:06.653434: I tensorflow/cc/saved_model/reader.cc:147] Reading SavedModel debug info (if present) from: C:\Users\Apeksha\AppData\Local\Temp\tmpb9hj5acb
+I0000 00:00:1790058966.811852    8424 mlir_graph_optimization_pass.cc:425] MLIR V1 optimization pass is not enabled
+2026-09-22 12:06:06.837449: I tensorflow/cc/saved_model/loader.cc:236] Restoring SavedModel bundle.
+2026-09-22 12:06:07.825431: I tensorflow/cc/saved_model/loader.cc:220] Running initialization op on SavedModel bundle at path: C:\Users\Apeksha\AppData\Local\Temp\tmpb9hj5acb
+2026-09-22 12:06:08.088842: I tensorflow/cc/saved_model/loader.cc:471] SavedModel load for tags { serve }; Status: success: OK. Took 1455340 microseconds.
+2026-09-22 12:06:08.395705: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+D:\Final-Year-Project\.venv\Lib\site-packages\tensorflow\lite\python\interpreter.py:457: UserWarning:     Warning: tf.lite.Interpreter is deprecated and is scheduled for deletion in
+    TF 2.20. Please use the LiteRT interpreter from the ai_edge_litert package.
+    See the [migration guide](https://ai.google.dev/edge/litert/migration)
+    for details.
+    
+  warnings.warn(_INTERPRETER_DELETION_WARNING)
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[TFLITE] Running inference on untouched test set
+
+========================================================================
+  TEST-SET RESULTS (held-out children, frontal1 only, threshold=0.300)
+========================================================================
+
+  [image level (Keras)]  n=193
+    accuracy                = 0.5181
+    balanced accuracy       = 0.5190
+    precision(malnourished) = 0.5118
+    recall(malnourished)    = 0.6771
+    F1(malnourished)        = 0.5830
+    recall(healthy)         = 0.3608
+    ROC-AUC                 = 0.5602
+    confusion matrix (rows=true, cols=predicted):
+      [[TN=35, FP=62],
+       [FN=31, TP=65]]
+
+  [image level (TFLite)]  n=193
+    accuracy                = 0.5492
+    balanced accuracy       = 0.5503
+    precision(malnourished) = 0.5333
+    recall(malnourished)    = 0.7500
+    F1(malnourished)        = 0.6234
+    recall(healthy)         = 0.3505
+    ROC-AUC                 = 0.5709
+    confusion matrix (rows=true, cols=predicted):
+      [[TN=34, FP=63],
+       [FN=24, TP=72]]
+
+  [child level (Keras)]  n=193
+    accuracy                = 0.5181
+    balanced accuracy       = 0.5190
+    precision(malnourished) = 0.5118
+    recall(malnourished)    = 0.6771
+    F1(malnourished)        = 0.5830
+    recall(healthy)         = 0.3608
+    ROC-AUC                 = 0.5602
+    confusion matrix (rows=true, cols=predicted):
+      [[TN=35, FP=62],
+       [FN=31, TP=65]]
+
+  [child level (TFLite)]  n=193
+    accuracy                = 0.5492
+    balanced accuracy       = 0.5503
+    precision(malnourished) = 0.5333
+    recall(malnourished)    = 0.7500
+    F1(malnourished)        = 0.6234
+    recall(healthy)         = 0.3505
+    ROC-AUC                 = 0.5709
+    confusion matrix (rows=true, cols=predicted):
+      [[TN=34, FP=63],
+       [FN=24, TP=72]]
+
+  SUBGROUP RECALL (test children)
+
+    [underweight]  test_children=57  test_images=57
+      image-level keras recall = 0.6842
+      image-level tflite recall = 0.7368
+      keras mean probability = 0.3632
+      tflite mean probability = 0.3886
+
+    [stunted]  test_children=7  test_images=7
+      image-level keras recall = 0.7143
+      image-level tflite recall = 0.8571
+      keras mean probability = 0.3658
+      tflite mean probability = 0.3743
+
+    [stunted and underweight]  test_children=32  test_images=32
+      image-level keras recall = 0.6562
+      image-level tflite recall = 0.7500
+      keras mean probability = 0.3768
+      tflite mean probability = 0.3896
+
+  KERAS vs TFLITE DIFFERENCES (Keras - TFLite)
+
+    [image_level]
+      accuracy_diff = -0.031088
+      balanced_accuracy_diff = -0.031304
+      recall_malnourished_diff = -0.072917
+      roc_auc_diff = -0.010631
+
+    [child_level]
+      accuracy_diff = -0.031088
+      balanced_accuracy_diff = -0.031304
+      recall_malnourished_diff = -0.072917
+      roc_auc_diff = -0.010631
+
+========================================================================
+  ARTIFACTS
+========================================================================
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\finetuned_binary_child_level.keras
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\finetuned_binary_child_level.tflite
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\artifacts\epoch_history.json
+  RESULTS:
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\results\finetune_binary_child_level_metrics.json
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\results\confusion_matrices\image_level_keras.txt
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\results\confusion_matrices\image_level_tflite.txt
+  D:\Final-Year-Project\Poshaneyemn\experiments\image_model_frontal1_finetuned\results\confusion_matrices\child_level_keras.txt
+
+Elapsed: 583.9 seconds

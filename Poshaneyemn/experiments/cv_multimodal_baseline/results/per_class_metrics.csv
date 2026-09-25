@@ -1,0 +1,29 @@
+model_name,modality_arm,split,class_index,class_name,precision,recall,f1_score,support
+RandomForest_Balanced,Arm A: Measurement-Only,test,0,healthy,0.9361,0.9111,0.9234,225
+RandomForest_Balanced,Arm A: Measurement-Only,test,1,underweight,0.5846,0.717,0.6441,53
+RandomForest_Balanced,Arm A: Measurement-Only,test,2,stunted,0.3333,0.3333,0.3333,9
+RandomForest_Balanced,Arm A: Measurement-Only,test,3,stunted and underweight,0.6071,0.5,0.5484,34
+SVM_RBF_Balanced,Arm A: Measurement-Only,test,0,healthy,0.9769,0.7511,0.8492,225
+SVM_RBF_Balanced,Arm A: Measurement-Only,test,1,underweight,0.6389,0.8679,0.736,53
+SVM_RBF_Balanced,Arm A: Measurement-Only,test,2,stunted,0.1364,0.6667,0.2264,9
+SVM_RBF_Balanced,Arm A: Measurement-Only,test,3,stunted and underweight,0.8125,0.7647,0.7879,34
+RandomForest_Balanced,Arm B: CV-Only,test,0,healthy,0.7447,0.7778,0.7609,225
+RandomForest_Balanced,Arm B: CV-Only,test,1,underweight,0.1961,0.1887,0.1923,53
+RandomForest_Balanced,Arm B: CV-Only,test,2,stunted,0.0,0.0,0.0,9
+RandomForest_Balanced,Arm B: CV-Only,test,3,stunted and underweight,0.2333,0.2059,0.2188,34
+SVM_RBF_Balanced,Arm B: CV-Only,test,0,healthy,0.7518,0.4578,0.5691,225
+SVM_RBF_Balanced,Arm B: CV-Only,test,1,underweight,0.2059,0.3962,0.271,53
+SVM_RBF_Balanced,Arm B: CV-Only,test,2,stunted,0.0345,0.1111,0.0526,9
+SVM_RBF_Balanced,Arm B: CV-Only,test,3,stunted and underweight,0.1509,0.2353,0.1839,34
+RandomForest_Balanced,Arm C: Measurement + CV,test,0,healthy,0.8894,0.9289,0.9087,225
+RandomForest_Balanced,Arm C: Measurement + CV,test,1,underweight,0.5968,0.6981,0.6435,53
+RandomForest_Balanced,Arm C: Measurement + CV,test,2,stunted,0.0,0.0,0.0,9
+RandomForest_Balanced,Arm C: Measurement + CV,test,3,stunted and underweight,0.5714,0.3529,0.4364,34
+SVM_RBF_Balanced,Arm C: Measurement + CV,test,0,healthy,0.9661,0.76,0.8507,225
+SVM_RBF_Balanced,Arm C: Measurement + CV,test,1,underweight,0.5195,0.7547,0.6154,53
+SVM_RBF_Balanced,Arm C: Measurement + CV,test,2,stunted,0.129,0.4444,0.2,9
+SVM_RBF_Balanced,Arm C: Measurement + CV,test,3,stunted and underweight,0.4722,0.5,0.4857,34
+MobileNetV2_TFLite,Diagnostic Arm D: Image-Only (Existing),test,0,healthy,0.7079,0.9911,0.8259,225
+MobileNetV2_TFLite,Diagnostic Arm D: Image-Only (Existing),test,1,underweight,0.0,0.0,0.0,53
+MobileNetV2_TFLite,Diagnostic Arm D: Image-Only (Existing),test,2,stunted,0.5,0.1111,0.1818,9
+MobileNetV2_TFLite,Diagnostic Arm D: Image-Only (Existing),test,3,stunted and underweight,0.0,0.0,0.0,34
