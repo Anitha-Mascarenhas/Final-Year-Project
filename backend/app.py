@@ -1,9 +1,13 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import shutil
 
-from predict import run_prediction
+from hybrid_predict import (
+    extract_anthropometrics,
+    run_hybrid_prediction,
+    warm_up as hybrid_warm_up,
+)
 from routers.auth import router as auth_router
 from routers.health_worker import router as health_worker_router
 from routers.screening import router as screening_router
@@ -53,13 +57,57 @@ def health():
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(
+    file: UploadFile = File(...),
+    age_months: str = Form(None),
+    age_years: str = Form(None),
+    gender: str = Form(None),
+    height_cm: str = Form(None),
+    weight_kg: str = Form(None),
+    head_circumference_cm: str = Form(None),
+    waist_cm: str = Form(None),
+    muac_cm: str = Form(None),
+):
+    """Run the PRODUCTION hybrid pipeline (168-feature fusion + portable SVM).
 
+    The image is required; all anthropometric fields are optional form fields.
+    Missing/invalid values follow the exact training convention (median imputation
+    with training-split statistics). The response JSON contract is unchanged:
+    prediction / confidence / probabilities (+ status / risk / recommendation),
+    so the existing Flutter result UI keeps working as-is.
+    """
     image_path = UPLOAD_DIR / file.filename
 
     with image_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    result = run_prediction(str(image_path))
+    anthropometrics = extract_anthropometrics(
+        {
+            "age_months": age_months,
+            "age_years": age_years,
+            "gender": gender,
+            "height_cm": height_cm,
+            "weight_kg": weight_kg,
+            "head_circumference_cm": head_circumference_cm,
+            "waist_cm": waist_cm,
+            "muac_cm": muac_cm,
+        }
+    )
+
+    image_bytes = image_path.read_bytes()
+
+    # Temporary data-flow trace (remove after verification)
+    print(f"[BACKEND] image_bytes={len(image_bytes)} height_cm={height_cm!r} "
+          f"weight_kg={weight_kg!r} age_years={age_years!r} age_months={age_months!r} "
+          f"gender={gender!r}", flush=True)
+
+    result = run_hybrid_prediction(image_bytes, anthropometrics)
 
     return result
+
+
+@app.on_event("startup")
+def _load_hybrid_models():
+    # Eagerly load the frozen production artifacts so the first scan doesn't
+    # pay the model-loading cost (and load errors surface in server logs).
+    hybrid_warm_up()

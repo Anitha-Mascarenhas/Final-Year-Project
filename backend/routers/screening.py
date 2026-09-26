@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from predict import run_prediction
+from hybrid_predict import run_hybrid_prediction, extract_anthropometrics
 
 from security.dependencies import get_current_user
 
@@ -71,8 +71,16 @@ async def predict_for_child(
         shutil.copyfileobj(file.file, buffer)
 
     try:
-        # 6. Run existing ML prediction
-        prediction_result = run_prediction(str(image_path))
+        # 6. Run the PRODUCTION hybrid ML prediction (168-feature fusion + SVM)
+        prediction_result = run_hybrid_prediction(
+            image_path.read_bytes(),
+            extract_anthropometrics({
+                "gender": child.get("gender"),
+                "age_years": child.get("age"),
+                "height_cm": child.get("height"),
+                "weight_kg": child.get("weight"),
+            }),
+        )
 
         # 7. Save prediction to MongoDB
         screening = await create_screening(

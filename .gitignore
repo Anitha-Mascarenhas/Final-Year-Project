@@ -1,40 +1,70 @@
-# Python
 __pycache__/
 *.py[cod]
-
-# Virtual environments
 venv/
 venv311/
 **/venv/
 **/venv311/
 .venv/
 backend/.venv/
+backend/.venv_hybrid/
 Poshaneyemn/.venv_test/
-
-# Environment files
 backend/.env
 /backend/.env.venv/
-
-# Large datasets
 dataset/
 **/dataset/
-
-# Temporary folders
 temp_mediapipe_download*/
 **/temp_mediapipe_download*/
-
-# IDE
 .vscode/
 .idea/
-
-# Training logs
 **/outputs/logs/
-
-# Flutter videos
 poshaneye_flutter/assets/videos/*.mp4
-
-# Large generated training caches
 Poshaneyemn/experiments/image_model_binary_child_level/cache/
-
-# Large dataset archives
 Poshaneyemn/experiments/upper_arm_segmentation/*.zip
+# Generated Android/Kotlin files
+poshaneye_flutter/android/.kotlin/
+poshaneye_flutter/android/.gradle/
+poshaneye_flutter/android/local.properties
+
+# Backend virtual environments
+backend/.venv_hybrid/
+backend/.venv/
+
+# Large upper-arm segmentation training data
+Poshaneyemn/experiments/upper_arm_segmentation/images/
+Poshaneyemn/experiments/upper_arm_segmentation/*.zip
+
+# Large training checkpoints / weights
+**/*.weights.h5
+**/*.keras
+**/last_model.weights.h5
+**/best_model.weights.h5
+
+# Large training/model experiment artifacts
+Poshaneyemn/experiments/image_model_v2/artifacts/
+Poshaneyemn/experiments/image_model_frontal1_only/artifacts/
+Poshaneyemn/experiments/image_model_frontal1_finetuned/artifacts/
+Poshaneyemn/experiments/image_model_binary_child_level/artifacts/
+Poshaneyemn/experiments/image_model_frontal1_only/cache/
+
+# Generated logs
+**/*.log
+backend/device_logcat.log
+
+# Large generated datasets/caches
+**/*.npy
+**/*.npz
+**/*.pkl
+# Backend uploaded/test images and generated logs
+backend/uploads/
+backend/*.log
+backend/*.log.*
+# Large training checkpoints / experiment artifacts
+**/*.weights.h5
+**/*.keras
+**/project_structure.txt
+poshaneye_flutter/android/app/src/androidTest/resources/
+Poshaneyemn/experiments/image_model_binary_child_level/artifacts/*.tflite
+Poshaneyemn/experiments/image_model_frontal1_only/artifacts/*.tflite
+# Generated experiment outputs
+Poshaneyemn/experiments/cv_features_clean/results/cv_features_clean.csv
+Poshaneyemn/experiments/upper_arm_segmentation/contact_sheet_20.png

@@ -80,11 +80,32 @@ class HybridProductionPredictor:
         # 5. identical preprocessing
         x = self.preprocessor.transform_single(image_features, cv_features, seg_features, anthro)[0]
 
+        # Temporary data-flow trace (debug only; enable with POSHANEYE_TRACE=1).
+        import os
+        if os.environ.get("POSHANEYE_TRACE") == "1":
+            print(f"[PROD] image_feature_dim={image_features.shape[0]} "
+                  f"image_feat[:4]={np.round(image_features[:4], 3).tolist()}", flush=True)
+            print(f"[PROD] RAW anthro={ {k: (round(float(v), 4) if v == v else 'NaN->median') for k, v in anthro.items()} }", flush=True)
+            from .config import CV_FEATURE_COLUMNS, SEGMENTATION_FEATURE_COLUMNS
+            anthro_start = (self.preprocessor.image_dim + len(CV_FEATURE_COLUMNS)
+                            + len(SEGMENTATION_FEATURE_COLUMNS))
+            anthro_proc = x[anthro_start:]
+            print(f"[PROD] PREPROCESSED anthro={np.round(anthro_proc, 4).tolist()}", flush=True)
+            print(f"[PROD] fused_vector_dim={x.shape[0]}", flush=True)
+
         # 6. portable RBF-SVM
         pred = self.svm.predict_one(x)
+        # Raw one-vs-one class scores from the classifier itself (votes + confidence
+        # tie-breaker). NOT probabilities - can contain negatives. The backend adapter
+        # may normalize them for UI display; the prediction is argmax of these.
+        class_scores_raw = self.svm.ovr_decision_function_one(x)
         return {
             "prediction": self.label_map.get(pred, CLASS_NAMES[pred]),
             "label_index": pred,
+            "class_scores_raw": {
+                CLASS_NAMES[c]: float(class_scores_raw[c])
+                for c in self.svm.classes
+            },
             "feature_vector_dim": int(x.shape[0]),
         }
 

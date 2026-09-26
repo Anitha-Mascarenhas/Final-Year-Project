@@ -19,6 +19,13 @@ dependencies:
   video_player: ^2.14.0
   http: ^1.2.0
 
+# Vendored fork of camera_android_camerax 0.6.30: binds ImageAnalysis only when a
+# frame stream is actually used, fixing "No supported surface combination is found"
+# on OPPO CPH2603 (ColorOS). See third_party/README.md.
+dependency_overrides:
+  camera_android_camerax:
+    path: third_party/camera_android_camerax
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

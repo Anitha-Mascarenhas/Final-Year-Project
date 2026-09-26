@@ -1,17 +1,22 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'dart:typed_data';
+import 'dart:io' show Platform;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:camera/camera.dart';
 import 'package:video_player/video_player.dart';
 import '../models/prediction_result.dart';
 import '../services/api_service.dart';
+import '../services/hybrid_landmark_bridge.dart';
+import '../state/session_provider.dart';
+import '../state/vitals_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/chime_synthesizer.dart';
 import '../utils/image_picker_helper.dart';
 import '../widgets/interactive_eye_logo.dart';
 
-class AiScanScreen extends StatefulWidget {
+class AiScanScreen extends ConsumerStatefulWidget {
   final String childName;
 
   const AiScanScreen({
@@ -20,19 +25,34 @@ class AiScanScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<AiScanScreen> createState() => _AiScanScreenState();
+  ConsumerState<AiScanScreen> createState() => _AiScanScreenState();
 }
 
-enum _ScanState { scanner, mascot, result }
+enum _ScanState { scanner, mascot, measurements, result }
 
-class _AiScanScreenState extends State<AiScanScreen>
+class _AiScanScreenState extends ConsumerState<AiScanScreen>
     with TickerProviderStateMixin {
   _ScanState _state = _ScanState.scanner;
+  Uint8List? _pendingScanBytes; // photo captured, awaiting measurements confirmation
+  Uint8List? _analyzingBytes; // image currently being analyzed (full-quality bytes)
   bool _soundsEnabled = false;
   bool _isScanning = false;
   int _selectedMascotIndex = 2; // Cheetah default
   PredictionResult? _lastPrediction;
-  String? _errorMessage;
+
+  // ── Auto-capture (honest implementation: NO fake face/body detection) ──
+  // The web build has no MediaPipe landmark bridge (that exists only in the
+  // Android native code), so we do NOT claim landmark detection. What we gate
+  // on: a held shutter (user = framing judge) or a stability timer that only
+  // fires when the preview is actually still (per-frame luminance-difference
+  // motion check) plus a minimum hold time.
+  bool _autoCaptureArmed = false;
+  bool _autoCaptured = false;
+  bool _frameStable = false;
+  int _stabilityHoldMs = 0;
+  double? _lastFrameLuma;
+  static const int _stabilityWindowMs = 1000; // ~1s stillness required
+  static const double _stabilityLumaThreshold = 7.0; // mean |luma diff| / frame
 
   late AnimationController _laserController;
   late Animation<double> _laserAnimation;
@@ -160,6 +180,17 @@ class _AiScanScreenState extends State<AiScanScreen>
       parent: _counterController,
       curve: Curves.easeOutCubic,
     );
+
+    // AI scan overlay animations (visual only)
+    _scanSweepController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
+    _scanPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
     _initializeCamera();
   }
 
@@ -222,8 +253,44 @@ class _AiScanScreenState extends State<AiScanScreen>
     }
   }
 
+  // ── Height/weight confirmation step (after photo, before analysis) ──
+  // Values come from the existing vitals provider; nothing is fabricated.
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final GlobalKey<FormState> _measurementsFormKey = GlobalKey<FormState>();
+  bool _measurementsPreFilled = false;
+
+  // ── Analysis overlay (purely visual progress; shows no fake results) ──
+  late AnimationController _scanSweepController;
+  late AnimationController _scanPulseController;
+  Timer? _autoCaptureTimer;
+
+  /// Pre-fill the confirmation fields from the most recent vitals record.
+  /// A measurement the app does not have stays empty — no defaults.
+  void _prepareMeasurementsStep() {
+    if (_measurementsPreFilled) return;
+    final records = ref.read(vitalsProvider);
+    if (records.isNotEmpty) {
+      final v = records.first;
+      if (v.height > 0) _heightController.text = v.height.toStringAsFixed(1);
+      if (v.weight > 0) _weightController.text = v.weight.toStringAsFixed(1);
+    }
+    _measurementsPreFilled = true;
+  }
+
+  void _startAnalyze() {
+    if (!(_measurementsFormKey.currentState?.validate() ?? false)) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    _analyzePendingScan();
+  }
+
   @override
   void dispose() {
+    _heightController.dispose();
+    _weightController.dispose();
+    _autoCaptureTimer?.cancel();
+    _scanSweepController.dispose();
+    _scanPulseController.dispose();
     _cameraController?.dispose();
     for (final controller in _mascotVideoControllers.values) {
       controller.dispose();
@@ -234,34 +301,107 @@ class _AiScanScreenState extends State<AiScanScreen>
     super.dispose();
   }
 
+  /// Upload path: the picked image is shown FULL (contain) on the analysis
+  /// view while the real backend runs; then the measurements step appears.
   void _triggerScan([Uint8List? providedBytes]) async {
     if (_isScanning) return;
+    Uint8List? bytes = providedBytes;
+    if (bytes == null || bytes.isEmpty) {
+      bytes = await pickImageBytes();
+    }
+
+    if (bytes == null || bytes.isEmpty) {
+      _showScanError(ApiException('No image selected or captured. Please select an image to scan.'));
+      return;
+    }
+
+    debugPrint('[SCAN] selected image bytes = ${bytes.length}');
+    await _beginAnalysis(bytes);
+  }
+
+  /// Live-camera path: capture the current frame, then run the same analysis
+  /// flow. Used by the shutter and by auto-capture.
+  void _captureAndAnalyze() async {
+    if (_isScanning || !_isCameraReady || _cameraController == null) return;
+    try {
+      final XFile imageFile = await _cameraController!.takePicture();
+      final bytes = await imageFile.readAsBytes();
+      debugPrint('[SCAN] captured frame bytes = ${bytes.length}');
+      await _beginAnalysis(bytes);
+    } catch (camErr) {
+      debugPrint('Camera capture error: $camErr');
+      _showScanError(ApiException('Could not capture the photo. Please try again.'));
+    }
+  }
+
+  /// Show the AI analysis view with the full image, run the real backend
+  /// request, then continue to the measurements confirmation step.
+  Future<void> _beginAnalysis(Uint8List bytes) async {
+    _prepareMeasurementsStep();
+    setState(() {
+      _analyzingBytes = bytes;
+      _isScanning = true;
+      _state = _ScanState.scanner; // analysis overlay renders over the scanner view
+    });
+    _scanSweepController.repeat();
+    _scanPulseController.repeat(reverse: true);
+
+    try {
+      final result = await ApiService.predictImage(
+        bytes,
+        filename: 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        fields: _anthropometricFields(),
+      );
+      if (!mounted) return;
+      _scanSweepController.stop();
+      _scanPulseController.stop();
+      setState(() {
+        _isScanning = false;
+        _lastPrediction = result;
+        _pendingScanBytes = bytes;
+        _state = _ScanState.measurements;
+      });
+    } on ApiException catch (e) {
+      _showScanError(e);
+    } catch (e) {
+      _showScanError(ApiException('Unable to analyze this image. Please try another photo.'));
+    }
+  }
+
+  void _showScanError(ApiException e) {
+    if (!mounted) return;
+    _spinController.stop();
+    setState(() {
+      _isScanning = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.message),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Step 2 of the flow: run the real hybrid analysis on the confirmed photo
+  /// with the height/weight values currently in the fields (edited or not).
+  void _analyzePendingScan() async {
+    if (_isScanning || _pendingScanBytes == null) return;
     setState(() {
       _isScanning = true;
-      _errorMessage = null;
     });
     _spinController.repeat();
 
     try {
-      Uint8List? bytes = providedBytes;
-      if (bytes == null && _isCameraReady && _cameraController != null) {
-        try {
-          final XFile imageFile = await _cameraController!.takePicture();
-          bytes = await imageFile.readAsBytes();
-        } catch (camErr) {
-          debugPrint('Camera capture error: $camErr');
-        }
-      }
-
-      if (bytes == null || bytes.isEmpty) {
-        bytes = await pickImageBytes();
-      }
-
-      if (bytes == null || bytes.isEmpty) {
-        throw ApiException('No image selected or captured. Please select an image to scan.');
-      }
-
-      final result = await ApiService.predictImage(bytes);
+      // Send the child's anthropometrics with the scan so the backend's
+      // production hybrid pipeline (168-feature fusion) can use them. Any field
+      // left out is safely imputed server-side (training-split medians).
+      debugPrint('[SCAN] sending current image to /predict '
+          '(bytes=${_pendingScanBytes!.length})');
+      final result = await ApiService.predictImage(
+        _pendingScanBytes!,
+        fields: _anthropometricFields(),
+      );
 
       if (!mounted) return;
       _spinController.stop();
@@ -271,23 +411,11 @@ class _AiScanScreenState extends State<AiScanScreen>
         _state = _ScanState.result;
       });
       _counterController.forward(from: 0.0);
+    } on ApiException catch (e) {
+      _showScanError(e);
     } catch (e) {
-      if (!mounted) return;
-      _spinController.stop();
-      final msg = e is ApiException
-          ? e.message
-          : 'Unable to connect to server. Please check the backend and try again.';
-      setState(() {
-        _isScanning = false;
-        _errorMessage = msg;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showScanError(ApiException(
+          'Unable to connect to server. Please check the backend and try again.'));
     }
   }
 
@@ -298,20 +426,184 @@ class _AiScanScreenState extends State<AiScanScreen>
     }
   }
 
+  // ── Auto-capture: honest, platform-aware implementation ────────────
+  // ANDROID: the native MediaPipe bridge (poshaneye/landmarks) provides REAL
+  // face/pose detection on sampled frames. Capture fires only when a face is
+  // actually detected, visible pose landmarks exist, the face is near the
+  // frame centre, and the pose has held stable for ~1 second.
+  // WEB/other: no landmark source exists, so NO detection is claimed — we gate
+  // only on genuine preview stillness (mean-luminance difference) plus text
+  // positioning guidance; the user remains the framing judge.
+
+  void _toggleAutoCapture() {
+    setState(() {
+      _autoCaptureArmed = !_autoCaptureArmed;
+      if (!_autoCaptureArmed) {
+        _autoCaptureTimer?.cancel();
+        _autoCaptureTimer = null;
+        _frameStable = false;
+        _stabilityHoldMs = 0;
+      } else {
+        _autoCaptured = false;
+        _lastFrameLuma = null;
+        _stabilityHoldMs = 0;
+        _startAutoCapturePolling();
+      }
+    });
+  }
+
+  void _startAutoCapturePolling() {
+    _autoCaptureTimer?.cancel();
+    _autoCaptureTimer = Timer.periodic(const Duration(milliseconds: 400), (_) async {
+      if (!mounted || !_autoCaptureArmed || _autoCaptured || _isScanning) return;
+      if (!_isCameraReady || _cameraController == null) return;
+
+      try {
+        // Sample the preview (small JPEG) for detection/stability checks.
+        final XFile frame = await _cameraController!.takePicture();
+        final bytes = await frame.readAsBytes();
+
+        // ANDROID: real MediaPipe detection through the native bridge.
+        // WEB: honest stillness-only check (no detection claims).
+        final bool usable = Platform.isAndroid ? await _androidAutoCaptureCheck(bytes) : await _isFrameStill(bytes);
+        if (!mounted) return;
+
+        if (usable) {
+          _stabilityHoldMs += 400;
+        } else {
+          _stabilityHoldMs = 0;
+        }
+        final nowStable = _stabilityHoldMs >= _stabilityWindowMs;
+        if (nowStable != _frameStable) {
+          setState(() => _frameStable = nowStable);
+        }
+        if (nowStable) {
+          _autoCaptured = true;
+          _autoCaptureTimer?.cancel();
+          _autoCaptureTimer = null;
+          if (mounted) setState(() {});
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          if (mounted && _autoCaptureArmed) {
+            debugPrint('[SCAN] auto-capture fired after ${_stabilityHoldMs}ms of usable frames');
+            _captureAndAnalyze();
+          }
+        }
+      } catch (_) {
+        // Sampling failures simply reset the stability window.
+        _stabilityHoldMs = 0;
+        if (mounted && _frameStable) setState(() => _frameStable = false);
+      }
+    });
+  }
+
+  /// ANDROID ONLY: real detection gate. Returns true when the sampled frame
+  /// has (a) a detected face (MediaPipe), (b) the face reasonably centred and
+  /// large enough, and (c) at least the two shoulder landmarks visible. All
+  /// signals come from the actual native MediaPipe bridge — nothing faked.
+  Future<bool> _androidAutoCaptureCheck(Uint8List bytes) async {
+    try {
+      final landmarks = await HybridLandmarkBridge.extractLandmarks(bytes);
+      final face = landmarks.face;
+
+      // Face centre (from the 10 extracted FaceMesh points).
+      double fx = 0, fy = 0;
+      for (final p in face.values) {
+        fx += p[0];
+        fy += p[1];
+      }
+      fx /= face.length;
+      fy /= face.length;
+
+      // Face span estimate for a distance proxy (eye outer corners 234/454).
+      final l = face['234'], r = face['454'];
+      final faceSpan = (l != null && r != null)
+          ? ((l[0] - r[0]).abs() + (l[1] - r[1]).abs())
+          : 0.0;
+
+      // Shoulders visible and inside frame.
+      final ls = landmarks.pose['11'], rs = landmarks.pose['12'];
+      final visLs = landmarks.poseVisibility['11'] ?? 0;
+      final visRs = landmarks.poseVisibility['12'] ?? 0;
+      final shouldersOk = ls != null && rs != null && visLs >= 0.3 && visRs >= 0.3;
+
+      final centred = (fx - 0.5).abs() < 0.28 && (fy - 0.45).abs() < 0.35;
+      final distanceOk = faceSpan > 0.10; // child not too far away
+      final ok = centred && distanceOk && shouldersOk;
+      debugPrint('[SCAN] MediaPipe check: face=(${fx.toStringAsFixed(2)}, '
+          '${fy.toStringAsFixed(2)}) span=${faceSpan.toStringAsFixed(2)} '
+          'shoulders=$shouldersOk -> $ok');
+      return ok;
+    } on HybridLandmarkException {
+      // No face (or bridge unavailable) — genuinely not usable, keep waiting.
+      return false;
+    }
+  }
+
+  Future<bool> _isFrameStill(Uint8List bytes) async {
+    // Decode tiny and compare mean luminance with the previous sample.
+    final codec = await ui.instantiateImageCodec(bytes, targetWidth: 48, targetHeight: 48);
+    final frame = await codec.getNextFrame();
+    final data = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    frame.image.dispose();
+    if (data == null) return false;
+    final pixels = data.buffer.asUint8List();
+    double sum = 0;
+    for (var i = 0; i < pixels.length; i += 4) {
+      sum += 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+    }
+    final luma = sum / (pixels.length / 4);
+    final prev = _lastFrameLuma;
+    _lastFrameLuma = luma;
+    if (prev == null) return false; // need a baseline sample
+    return (luma - prev).abs() < _stabilityLumaThreshold;
+  }
+
+  /// Anthropometric form fields for the hybrid API. Height/weight come from the
+  /// confirmation fields (the values actually used for THIS scan — edited or
+  /// pre-filled); the remaining fields come from the existing vitals record.
+  /// Missing values are simply omitted and imputed server-side (training median).
+  Map<String, String> _anthropometricFields() {
+    final fields = <String, String>{};
+    final height = double.tryParse(_heightController.text.trim());
+    final weight = double.tryParse(_weightController.text.trim());
+    if (height != null && height > 0) fields['height_cm'] = height.toStringAsFixed(2);
+    if (weight != null && weight > 0) fields['weight_kg'] = weight.toStringAsFixed(2);
+
+    final records = ref.read(vitalsProvider);
+    if (records.isNotEmpty) {
+      final v = records.first;
+      fields['child_name'] = v.childName;
+      fields['gender'] = v.gender;
+      fields['age_years'] = '${v.ageYears}';
+      fields['age_months'] = '${v.ageMonths}';
+      // head_circumference_cm / muac_cm / waist_cm are not tracked in the app
+      // yet; they are simply omitted and the backend imputes them.
+    }
+    // Temporary data-flow trace (remove after verification)
+    debugPrint('[SCAN] fields sent: $fields');
+    return fields;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: _buildBody(),
-              ),
+            Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: _buildBody(),
+                  ),
+                ),
+              ],
             ),
+            // Full-screen AI analysis overlay while the backend request runs.
+            if (_isScanning && _analyzingBytes != null) _buildAnalyzingOverlay(),
           ],
         ),
       ),
@@ -376,6 +668,8 @@ class _AiScanScreenState extends State<AiScanScreen>
         return _buildScannerView();
       case _ScanState.mascot:
         return _buildMascotView();
+      case _ScanState.measurements:
+        return _buildMeasurementsView();
       case _ScanState.result:
         return _buildResultView();
     }
@@ -659,9 +953,56 @@ class _AiScanScreenState extends State<AiScanScreen>
           ),
           const SizedBox(height: 20),
 
+          // Auto-capture toggle (honest framing aid, no fake detection claims)
+          GestureDetector(
+            onTap: _isScanning ? null : _toggleAutoCapture,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _autoCaptureArmed
+                    ? (_frameStable ? const Color(0xFFDCFCE7) : const Color(0xFFECF7ED))
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: _autoCaptureArmed
+                        ? (_frameStable ? const Color(0xFF059669) : const Color(0xFFA7F3D0))
+                        : const Color(0xFFD8E3D8)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    size: 15,
+                    color: _autoCaptureArmed
+                        ? const Color(0xFF059669)
+                        : const Color(0xFF7D9585),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _autoCaptureArmed
+                        ? (_autoCaptured
+                            ? 'Captured \u2713'
+                            : _frameStable
+                                ? 'Hold still...'
+                                : 'Position child in frame')
+                        : 'Enable Auto Capture',
+                    style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: _autoCaptureArmed
+                            ? const Color(0xFF065F46)
+                            : const Color(0xFF556D5E)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
           // Big Shutter Button
           GestureDetector(
-            onTap: _triggerScan,
+            onTap: _captureAndAnalyze,
             child: Container(
               width: 72,
               height: 72,
@@ -691,11 +1032,27 @@ class _AiScanScreenState extends State<AiScanScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            _isScanning ? 'Processing scan...' : 'Tap shutter to scan',
+            _isScanning
+                ? 'Analyzing image...'
+                : 'Tap shutter to scan',
             style: const TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF556D5E)),
+          ),
+          const SizedBox(height: 4),
+          // Minimal upload action: pick a real photo from this device and run
+          // the same analysis path as the shutter (browser-compatible).
+          TextButton.icon(
+            onPressed: _isScanning ? null : _pickAndScanImage,
+            icon: const Icon(Icons.upload_file, size: 16, color: Color(0xFF0F3827)),
+            label: const Text(
+              'Upload Photo',
+              style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F3827)),
+            ),
           ),
         ],
       ),
@@ -978,29 +1335,329 @@ class _AiScanScreenState extends State<AiScanScreen>
 
 
 
+  // ── AI ANALYSIS OVERLAY ─────────────────────────────────────────────
+  // Shows the FULL selected/captured image (contain, aspect preserved) with a
+  // futuristic scan animation. Honest by design: the web build has no landmark
+  // detection, so the animated dots are a decorative network pattern that is
+  // never labelled as detected landmarks. No fake prediction/confidence here.
+  Widget _buildAnalyzingOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: const Color(0xFF0B1F15).withOpacity(0.97),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'AI GROWTH SCAN',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                          color: Color(0xFF2AE196)),
+                    ),
+                    const Icon(Icons.graphic_eq, size: 18, color: Color(0xFF2AE196)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // 1. FULL image, aspect preserved, nothing cropped
+                        Image.memory(
+                          _analyzingBytes!,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                        ),
+                        // 2. Subtle darkening for scan visibility
+                        Container(color: const Color(0xFF04150D).withOpacity(0.30)),
+                        // 3. Animated landmark-style network dots (decorative)
+                        AnimatedBuilder(
+                          animation: Listenable.merge([_scanSweepController, _scanPulseController]),
+                          builder: (context, _) => CustomPaint(
+                            painter: _AiScanNetworkPainter(
+                              progress: _scanSweepController.value,
+                              pulse: _scanPulseController.value,
+                            ),
+                          ),
+                        ),
+                        // 4. Sweeping scan line
+                        AnimatedBuilder(
+                          animation: _scanSweepController,
+                          builder: (context, child) {
+                            final y = MediaQuery.of(context).size.height * 0.55 * _scanSweepController.value;
+                            return Positioned(
+                              left: 0, right: 0, top: y,
+                              child: Container(
+                                height: 2.5,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2AE196),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF2AE196).withOpacity(0.75),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // Honest status: what is actually happening
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10291C),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: const Color(0xFF1F5C41)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2AE196)),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Analyzing child\u2019s image...',
+                        style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFCFF5E4)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Running the production hybrid model on this photo',
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFF6FA88C)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 2b. HEIGHT/WEIGHT CONFIRMATION VIEW (photo captured, pre-analysis)
+  Widget _buildMeasurementsView() {
+    const fieldBorder = Color(0xFFD8E3D8);
+    const labelColor = Color(0xFF556D5E);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            'Confirm Measurements',
+            style: TextStyle(
+                fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF0C2417)),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Check the values below, edit if needed, then analyze.',
+            style: TextStyle(fontSize: 13, color: labelColor),
+          ),
+          const SizedBox(height: 16),
+
+          // Photo preview — FULL image, aspect preserved (this exact file is
+          // what Analyze sends to /predict).
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              color: const Color(0xFF0B1F15),
+              child: Image.memory(
+                _pendingScanBytes!,
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Form(
+            key: _measurementsFormKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _heightController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Height (cm)',
+                    hintText: 'Enter height in centimeters',
+                    prefixIcon: const Icon(Icons.height, size: 20, color: Color(0xFF0F3827)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: fieldBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: Color(0xFF0F3827)),
+                    ),
+                  ),
+                  validator: (value) {
+                    final v = double.tryParse(value?.trim() ?? '');
+                    if (v == null || v <= 0) {
+                      return 'Enter a valid height in centimeters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _weightController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Weight (kg)',
+                    hintText: 'Enter weight in kilograms',
+                    prefixIcon: const Icon(Icons.monitor_weight_outlined,
+                        size: 20, color: Color(0xFF0F3827)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: fieldBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: Color(0xFF0F3827)),
+                    ),
+                  ),
+                  validator: (value) {
+                    final v = double.tryParse(value?.trim() ?? '');
+                    if (v == null || v <= 0) {
+                      return 'Enter a valid weight in kilograms';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          ElevatedButton.icon(
+            onPressed: _isScanning ? null : _startAnalyze,
+            icon: _isScanning
+                ? RotationTransition(
+                    turns: _spinController,
+                    child: const Icon(Icons.sync, color: Colors.white, size: 20),
+                  )
+                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+            label: Text(
+              _isScanning ? 'ANALYZING...' : 'Analyze',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F3827),
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 4,
+              shadowColor: const Color(0xFF0F3827).withOpacity(0.4),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          OutlinedButton.icon(
+            onPressed: _isScanning
+                ? null
+                : () => setState(() {
+                      _pendingScanBytes = null;
+                      _state = _ScanState.scanner;
+                    }),
+            icon: const Icon(Icons.close, size: 16, color: Color(0xFF556D5E)),
+            label: const Text(
+              'Retake Photo',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0C2417),
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(46),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              side: const BorderSide(color: Color(0xFFD8E3D8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 3. RESULT VIEW (00:39 - 00:50)
   Widget _buildResultView() {
+    // ALL displayed values come from the real backend response (_lastPrediction)
+    // and the real vitals state. There are no demo/fallback prediction values.
     final pred = _lastPrediction;
+    final sessionChildName = ref.read(sessionProvider).childName;
+    final childName = (sessionChildName != null && sessionChildName.isNotEmpty)
+        ? sessionChildName
+        : widget.childName;
     final String statusText = pred != null
-        ? '${widget.childName} status: ${pred.status}'
-        : '${widget.childName} is growing normally';
+        ? '$childName status: ${pred.status}'
+        : '$childName status: Not available';
     final String confidenceText = pred != null
         ? '${(pred.confidence * 100).toStringAsFixed(1)}%'
-        : '95.2%';
-    final String riskText = pred?.risk ?? 'Low Risk';
-    final String recommendationText = pred?.recommendation ??
-        '${widget.childName} is tracking well on growth curves. Maintain balanced nutrition.';
-    final isHealthy = pred == null || pred.prediction.toLowerCase() == 'healthy';
+        : 'Not available';
+    final String riskText = pred?.risk ?? 'Not available';
+    final String recommendationText =
+        pred?.recommendation ?? 'Not available';
+    final isHealthy =
+        pred != null && pred.prediction.toLowerCase() == 'healthy';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: AnimatedBuilder(
         animation: _counterAnimation,
         builder: (context, child) {
-          final p = _counterAnimation.value;
-          final weight = (11.0 + (14.2 - 11.0) * p).toStringAsFixed(1);
-          final height = (72.9 + (94.5 - 72.9) * p).toStringAsFixed(1);
-          final muac = (11.6 + (15.0 - 11.6) * p).toStringAsFixed(1);
+          // Show the exact height/weight values used for THIS scan (the user's
+          // confirmed/edited confirmation-field values), falling back to the
+          // latest vitals record only if the fields were never populated. Values
+          // the app does not collect (MUAC, head circumference, waist) are shown
+          // as not recorded instead of being fabricated.
+          final height =
+              double.tryParse(_heightController.text.trim())?.toStringAsFixed(1);
+          final weight =
+              double.tryParse(_weightController.text.trim())?.toStringAsFixed(1);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1136,11 +1793,13 @@ class _AiScanScreenState extends State<AiScanScreen>
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF445B4E))),
-                        Text('$weight kg',
-                            style: const TextStyle(
+                        Text(weight != null ? '$weight kg' : 'Not recorded',
+                            style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF0C2417))),
+                                color: weight != null
+                                    ? const Color(0xFF0C2417)
+                                    : const Color(0xFF9AA79F))),
                       ],
                     ),
                     const Divider(height: 20, color: Color(0xFFEDF2ED)),
@@ -1152,11 +1811,13 @@ class _AiScanScreenState extends State<AiScanScreen>
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF445B4E))),
-                        Text('$height cm',
-                            style: const TextStyle(
+                        Text(height != null ? '$height cm' : 'Not recorded',
+                            style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF0C2417))),
+                                color: height != null
+                                    ? const Color(0xFF0C2417)
+                                    : const Color(0xFF9AA79F))),
                       ],
                     ),
                     const Divider(height: 20, color: Color(0xFFEDF2ED)),
@@ -1170,11 +1831,11 @@ class _AiScanScreenState extends State<AiScanScreen>
                                 color: Color(0xFF445B4E))),
                         Row(
                           children: [
-                            Text('$muac cm',
+                            Text('Not recorded',
                                 style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0C2417))),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF9AA79F))),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -1183,7 +1844,7 @@ class _AiScanScreenState extends State<AiScanScreen>
                                   color: isHealthy ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
                                   borderRadius: BorderRadius.circular(12)),
                               child: Text(
-                                pred?.status.toUpperCase() ?? 'HEALTHY',
+                                pred?.status.toUpperCase() ?? 'N/A',
                                 style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
@@ -1278,6 +1939,58 @@ class _AiScanScreenState extends State<AiScanScreen>
     );
   }
 
+}
+
+/// Decorative animated node-network for the AI scan overlay.
+///
+/// HONESTY NOTE: this is NOT landmark data. The web build has no MediaPipe
+/// bridge, so nothing here represents a detected face/body point. It is a
+/// deterministic decorative pattern (never labelled as detection results).
+class _AiScanNetworkPainter extends CustomPainter {
+  final double progress; // 0..1 sweep phase
+  final double pulse; // 0..1 breathing phase
+
+  _AiScanNetworkPainter({required this.progress, required this.pulse});
+
+  // Fixed pseudo-random node positions (deterministic, no detection claim).
+  static const List<Offset> _nodes = [
+    Offset(0.30, 0.18), Offset(0.52, 0.14), Offset(0.70, 0.22),
+    Offset(0.26, 0.34), Offset(0.48, 0.30), Offset(0.72, 0.38),
+    Offset(0.34, 0.52), Offset(0.60, 0.50), Offset(0.78, 0.58),
+    Offset(0.24, 0.68), Offset(0.46, 0.70), Offset(0.68, 0.74),
+    Offset(0.38, 0.86), Offset(0.58, 0.88),
+  ];
+
+  static const List<List<int>> _links = [
+    [0, 1], [1, 2], [0, 3], [1, 4], [2, 5], [3, 4], [4, 5],
+    [4, 6], [5, 7], [6, 7], [7, 8], [6, 9], [7, 10], [8, 11],
+    [9, 10], [10, 11], [10, 12], [11, 13], [12, 13],
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pts = _nodes.map((n) => Offset(n.dx * size.width, n.dy * size.height)).toList();
+
+    final linePaint = Paint()
+      ..color = const Color(0xFF2AE196).withOpacity(0.16 + 0.14 * pulse)
+      ..strokeWidth = 1.2;
+    for (final link in _links) {
+      canvas.drawLine(pts[link[0]], pts[link[1]], linePaint);
+    }
+
+    final nodePaint = Paint()
+      ..color = const Color(0xFF2AE196).withOpacity(0.55 + 0.35 * pulse);
+    final haloPaint = Paint()
+      ..color = const Color(0xFF2AE196).withOpacity(0.12 + 0.10 * pulse);
+    for (final p in pts) {
+      canvas.drawCircle(p, 6.5, haloPaint);
+      canvas.drawCircle(p, 2.4, nodePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AiScanNetworkPainter old) =>
+      old.progress != progress || old.pulse != pulse;
 }
 
 class _CornerBracketPainter extends CustomPainter {

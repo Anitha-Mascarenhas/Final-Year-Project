@@ -1,0 +1,30 @@
+# Runtime for the PRODUCTION hybrid inference pipeline
+# (MobileNetV2 features + MediaPipe CV features + DeepLabV3+ segmentation features
+#  + anthropometrics -> exact preprocessing -> portable RBF-SVM).
+#
+# These versions MUST be kept in lockstep with the main project .venv that trained and
+# validated the production artifacts (Poshaneyemn/production): the backend's default
+# venv has newer tensorflow/mediapipe whose APIs are incompatible with the existing
+# production code (mp.solutions was removed in mediapipe 1.x; TF 2.21 needs protobuf>=6).
+#
+#   python -m venv backend/.venv_hybrid
+#   backend/.venv_hybrid/Scripts/python -m pip install -r backend/requirements_hybrid.txt
+#   backend/.venv_hybrid/Scripts/python -m uvicorn app:app --port 8000   (from backend/)
+#
+# No ML code or artifact is modified by this file — it only pins the runtime that
+# loads the frozen production models.
+
+tensorflow==2.19.1
+mediapipe==0.10.13
+opencv-python
+numpy==2.1.3
+pandas==2.2.3
+scikit-learn
+pillow
+protobuf==4.25.9
+
+# --- backend web layer -------------------------------------------------------
+fastapi
+uvicorn
+python-multipart
+pydantic[email]
