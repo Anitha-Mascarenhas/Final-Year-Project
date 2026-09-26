@@ -28,3 +28,9 @@ fastapi
 uvicorn
 python-multipart
 pydantic[email]
+
+# --- auth / database layer ---------------------------------------------------
+python-dotenv
+pymongo
+pwdlib[argon2]
+PyJWT

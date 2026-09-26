@@ -585,91 +585,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.selectLanguage,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: _primaryText,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: _secondaryText),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ...options.map((opt) {
-                final isSelected = opt['code'] == currentLocale.languageCode;
-                return GestureDetector(
-                  onTap: () {
-                    ref
-                        .read(localeProvider.notifier)
-                        .setLocale(Locale(opt['code']!));
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF2DE099).withOpacity(0.12)
-                          : _softSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF2DE099)
-                            : _cardBorder,
-                        width: isSelected ? 2 : 1,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.selectLanguage,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: _primaryText,
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, color: _secondaryText),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...options.map((opt) {
+                    final isSelected = opt['code'] == currentLocale.languageCode;
+                    return GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(localeProvider.notifier)
+                            .setLocale(Locale(opt['code']!));
+                        Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF2DE099).withOpacity(0.12)
+                              : _softSurface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFF2DE099)
+                                : _cardBorder,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              opt['name']!,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: isSelected
-                                    ? const Color(0xFF2DE099)
-                                    : _primaryText,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  opt['name']!,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: isSelected
+                                        ? const Color(0xFF2DE099)
+                                        : _primaryText,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '(${opt['sub']})',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _secondaryText,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '(${opt['sub']})',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: _secondaryText,
+                            if (isSelected)
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF2DE099),
+                                size: 22,
                               ),
-                            ),
                           ],
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            color: Color(0xFF2DE099),
-                            size: 22,
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-              const SizedBox(height: 12),
-            ],
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
           ),
         );
       },
