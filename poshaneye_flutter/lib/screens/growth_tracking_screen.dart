@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/vitals_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import 'profile_screen.dart';
 import '../widgets/interactive_eye_logo.dart';
 
@@ -305,7 +306,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
               ),
               const SizedBox(width: 8),
               Text(
-                'Growth Tracking',
+                context.l10n.growthTrackingHeader,
                 style: TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
@@ -370,13 +371,14 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
   }
 
   Widget _buildTitleSection() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Growth Tracking',
+            l10n.growthTrackingHeader,
             style: TextStyle(
               fontSize: 23,
               fontWeight: FontWeight.w900,
@@ -387,7 +389,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
           ),
           const SizedBox(height: 2),
           Text(
-            "Monitor ${childName}'s development milestones.",
+            l10n.growthTrackingSubtitle,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -428,7 +430,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                   ),
                   child: Center(
                     child: Text(
-                      'GROWTH TRENDS',
+                      context.l10n.tabWhoGrowthCurve.toUpperCase(),
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
@@ -454,7 +456,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                   ),
                   child: Center(
                     child: Text(
-                      'CALCULATOR',
+                      context.l10n.tabVitalsCalculator.toUpperCase(),
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
@@ -488,7 +490,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                   ),
                   child: Center(
                     child: Text(
-                      'HISTORY',
+                      context.l10n.childHistoryTitle.toUpperCase(),
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
@@ -926,11 +928,11 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.add, size: 18),
-                  SizedBox(width: 6),
-                  Text('Log New Vitals',
-                      style: TextStyle(
+                children: [
+                  const Icon(Icons.add, size: 18),
+                  const SizedBox(width: 6),
+                  Text(context.l10n.logNewMeasurement,
+                      style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 14.5)),
                 ],
               ),

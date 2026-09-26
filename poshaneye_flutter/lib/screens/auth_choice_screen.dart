@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/topo_header.dart';
 import '../widgets/auth_option_card.dart';
 
@@ -13,8 +14,9 @@ class AuthChoiceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isParent = role == UserRole.parent;
-    final roleTitle = isParent ? 'Parent' : 'Healthcare\nWorker';
+    final roleTitle = isParent ? l10n.roleParentTitle : l10n.roleHealthcareTitle;
     final roleIcon = isParent ? Icons.person_outline_rounded : Icons.medical_services_outlined;
 
     return Scaffold(
@@ -33,16 +35,16 @@ class AuthChoiceScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 4, bottom: 20, top: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
                         color: AppColors.textDark,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Back to roles',
-                        style: TextStyle(
+                        l10n.backToRoles,
+                        style: const TextStyle(
                           color: AppColors.textDark,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -56,7 +58,7 @@ class AuthChoiceScreen extends StatelessWidget {
               // Topo header with icon pill
               TopoHeader(
                 title: roleTitle,
-                subtitle: 'Choose how you would like to continue with your PoshanEye account.',
+                subtitle: l10n.authChoiceSubtitle,
                 trailing: Container(
                   width: 48,
                   height: 48,
@@ -85,8 +87,8 @@ class AuthChoiceScreen extends StatelessWidget {
               // Existing: Sign In
               AuthOptionCard(
                 tag: 'EXISTING',
-                title: 'Sign In',
-                description: 'Existing account login',
+                title: l10n.signInTitle,
+                description: l10n.signInDesc,
                 isPrimary: true,
                 onTap: () {
                   context.push('/sign-in/${role.name}');
@@ -97,8 +99,8 @@ class AuthChoiceScreen extends StatelessWidget {
               // New: Create Account
               AuthOptionCard(
                 tag: 'NEW',
-                title: 'Create Account',
-                description: 'Register new account',
+                title: l10n.createAccountTitle,
+                description: l10n.createAccountDesc,
                 isPrimary: false,
                 onTap: () {
                   context.push('/sign-up/${role.name}');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 
 class AuthTabs extends StatelessWidget {
   final bool isSignIn;
@@ -13,6 +14,7 @@ class AuthTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -34,7 +36,7 @@ class AuthTabs extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    'Sign In',
+                    l10n.signInTitle,
                     style: TextStyle(
                       color: isSignIn ? Colors.white : AppColors.textMuted,
                       fontSize: 14,
@@ -57,7 +59,7 @@ class AuthTabs extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    'Sign Up',
+                    l10n.createAccountTitle,
                     style: TextStyle(
                       color: !isSignIn ? Colors.white : AppColors.textMuted,
                       fontSize: 14,

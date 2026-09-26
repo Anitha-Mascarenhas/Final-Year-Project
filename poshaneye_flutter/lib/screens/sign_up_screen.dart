@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/topo_header.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/auth_tabs.dart';
@@ -66,11 +67,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isParent = widget.role == UserRole.parent;
-    final title = isParent ? 'Create Account' : 'Join Clinician';
+    final title = isParent ? l10n.createAccountTitle : l10n.joinClinician;
     final subtitle = isParent
-        ? 'Set up your family account and track child growth.'
-        : 'Create a protected workspace for clinical monitoring.';
+        ? l10n.parentSignUpSubtitle
+        : l10n.healthcareSignUpSubtitle;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,16 +90,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   padding: const EdgeInsets.only(left: 4, bottom: 20, top: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
                         color: AppColors.textDark,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Back',
-                        style: TextStyle(
+                        l10n.backButton,
+                        style: const TextStyle(
                           color: AppColors.textDark,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -118,8 +120,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Form fields
               if (isParent) ...[
                 CustomTextField(
-                  label: 'CHILD NAME',
-                  hint: 'Aarav',
+                  label: l10n.childNameLabel,
+                  hint: l10n.childNameHint,
                   controller: _nameController,
                   prefixIcon: const Icon(
                     Icons.person_outline_rounded,
@@ -129,8 +131,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  label: 'DATE OF BIRTH',
-                  hint: 'dd-mm-yyyy',
+                  label: l10n.dobLabel,
+                  hint: l10n.dobHint,
                   controller: _dobController,
                   readOnly: true,
                   onTap: _selectDate,
@@ -150,8 +152,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  label: 'EMAIL',
-                  hint: 'hello@poshaneye.com',
+                  label: l10n.emailLabel,
+                  hint: l10n.emailHint,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
@@ -162,8 +164,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ] else ...[
                 CustomTextField(
-                  label: 'NAME',
-                  hint: 'Dr. Priya Nair',
+                  label: l10n.nameLabel,
+                  hint: l10n.doctorNameHint,
                   controller: _nameController,
                   prefixIcon: const Icon(
                     Icons.person_outline_rounded,
@@ -173,8 +175,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  label: 'EMAIL',
-                  hint: 'doctor@hospital.org',
+                  label: l10n.emailLabel,
+                  hint: l10n.doctorEmailHint,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(
@@ -185,8 +187,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  label: 'HOSPITAL ID',
-                  hint: 'HID-2341',
+                  label: l10n.hospitalIdLabel,
+                  hint: l10n.hospitalIdHint,
                   controller: _hospitalIdController,
                   prefixIcon: const Icon(
                     Icons.local_hospital_outlined,
@@ -198,8 +200,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 16),
 
               CustomTextField(
-                label: 'PASSWORD',
-                hint: 'Min 8 characters',
+                label: l10n.passwordLabel,
+                hint: l10n.passwordMinHint,
                 controller: _passwordController,
                 isPassword: true,
                 prefixIcon: const Icon(
@@ -211,8 +213,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 16),
 
               CustomTextField(
-                label: 'CONFIRM PASSWORD',
-                hint: 'Repeat password',
+                label: l10n.confirmPasswordLabel,
+                hint: l10n.confirmPasswordHint,
                 controller: _confirmPasswordController,
                 isPassword: true,
                 prefixIcon: const Icon(
@@ -258,17 +260,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Text(
-                        'Create account',
-                        style: TextStyle(
+                        l10n.createAccountButton,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
                     ],
                   ),
                 ),

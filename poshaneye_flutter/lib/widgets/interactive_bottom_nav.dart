@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../utils/l10n_extension.dart';
 
 class InteractiveBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -30,13 +31,23 @@ class _InteractiveBottomNavState extends State<InteractiveBottomNav>
   Offset? _pointerPosition;
   bool _isInteracting = false;
 
-  final List<String> _labels = [
-    'Home',
-    'Growth',
-    'Scan',
-    'Nutrition',
-    'Profile'
-  ];
+  String _getLabel(BuildContext context, int index) {
+    final l10n = context.l10n;
+    switch (index) {
+      case 0:
+        return l10n.navHome;
+      case 1:
+        return l10n.navGrowth;
+      case 2:
+        return l10n.navScan;
+      case 3:
+        return l10n.navNutrition;
+      case 4:
+        return l10n.navProfile;
+      default:
+        return '';
+    }
+  }
 
   @override
   void initState() {
@@ -245,7 +256,7 @@ class _InteractiveBottomNavState extends State<InteractiveBottomNav>
                             Icon(icon,
                                 size: 16, color: const Color(0xFF2DE099)),
                             Text(
-                              _labels[index],
+                              _getLabel(context, index),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,

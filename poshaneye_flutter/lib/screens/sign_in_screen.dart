@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/topo_header.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/auth_tabs.dart';
@@ -32,18 +33,19 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _signIn() {
+    final l10n = context.l10n;
     final enteredId = _idController.text.trim().toUpperCase();
     final enteredPassword = _passwordController.text;
 
     if (enteredId.isEmpty || enteredPassword.isEmpty) {
-      _showError('Enter your child ID and password to continue.');
+      _showError(l10n.errorEnterIdPassword);
       return;
     }
 
     if (widget.role == UserRole.parent &&
         (enteredId != _demoParentChildId ||
             enteredPassword != _demoParentPassword)) {
-      _showError('Incorrect child ID or password.');
+      _showError(l10n.errorIncorrectIdPassword);
       return;
     }
 
@@ -62,13 +64,14 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isParent = widget.role == UserRole.parent;
-    final title = isParent ? 'Welcome Back' : 'Clinical Sign In';
+    final title = isParent ? l10n.welcomeBack : l10n.clinicalSignIn;
     final subtitle = isParent
-        ? 'Sign in to view growth insights & nutrition status.'
-        : 'Sign in to access patient & child health records.';
-    final idLabel = isParent ? 'CHILD ID' : 'HOSPITAL ID';
-    final idHint = isParent ? 'e.g. PE-1048' : 'e.g. HID-2341';
+        ? l10n.parentSignInSubtitle
+        : l10n.healthcareSignInSubtitle;
+    final idLabel = isParent ? l10n.childIdLabel : l10n.hospitalIdLabel;
+    final idHint = isParent ? l10n.childIdHint : l10n.hospitalIdHint;
     final idIcon = isParent
         ? Icons.verified_user_outlined
         : Icons.local_hospital_outlined;
@@ -89,16 +92,16 @@ class _SignInScreenState extends State<SignInScreen> {
                   padding: const EdgeInsets.only(left: 4, bottom: 20, top: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
                         color: AppColors.textDark,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Back',
-                        style: TextStyle(
+                        l10n.backButton,
+                        style: const TextStyle(
                           color: AppColors.textDark,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -126,8 +129,8 @@ class _SignInScreenState extends State<SignInScreen> {
               const SizedBox(height: 18),
 
               CustomTextField(
-                label: 'PASSWORD',
-                hint: 'Enter password',
+                label: l10n.passwordLabel,
+                hint: l10n.passwordHint,
                 controller: _passwordController,
                 isPassword: true,
                 prefixIcon: const Icon(
@@ -165,17 +168,17 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Text(
-                        'Continue',
-                        style: TextStyle(
+                        l10n.continueButton,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
                     ],
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/card_swap_stack.dart';
 import '../widgets/interactive_eye_logo.dart';
 import 'ai_scan_screen.dart';
@@ -79,6 +80,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
   }
 
   Widget _buildTopBar() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Row(
@@ -92,7 +94,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
               ),
               const SizedBox(width: 10),
               Text(
-                'Home',
+                l10n.navHome,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -191,13 +193,15 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
   }
 
   String _getGreetingText() {
+    final l10n = context.l10n;
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return l10n.goodMorning;
+    if (hour < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   Widget _buildGreeting() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -217,7 +221,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${widget.childName} is doing well today.',
+            l10n.doingWellSubtitle(widget.childName),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -232,6 +236,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
   }
 
   Widget _buildRotatingCardStack(double cardWidth) {
+    final l10n = context.l10n;
     return Container(
       height: 235,
       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -245,7 +250,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
         autoSwapDuration: const Duration(seconds: 5),
         animDuration: const Duration(milliseconds: 850),
         cards: [
-          // Card 0: Current Vitals (Matching the reference screenshot exactly)
+          // Card 0: Current Vitals
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
             child: Column(
@@ -254,10 +259,10 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text(
-                      'Current Vitals',
-                      style: TextStyle(
+                      l10n.currentVitals,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF163224),
@@ -265,8 +270,8 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                       ),
                     ),
                     Text(
-                      'Updated 2 days ago',
-                      style: TextStyle(
+                      l10n.updatedDaysAgo,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF6C7C70),
@@ -278,9 +283,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildVitalColumn('Weight', '46.2', 'kg'),
-                    _buildVitalColumn('Height', '149.9', 'cm'),
-                    _buildVitalColumn('MUAC', '14.5', 'cm'),
+                    _buildVitalColumn(l10n.weightLabel, '46.2', 'kg'),
+                    _buildVitalColumn(l10n.heightLabel, '149.9', 'cm'),
+                    _buildVitalColumn(l10n.muacLabel, '14.5', 'cm'),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -305,9 +310,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'GROWTH STATUS',
-                      style: TextStyle(
+                    Text(
+                      l10n.growthStatusHeader,
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4,
@@ -317,9 +322,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Normal Growth',
-                  style: TextStyle(
+                Text(
+                  l10n.normalGrowthTitle,
+                  style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF163224),
@@ -328,7 +333,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${widget.childName} remains in the healthy percentile for their age group according to WHO standards.',
+                  l10n.growthStatusDesc(widget.childName),
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.35,
@@ -336,9 +341,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  'View growth details →',
-                  style: TextStyle(
+                Text(
+                  l10n.viewGrowthDetails,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF163224),
@@ -365,9 +370,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'NUTRITION MILESTONES',
-                      style: TextStyle(
+                    Text(
+                      l10n.nutritionMilestonesHeader,
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.4,
@@ -377,9 +382,9 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Optimal Nutrition',
-                  style: TextStyle(
+                Text(
+                  l10n.optimalNutritionTitle,
+                  style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF163224),
@@ -387,18 +392,18 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Analysis indicates optimal protein intake and balanced micro-nutrients.',
-                  style: TextStyle(
+                Text(
+                  l10n.nutritionMilestonesDesc,
+                  style: const TextStyle(
                     fontSize: 13,
                     height: 1.35,
                     color: Color(0xFF5A6C60),
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  'View nutrition plan →',
-                  style: TextStyle(
+                Text(
+                  l10n.viewNutritionPlan,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF163224),
@@ -476,6 +481,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
   }
 
   Widget _buildActionButtons() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -509,16 +515,16 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
+                children: [
+                  const Icon(
                     Icons.crop_free_rounded,
                     color: Colors.white,
                     size: 22,
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Text(
-                    'Start New Scan',
-                    style: TextStyle(
+                    l10n.startNewScan,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 17,
@@ -565,16 +571,16 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
+                children: [
+                  const Icon(
                     Icons.flatware_rounded,
                     color: Color(0xFF163224),
                     size: 22,
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Text(
-                    'Nutrition Plan',
-                    style: TextStyle(
+                    l10n.nutritionPlanBtn,
+                    style: const TextStyle(
                       color: Color(0xFF163224),
                       fontWeight: FontWeight.w700,
                       fontSize: 17,

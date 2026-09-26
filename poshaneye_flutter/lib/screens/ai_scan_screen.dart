@@ -14,6 +14,7 @@ import '../state/vitals_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/chime_synthesizer.dart';
 import '../utils/image_picker_helper.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class AiScanScreen extends ConsumerStatefulWidget {
@@ -1033,8 +1034,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           const SizedBox(height: 6),
           Text(
             _isScanning
-                ? 'Analyzing image...'
-                : 'Tap shutter to scan',
+                ? context.l10n.scanAnalyzing
+                : context.l10n.scanInstruction3,
             style: const TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
@@ -1046,9 +1047,9 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           TextButton.icon(
             onPressed: _isScanning ? null : _pickAndScanImage,
             icon: const Icon(Icons.upload_file, size: 16, color: Color(0xFF0F3827)),
-            label: const Text(
-              'Upload Photo',
-              style: TextStyle(
+            label: Text(
+              context.l10n.scanUploadImage,
+              style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F3827)),
@@ -1574,7 +1575,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                   )
                 : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
             label: Text(
-              _isScanning ? 'ANALYZING...' : 'Analyze',
+              _isScanning ? context.l10n.scanAnalyzing.toUpperCase() : context.l10n.scanCapturePhoto,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
@@ -1602,9 +1603,9 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                       _state = _ScanState.scanner;
                     }),
             icon: const Icon(Icons.close, size: 16, color: Color(0xFF556D5E)),
-            label: const Text(
-              'Retake Photo',
-              style: TextStyle(
+            label: Text(
+              context.l10n.retakeButton,
+              style: const TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0C2417),

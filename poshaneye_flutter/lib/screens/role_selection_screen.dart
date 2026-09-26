@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/topo_header.dart';
 import '../widgets/role_card.dart';
 
@@ -10,6 +11,8 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -18,10 +21,9 @@ class RoleSelectionScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const TopoHeader(
-                title: 'Welcome',
-                subtitle:
-                    'Continue with the role that matches your journey and keep every child milestone in view.',
+              TopoHeader(
+                title: l10n.welcomeTitle,
+                subtitle: l10n.welcomeSubtitle,
               ).animate().fadeIn(
                     duration: const Duration(milliseconds: 500),
                     curve: Curves.easeOutCubic,
@@ -32,11 +34,11 @@ class RoleSelectionScreen extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                   ),
               const SizedBox(height: 32),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
-                  'Who are you?',
-                  style: TextStyle(
+                  l10n.whoAreYou,
+                  style: const TextStyle(
                     color: AppColors.textDark,
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -46,8 +48,8 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               RoleCard(
-                title: 'Parent',
-                description: "Manage your child's growth and nutrition",
+                title: l10n.roleParentTitle,
+                description: l10n.roleParentDesc,
                 icon: Icons.person_outline_rounded,
                 onTap: () {
                   context.push('/auth/parent');
@@ -63,8 +65,8 @@ class RoleSelectionScreen extends StatelessWidget {
                   ),
               const SizedBox(height: 16),
               RoleCard(
-                title: 'Healthcare Worker',
-                description: 'Monitor and manage child health records',
+                title: l10n.roleHealthcareTitle,
+                description: l10n.roleHealthcareDesc,
                 icon: Icons.medical_services_outlined,
                 onTap: () {
                   context.push('/auth/healthcare');

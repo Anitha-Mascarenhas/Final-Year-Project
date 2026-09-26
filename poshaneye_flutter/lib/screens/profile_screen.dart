@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../state/locale_provider.dart';
 import '../state/vitals_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../utils/image_picker_helper.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -93,6 +95,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildTopBar() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -113,7 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               InteractiveEyeLogo(width: 26, color: _primaryText),
               const SizedBox(width: 6),
               Text(
-                _isHistoryView ? 'Child History' : 'Child Profile',
+                _isHistoryView ? l10n.childHistoryTitle : l10n.childProfileTitle,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -187,6 +190,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileView() {
+    final l10n = context.l10n;
     final childImageBytes = ref.watch(childProfileImageProvider);
 
     return Column(
@@ -194,7 +198,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       children: [
         // AARAV'S PROFILE
         Text(
-          "${_childName.toUpperCase()}'S\nPROFILE",
+          l10n.profileHeader(_childName.toUpperCase()),
           style: TextStyle(
             fontSize: 44,
             fontWeight: FontWeight.w900,
@@ -223,7 +227,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'CHILD HISTORY',
+                  l10n.childHistoryTitle.toUpperCase(),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w900,
@@ -248,7 +252,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 16),
 
         // 01 CHILD PROFILE
-        _buildSectionHeader('01 CHILD PROFILE'),
+        _buildSectionHeader(l10n.secChildProfile),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
@@ -310,7 +314,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             Icon(Icons.add_photo_alternate_outlined,
                                 size: 28, color: _secondaryText),
                             const SizedBox(height: 4),
-                            Text('NO PHOTO',
+                            Text(l10n.noPhoto,
                                 style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
@@ -340,14 +344,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    _infoRow('AGE', _age),
+                    _infoRow(l10n.ageLabel.toUpperCase(), _age),
                     const SizedBox(height: 3),
-                    _infoRow('GENDER', _gender),
+                    _infoRow(l10n.genderLabel.toUpperCase(), _gender),
                     const SizedBox(height: 3),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('STATUS',
+                        Text(l10n.statusLabel.toUpperCase(),
                             style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
@@ -369,7 +373,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 18),
 
         // 02 PARENT / ACCOUNT
-        _buildSectionHeader('02 PARENT / ACCOUNT'),
+        _buildSectionHeader(l10n.secParentAccount),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
@@ -407,7 +411,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 18),
 
         // 03 PREFERENCES
-        _buildSectionHeader('03 PREFERENCES'),
+        _buildSectionHeader(l10n.secPreferences),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -417,18 +421,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           child: Column(
             children: [
-              _menuItem('01', Icons.notifications_none, 'Notifications'),
+              _menuItem('01', Icons.notifications_none, l10n.notifications),
               Divider(height: 1, color: _dividerColor),
-              _menuItem('02', Icons.settings_outlined, 'App Settings'),
+              _menuItem('02', Icons.settings_outlined, l10n.appSettings),
               Divider(height: 1, color: _dividerColor),
-              _menuItem('03', Icons.people_outline, 'Manage Profiles'),
+              _menuItem('03', Icons.people_outline, l10n.manageProfiles),
+              Divider(height: 1, color: _dividerColor),
+              _buildLanguageSelector(context),
             ],
           ),
         ),
         const SizedBox(height: 18),
 
         // 04 SUPPORT
-        _buildSectionHeader('04 SUPPORT'),
+        _buildSectionHeader(l10n.secSupport),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -438,9 +444,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           child: Column(
             children: [
-              _menuItem('01', Icons.help_outline, 'Help Center'),
+              _menuItem('01', Icons.help_outline, l10n.helpCenter),
               Divider(height: 1, color: _dividerColor),
-              _menuItem('02', Icons.shield_outlined, 'Privacy & Security'),
+              _menuItem('02', Icons.shield_outlined, l10n.privacySecurity),
             ],
           ),
         ),
@@ -463,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           fontWeight: FontWeight.w900,
                           color: _secondaryText)),
                   const SizedBox(width: 10),
-                  Text('Sign Out',
+                  Text(l10n.signOut,
                       style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
@@ -476,6 +482,197 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  Widget _buildLanguageSelector(BuildContext context) {
+    final l10n = context.l10n;
+    final currentLocale = ref.watch(localeProvider);
+
+    final languages = [
+      {'code': 'en', 'name': 'English'},
+      {'code': 'hi', 'name': 'हिन्दी'},
+      {'code': 'kn', 'name': 'ಕನ್ನಡ'},
+    ];
+
+    final selectedLangName = languages.firstWhere(
+      (l) => l['code'] == currentLocale.languageCode,
+      orElse: () => languages[0],
+    )['name']!;
+
+    return GestureDetector(
+      onTap: () => _showLanguageModal(context),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text('04',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _secondaryText)),
+                const SizedBox(width: 12),
+                Icon(Icons.language_rounded, size: 18, color: _primaryText),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.selectLanguage,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryText),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2DE099).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF2DE099).withOpacity(0.4)),
+                  ),
+                  child: Text(
+                    selectedLangName,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: _isDarkMode
+                          ? const Color(0xFF2DE099)
+                          : const Color(0xFF0C2417),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 18, color: _secondaryText),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageModal(BuildContext context) {
+    final l10n = context.l10n;
+    final currentLocale = ref.read(localeProvider);
+
+    final options = [
+      {'code': 'en', 'name': 'English', 'sub': 'Default'},
+      {'code': 'hi', 'name': 'हिन्दी', 'sub': 'Hindi'},
+      {'code': 'kn', 'name': 'ಕನ್ನಡ', 'sub': 'Kannada'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: _cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.selectLanguage,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: _primaryText,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: _secondaryText),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...options.map((opt) {
+                final isSelected = opt['code'] == currentLocale.languageCode;
+                return GestureDetector(
+                  onTap: () {
+                    ref
+                        .read(localeProvider.notifier)
+                        .setLocale(Locale(opt['code']!));
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF2DE099).withOpacity(0.12)
+                          : _softSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF2DE099)
+                            : _cardBorder,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              opt['name']!,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: isSelected
+                                    ? const Color(0xFF2DE099)
+                                    : _primaryText,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '(${opt['sub']})',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _secondaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isSelected)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFF2DE099),
+                            size: 22,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
   }
 

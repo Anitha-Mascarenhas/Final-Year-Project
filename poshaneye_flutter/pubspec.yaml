@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
+  shared_preferences: ^2.3.2
   google_fonts: ^6.2.1
   lucide_icons: ^0.257.0
   go_router: ^16.2.4
@@ -33,3 +37,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true

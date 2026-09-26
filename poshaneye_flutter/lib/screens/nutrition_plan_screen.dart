@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/l10n_extension.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class NutritionPlanScreen extends StatefulWidget {
@@ -78,90 +79,97 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
   Color get _timelineSurface =>
       _isDarkMode ? const Color(0xFF294535) : const Color(0xFFE3ECE3);
 
-  late final List<_MealData> _meals = [
-    _MealData(
-      id: 'breakfast',
-      category: 'Breakfast',
-      time: '8:00 AM',
-      icon: Icons.coffee,
-      options: [
-        {
-          'title': 'Oatmeal with mashed bananas & almond dust',
-          'nutrition':
-              'Nutritional value: Approx. 220 kcal · 7 g protein · 5 g fiber',
-        },
-        {
-          'title': 'Warm ragi porridge with grated apples & almonds',
-          'nutrition':
-              'Nutritional value: Approx. 220 kcal · 7 g protein · 5 g fiber',
-        },
-        {
-          'title': 'Steamed idli with mild vegetable sambar & coconut drizzle',
-          'nutrition':
-              'Nutritional value: Approx. 205 kcal · 6.5 g protein · 4.5 g fiber',
-        },
-      ],
-    ),
-    _MealData(
-      id: 'lunch',
-      category: 'Lunch',
-      time: '12:30 PM',
-      icon: Icons.restaurant,
-      options: [
-        {
-          'title': 'Soft lentil soup (Dal) with mashed rice & ghee',
-          'nutrition':
-              'Nutritional value: Approx. 340 kcal · 11 g protein · 6 g fiber',
-        },
-        {
-          'title': 'Mashed khichdi with ghee and steamed carrots',
-          'nutrition':
-              'Nutritional value: Approx. 315 kcal · 10.5 g protein · 6.5 g fiber',
-        },
-        {
-          'title': 'Curd rice with steamed beetroot & tempered cumin',
-          'nutrition':
-              'Nutritional value: Approx. 290 kcal · 9.2 g protein · 4.8 g fiber',
-        },
-      ],
-    ),
-    _MealData(
-      id: 'snack',
-      category: 'Afternoon Snack',
-      time: '3:30 PM',
-      icon: Icons.apple,
-      options: [
-        {
-          'title': 'Thinly sliced apples or pureed fruit with curd',
-          'nutrition':
-              'Nutritional value: Approx. 135 kcal · 3.5 g protein · 4.2 g fiber',
-        },
-        {
-          'title': 'Roasted makhana with mashed banana puree',
-          'nutrition':
-              'Nutritional value: Approx. 145 kcal · 4 g protein · 3.8 g fiber',
-        },
-      ],
-    ),
-    _MealData(
-      id: 'dinner',
-      category: 'Dinner',
-      time: '7:00 PM',
-      icon: Icons.nightlight_round,
-      options: [
-        {
-          'title': 'Steamed vegetables and pumpkin porridge',
-          'nutrition':
-              'Nutritional value: Approx. 235 kcal · 5.5 g protein · 6.2 g fiber',
-        },
-        {
-          'title': 'Soft moong dal cheela with mild mint dip',
-          'nutrition':
-              'Nutritional value: Approx. 250 kcal · 9 g protein · 5.5 g fiber',
-        },
-      ],
-    ),
-  ];
+  late List<_MealData> _meals;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = context.l10n;
+    _meals = [
+      _MealData(
+        id: 'breakfast',
+        category: l10n.breakfast,
+        time: '8:00 AM',
+        icon: Icons.coffee,
+        options: [
+          {
+            'title': 'Oatmeal with mashed bananas & almond dust',
+            'nutrition':
+                'Nutritional value: Approx. 220 kcal · 7 g protein · 5 g fiber',
+          },
+          {
+            'title': 'Warm ragi porridge with grated apples & almonds',
+            'nutrition':
+                'Nutritional value: Approx. 220 kcal · 7 g protein · 5 g fiber',
+          },
+          {
+            'title': 'Steamed idli with mild vegetable sambar & coconut drizzle',
+            'nutrition':
+                'Nutritional value: Approx. 205 kcal · 6.5 g protein · 4.5 g fiber',
+          },
+        ],
+      ),
+      _MealData(
+        id: 'lunch',
+        category: l10n.lunch,
+        time: '12:30 PM',
+        icon: Icons.restaurant,
+        options: [
+          {
+            'title': 'Soft lentil soup (Dal) with mashed rice & ghee',
+            'nutrition':
+                'Nutritional value: Approx. 340 kcal · 11 g protein · 6 g fiber',
+          },
+          {
+            'title': 'Mashed khichdi with ghee and steamed carrots',
+            'nutrition':
+                'Nutritional value: Approx. 315 kcal · 10.5 g protein · 6.5 g fiber',
+          },
+          {
+            'title': 'Curd rice with steamed beetroot & tempered cumin',
+            'nutrition':
+                'Nutritional value: Approx. 290 kcal · 9.2 g protein · 4.8 g fiber',
+          },
+        ],
+      ),
+      _MealData(
+        id: 'snack',
+        category: l10n.afternoonSnack,
+        time: '3:30 PM',
+        icon: Icons.apple,
+        options: [
+          {
+            'title': 'Thinly sliced apples or pureed fruit with curd',
+            'nutrition':
+                'Nutritional value: Approx. 135 kcal · 3.5 g protein · 4.2 g fiber',
+          },
+          {
+            'title': 'Roasted makhana with mashed banana puree',
+            'nutrition':
+                'Nutritional value: Approx. 145 kcal · 4 g protein · 3.8 g fiber',
+          },
+        ],
+      ),
+      _MealData(
+        id: 'dinner',
+        category: l10n.dinner,
+        time: '7:00 PM',
+        icon: Icons.nightlight_round,
+        options: [
+          {
+            'title': 'Steamed vegetables and pumpkin porridge',
+            'nutrition':
+                'Nutritional value: Approx. 235 kcal · 5.5 g protein · 6.2 g fiber',
+          },
+          {
+            'title': 'Soft moong dal cheela with mild mint dip',
+            'nutrition':
+                'Nutritional value: Approx. 250 kcal · 9 g protein · 5.5 g fiber',
+          },
+        ],
+      ),
+    ];
+  }
 
   void _swapMeal(_MealData meal) async {
     if (meal.isSwapping) return;
@@ -208,6 +216,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
   }
 
   Widget _buildTopBar() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -222,7 +231,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
               InteractiveEyeLogo(width: 26, color: _primaryText),
               const SizedBox(width: 6),
               Text(
-                'Nutrition Plan',
+                l10n.nutritionPlanTitle,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -296,13 +305,14 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
   }
 
   Widget _buildTitle() {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "${widget.childName}'s Nutrition Plan",
+            l10n.childNutritionPlanTitle(widget.childName),
             style: TextStyle(
               fontSize: 25,
               fontWeight: FontWeight.w900,
@@ -312,7 +322,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
           ),
           const SizedBox(height: 3),
           Text(
-            'Nourishing meal guide tailored for today.',
+            l10n.nourishingMealGuide,
             style: TextStyle(
               fontSize: 13.5,
               color: _secondaryText,
@@ -517,7 +527,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                         child: Row(
                           children: [
                             Text(
-                              meal.isExpanded ? 'Read less' : 'Read more',
+                              meal.isExpanded ? context.l10n.readLess : context.l10n.readMore,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
@@ -551,7 +561,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                                     size: 16, color: _primaryText),
                             const SizedBox(width: 6),
                             Text(
-                              meal.isSwapping ? 'Swapping...' : 'Swap Option',
+                              meal.isSwapping ? context.l10n.swapping : context.l10n.swapOption,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
