@@ -73,3 +73,4 @@ predictor = PoshanEyePredictor()
 
 def run_prediction(image_path: str):
     return predictor.predict(image_path)
+    

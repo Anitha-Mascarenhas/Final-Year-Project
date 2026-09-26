@@ -42,6 +42,27 @@ Page<void> _fluidPage(GoRouterState state, Widget child) {
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
+  errorBuilder: (context, state) => Scaffold(
+    backgroundColor: const Color(0xFF0C2417),
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Color(0xFF2DE099), size: 48),
+          const SizedBox(height: 16),
+          Text(
+            'Page not found',
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => context.go('/'),
+            child: const Text('Go Home', style: TextStyle(color: Color(0xFF2DE099))),
+          ),
+        ],
+      ),
+    ),
+  ),
   routes: [
     GoRoute(
       path: '/',
