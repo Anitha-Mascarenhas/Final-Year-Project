@@ -4,6 +4,8 @@ build/
 .flutter-plugins-dependencies
 .packages
 *.log
+.gradle/
+**/android/.gradle/
 
 # Large MP4 static video assets (Must remain local, never committed to Git)
 public/videos/*

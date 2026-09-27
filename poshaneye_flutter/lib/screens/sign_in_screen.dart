@@ -21,6 +21,8 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   static const _demoParentChildId = 'PE-1048';
   static const _demoParentPassword = '12345678';
+  static const _demoHealthcareId = 'HW001';
+  static const _demoHealthcarePassword = '1234';
 
   final _idController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -42,18 +44,28 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    if (widget.role == UserRole.parent &&
-        (enteredId != _demoParentChildId ||
-            enteredPassword != _demoParentPassword)) {
-      _showError(l10n.errorIncorrectIdPassword);
-      return;
+    if (widget.role == UserRole.parent) {
+      if (enteredId != _demoParentChildId ||
+          enteredPassword != _demoParentPassword) {
+        _showError(l10n.errorIncorrectIdPassword);
+        return;
+      }
+      ProviderScope.containerOf(context, listen: false)
+          .read(sessionProvider.notifier)
+          .signInAs('Aarav');
+      context.go('/app', extra: 'Aarav');
+    } else {
+      if (enteredId != _demoHealthcareId ||
+          enteredPassword != _demoHealthcarePassword) {
+        _showError(
+            'Incorrect Health Worker ID or password. Demo: HW001 / 1234');
+        return;
+      }
+      ProviderScope.containerOf(context, listen: false)
+          .read(sessionProvider.notifier)
+          .signInAs('Dr. Priya');
+      context.go('/healthcare-dashboard');
     }
-
-    final childName = widget.role == UserRole.parent ? 'Aarav' : 'Dr. Priya';
-    ProviderScope.containerOf(context, listen: false)
-        .read(sessionProvider.notifier)
-        .signInAs(childName);
-    context.go('/app', extra: childName);
   }
 
   void _showError(String message) {
@@ -70,11 +82,11 @@ class _SignInScreenState extends State<SignInScreen> {
     final subtitle = isParent
         ? l10n.parentSignInSubtitle
         : l10n.healthcareSignInSubtitle;
-    final idLabel = isParent ? l10n.childIdLabel : l10n.hospitalIdLabel;
-    final idHint = isParent ? l10n.childIdHint : l10n.hospitalIdHint;
+    final idLabel = isParent ? l10n.childIdLabel : 'HEALTH WORKER ID';
+    final idHint = isParent ? l10n.childIdHint : 'e.g. HW001';
     final idIcon = isParent
         ? Icons.verified_user_outlined
-        : Icons.local_hospital_outlined;
+        : Icons.badge_outlined;
 
     return Scaffold(
       backgroundColor: AppColors.background,

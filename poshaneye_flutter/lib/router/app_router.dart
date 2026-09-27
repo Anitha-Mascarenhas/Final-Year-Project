@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/auth_choice_screen.dart';
+import '../screens/healthcare_dashboard_screen.dart';
 import '../screens/main_scaffold.dart';
 import '../screens/role_selection_screen.dart';
 import '../screens/sign_in_screen.dart';
@@ -87,6 +88,13 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _fluidPage(
         state,
         SignUpScreen(role: _roleFromPath(state.pathParameters['role'])),
+      ),
+    ),
+    GoRoute(
+      path: '/healthcare-dashboard',
+      pageBuilder: (context, state) => _fluidPage(
+        state,
+        const HealthcareDashboardScreen(),
       ),
     ),
     GoRoute(

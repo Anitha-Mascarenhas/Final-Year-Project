@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../utils/image_picker_helper.dart';
 import '../utils/l10n_extension.dart';
+import '../utils/pdf_exporter.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -44,17 +45,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isDarkMode ? const Color(0xFF34513F) : const Color(0xFFF0F4F0);
 
   String _childName = 'Aarav';
-  String _age = '2 years, 3 months';
+  String _childId = 'CHILD001';
+  String _age = '2y 3m';
   String _gender = 'Boy';
   String _status = 'On Track';
-  String _parentName = 'Sarah & Leo';
+  String _parentName = 'Sunita Sharma';
   String _accountType = 'Premium Account';
+  String _height = '92.5 cm';
+  String _weight = '12.4 kg';
+  String _muac = '14.2 cm';
+  String _zScore = '-0.4';
+  String _lastScreened = '24 Sep 2026';
 
   @override
   void initState() {
     super.initState();
     _childName = widget.childName;
     _isHistoryView = widget.initialHistoryView;
+
+    if (_childName == 'Aadhya') {
+      _childId = 'CHILD002';
+      _age = '1y 6m';
+      _gender = 'Girl';
+      _status = 'Moderate SAM';
+      _parentName = 'Rajesh Patel';
+      _height = '78.0 cm';
+      _weight = '9.2 kg';
+      _muac = '11.8 cm';
+      _zScore = '-2.1';
+      _lastScreened = '15 Aug 2026';
+    } else if (_childName == 'Ananya') {
+      _childId = 'CHILD003';
+      _age = '2y 6m';
+      _gender = 'Girl';
+      _status = 'Mild Stunting';
+      _parentName = 'Meera Reddy';
+      _height = '85.2 cm';
+      _weight = '11.5 kg';
+      _muac = '13.1 cm';
+      _zScore = '-1.2';
+      _lastScreened = '10 Jul 2026';
+    } else if (_childName == 'Vihaan') {
+      _childId = 'CHILD004';
+      _age = '1y 0m';
+      _gender = 'Boy';
+      _status = 'Healthy';
+      _parentName = 'Amit Verma';
+      _height = '75.0 cm';
+      _weight = '9.8 kg';
+      _muac = '14.5 cm';
+      _zScore = '+0.1';
+      _lastScreened = '01 Sep 2026';
+    }
   }
 
   Future<void> _pickChildImage() async {
@@ -106,9 +148,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               IconButton(
                 icon: Icon(Icons.arrow_back, color: _primaryText),
                 onPressed: () {
-                  if (_isHistoryView) {
+                  if (widget.initialHistoryView &&
+                      Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else if (_isHistoryView) {
                     setState(() => _isHistoryView = false);
-                  } else {
+                  } else if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
                 },
@@ -703,31 +748,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final metrics = [
       {
         'label': 'HEIGHT',
-        'value': latest?.formattedHeight ?? '92.5 cm',
+        'value': latest?.formattedHeight ?? _height,
         'icon': Icons.straighten,
         'idx': '01 / 05'
       },
       {
         'label': 'WEIGHT',
-        'value': latest?.formattedWeight ?? '14.2 kg',
+        'value': latest?.formattedWeight ?? _weight,
         'icon': Icons.scale,
         'idx': '02 / 05'
       },
       {
         'label': 'AGE',
-        'value': latest?.formattedAge ?? '2y 3m',
+        'value': latest?.formattedAge ?? _age,
         'icon': Icons.calendar_today,
         'idx': '03 / 05'
       },
       {
         'label': 'GENDER',
-        'value': latest?.gender ?? 'Boy',
+        'value': latest?.gender ?? _gender,
         'icon': Icons.person_outline,
         'idx': '04 / 05'
       },
       {
-        'label': 'BMI',
-        'value': latest?.formattedBmi ?? '16.6',
+        'label': 'BMI / Z-SCORE',
+        'value': latest?.formattedBmi ?? _zScore,
         'icon': Icons.monitor_weight_outlined,
         'idx': '05 / 05'
       },
@@ -762,7 +807,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ? const Color(0xFF4B9962)
                     : const Color(0xFFBCE4BC)),
           ),
-          child: Text('Health status : ${latest?.status ?? "Healthy"}',
+          child: Text('Health status : ${latest?.status ?? _status}',
               style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -771,6 +816,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 10),
         Text('A clear record of growth, scans, and clinical notes.',
             style: TextStyle(fontSize: 13, color: _secondaryText)),
+        const SizedBox(height: 14),
+
+        // Export PDF Action Button
+        ElevatedButton.icon(
+          onPressed: () {
+            PdfReportHelper.generateAndExportReport(
+              childId: _childId,
+              childName: _childName,
+              age: _age,
+              gender: _gender,
+              guardianName: _parentName,
+              status: _status,
+              height: _height,
+              weight: _weight,
+              muac: _muac,
+              bmiOrZScore: _zScore,
+              lastScreened: _lastScreened,
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryForest,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+          label: const Text(
+            'Export PDF Report',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
         const SizedBox(height: 16),
 
         // CURRENT DETAILS (01 / 05)
@@ -949,32 +1028,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       fontSize: 10.5,
                       fontWeight: FontWeight.w900,
                       color: _secondaryText)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('PDF Report exported successfully')),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.forestGreen,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(50),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.picture_as_pdf, size: 18),
-              SizedBox(width: 8),
-              Text('Export PDF report',
-                  style:
-                      TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
