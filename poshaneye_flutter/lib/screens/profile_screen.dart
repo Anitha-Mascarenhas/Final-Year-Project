@@ -5,11 +5,13 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../state/locale_provider.dart';
+import '../state/session_provider.dart';
 import '../state/vitals_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../utils/image_picker_helper.dart';
 import '../utils/l10n_extension.dart';
+import '../utils/pdf_exporter.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -49,7 +51,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _childName = 'Aarav';
   String _age = 'Not recorded';
-  String _parentName = 'Sarah & Leo';
+  String _parentName = 'Not recorded';
   String _accountType = 'Premium Account';
 
   @override
@@ -108,9 +110,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               IconButton(
                 icon: Icon(Icons.arrow_back, color: _primaryText),
                 onPressed: () {
-                  if (_isHistoryView) {
+                  if (widget.initialHistoryView &&
+                      Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else if (_isHistoryView) {
                     setState(() => _isHistoryView = false);
-                  } else {
+                  } else if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
                 },
@@ -781,6 +786,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildHistoryView() {
     final vitalsList = ref.watch(vitalsProvider).toList();
     final latest = ref.watch(latestVitalsProvider);
+    final session = ref.watch(sessionProvider);
+    final childId = session.childId ?? 'Not recorded';
+    final age = latest?.formattedAge ?? 'Not recorded';
+    final gender = latest?.gender ?? 'Not recorded';
+    final status = latest?.status ?? 'Not recorded';
+    final height = latest?.formattedHeight ?? 'Not recorded';
+    final weight = latest?.formattedWeight ?? 'Not recorded';
+    final muac = VitalsRecord.value(latest?.muacCm, 'cm');
+    final bmi = latest?.formattedBmi ?? 'Not recorded';
+    final lastScreened = latest?.recordedAt == null
+        ? 'Not recorded'
+        : DateFormat('d MMM yyyy').format(latest!.recordedAt!);
 
     final metrics = [
       {
@@ -853,6 +870,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 10),
         Text('A clear record of growth measurements and screenings.',
             style: TextStyle(fontSize: 13, color: _secondaryText)),
+        const SizedBox(height: 14),
+
+        // Export PDF Action Button
+        ElevatedButton.icon(
+          onPressed: () {
+            PdfReportHelper.generateAndExportReport(
+              childId: childId,
+              childName: _childName,
+              age: age,
+              gender: gender,
+              guardianName: _parentName,
+              status: status,
+              height: height,
+              weight: weight,
+              muac: muac,
+              bmiOrZScore: bmi,
+              lastScreened: lastScreened,
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryForest,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+          label: const Text(
+            'Export PDF Report',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
         const SizedBox(height: 16),
 
         // CURRENT DETAILS (01 / 05)
@@ -1021,7 +1072,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 18),
 
         const SizedBox(height: 20),
-
         ElevatedButton(
           onPressed: _exportHistoryPdf,
           style: ElevatedButton.styleFrom(

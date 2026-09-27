@@ -56,7 +56,11 @@ class _SignInScreenState extends State<SignInScreen> {
               childId: result['childId']?.toString(),
               accessToken: result['access_token']?.toString(),
               dateOfBirth: result['dateOfBirth']?.toString());
-      context.go('/app', extra: childName);
+      if (widget.role == UserRole.parent) {
+        context.go('/app', extra: childName);
+      } else {
+        context.go('/healthcare-dashboard');
+      }
     } catch (e) {
       _showError(e.toString());
     } finally {
@@ -80,7 +84,7 @@ class _SignInScreenState extends State<SignInScreen> {
     final idLabel = isParent ? l10n.childIdLabel : l10n.hospitalIdLabel;
     final idHint = isParent ? l10n.childIdHint : l10n.hospitalIdHint;
     final idIcon =
-        isParent ? Icons.verified_user_outlined : Icons.local_hospital_outlined;
+        isParent ? Icons.verified_user_outlined : Icons.badge_outlined;
 
     return Scaffold(
       backgroundColor: AppColors.background,
