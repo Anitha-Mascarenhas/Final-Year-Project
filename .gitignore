@@ -69,3 +69,4 @@ Poshaneyemn/experiments/image_model_frontal1_only/artifacts/*.tflite
 Poshaneyemn/experiments/cv_features_clean/results/cv_features_clean.csv
 Poshaneyemn/experiments/upper_arm_segmentation/contact_sheet_20.png
 .venv_hybrid/
+.venv-live/

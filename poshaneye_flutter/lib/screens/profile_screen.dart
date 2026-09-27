@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../state/locale_provider.dart';
 import '../state/vitals_provider.dart';
 import '../theme/app_colors.dart';
@@ -44,9 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isDarkMode ? const Color(0xFF34513F) : const Color(0xFFF0F4F0);
 
   String _childName = 'Aarav';
-  String _age = '2 years, 3 months';
-  String _gender = 'Boy';
-  String _status = 'On Track';
+  String _age = 'Not recorded';
   String _parentName = 'Sarah & Leo';
   String _accountType = 'Premium Account';
 
@@ -116,7 +118,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               InteractiveEyeLogo(width: 26, color: _primaryText),
               const SizedBox(width: 6),
               Text(
-                _isHistoryView ? l10n.childHistoryTitle : l10n.childProfileTitle,
+                _isHistoryView
+                    ? l10n.childHistoryTitle
+                    : l10n.childProfileTitle,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -190,6 +194,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileView() {
+    final latest = ref.watch(latestVitalsProvider);
+    _age = latest?.formattedAge ?? 'Not recorded';
     final l10n = context.l10n;
     final childImageBytes = ref.watch(childProfileImageProvider);
 
@@ -210,42 +216,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 12),
 
         // CHILD HISTORY
-        GestureDetector(
-          onTap: () => setState(() => _isHistoryView = true),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              border: Border.symmetric(
-                horizontal: BorderSide(
-                  color: _isDarkMode
-                      ? const Color(0xFF34513F)
-                      : const Color(0xFFD8E3D8),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.childHistoryTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
-                    color: _secondaryText,
-                    letterSpacing: 1.2,
+        Card(
+          color: _cardColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: _cardBorder),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => setState(() => _isHistoryView = true),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded, color: Color(0xFF059669)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.childHistoryTitle,
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _primaryText)),
+                        const SizedBox(height: 3),
+                        Text('View previous screenings and health records',
+                            style:
+                                TextStyle(fontSize: 12, color: _secondaryText)),
+                      ],
+                    ),
                   ),
-                ),
-                Row(
-                  children: [
-                    Text('01—05',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _secondaryText)),
-                    Icon(Icons.chevron_right, size: 18, color: _secondaryText),
-                  ],
-                ),
-              ],
+                  Icon(Icons.chevron_right, color: _secondaryText),
+                ],
+              ),
             ),
           ),
         ),
@@ -346,24 +351,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 4),
                     _infoRow(l10n.ageLabel.toUpperCase(), _age),
                     const SizedBox(height: 3),
-                    _infoRow(l10n.genderLabel.toUpperCase(), _gender),
+                    _infoRow(
+                        'HEIGHT', latest?.formattedHeight ?? 'Not recorded'),
                     const SizedBox(height: 3),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(l10n.statusLabel.toUpperCase(),
-                            style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w800,
-                                color: _secondaryText,
-                                letterSpacing: 0.6)),
-                        Text(_status,
-                            style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF10B981))),
-                      ],
-                    ),
+                    _infoRow(
+                        'WEIGHT', latest?.formattedWeight ?? 'Not recorded'),
                   ],
                 ),
               ),
@@ -530,7 +522,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF2DE099).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -611,7 +604,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   ...options.map((opt) {
-                    final isSelected = opt['code'] == currentLocale.languageCode;
+                    final isSelected =
+                        opt['code'] == currentLocale.languageCode;
                     return GestureDetector(
                       onTap: () {
                         ref
@@ -683,8 +677,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _monthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[(month - 1).clamp(0, 11)];
   }
@@ -696,38 +700,116 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return '$hour:$minute $period';
   }
 
+  Future<void> _exportHistoryPdf() async {
+    final records = ref.read(vitalsProvider);
+    final now = DateTime.now();
+    final pdf = pw.Document();
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(42),
+      build: (context) => [
+        pw.Text('PoshanEye',
+            style: pw.TextStyle(fontSize: 25, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 6),
+        pw.Text('Child health record', style: const pw.TextStyle(fontSize: 18)),
+        pw.SizedBox(height: 4),
+        pw.Text('Generated ${DateFormat('d MMM yyyy, h:mm a').format(now)}'),
+        pw.SizedBox(height: 18),
+        pw.Text('Child: $_childName',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 12),
+        if (records.isEmpty)
+          pw.Text(
+              'No screening or health measurements have been recorded for this child.')
+        else ...[
+          pw.Text('Screening and measurement history',
+              style:
+                  pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          ...records.expand((record) => <pw.Widget>[
+                pw.SizedBox(height: 8),
+                pw.Text(DateFormat('d MMM yyyy, h:mm a').format(record.date),
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                    'Age: ${record.formattedAge}    Gender: ${record.gender}'),
+                pw.Text(
+                    'Height: ${record.formattedHeight}    Weight: ${record.formattedWeight}    BMI: ${record.formattedBmi}'),
+                pw.Text(
+                    'MUAC: ${VitalsRecord.value(record.muacCm, 'cm')}    Head circumference: ${VitalsRecord.value(record.headCircumferenceCm, 'cm')}    Waist: ${VitalsRecord.value(record.waistCm, 'cm')}'),
+                pw.Text('Status: ${record.status}'),
+                if (record.prediction != null)
+                  pw.Text('AI screening result: ${record.prediction}'),
+                if (record.confidence != null)
+                  pw.Text(
+                      'Model confidence score: ${(record.confidence! * 100).toStringAsFixed(1)}% (model score, not a clinical probability)'),
+                if (record.risk != null)
+                  pw.Text('Risk / status: ${record.risk}'),
+                if (record.recommendation != null)
+                  pw.Text('Recommendation: ${record.recommendation}'),
+                pw.Divider(color: PdfColors.grey400),
+              ]),
+        ],
+        pw.SizedBox(height: 20),
+        pw.Text(
+            'This report contains records available in PoshanEye at the time of export.',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+      ],
+    ));
+    try {
+      await Printing.sharePdf(
+        bytes: await pdf.save(),
+        filename:
+            'PoshanEye_${_childName.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_')}_record.pdf',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF is ready to share or save.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Could not create or share the PDF. Please try again.')),
+        );
+      }
+      debugPrint('PDF export failed: $error');
+    }
+  }
+
   Widget _buildHistoryView() {
-    final vitalsList = ref.watch(vitalsProvider);
-    final latest = vitalsList.isNotEmpty ? vitalsList.first : null;
+    final vitalsList = ref.watch(vitalsProvider).toList();
+    final latest = ref.watch(latestVitalsProvider);
 
     final metrics = [
       {
         'label': 'HEIGHT',
-        'value': latest?.formattedHeight ?? '92.5 cm',
+        'value': latest?.formattedHeight ?? 'Not recorded',
         'icon': Icons.straighten,
         'idx': '01 / 05'
       },
       {
         'label': 'WEIGHT',
-        'value': latest?.formattedWeight ?? '14.2 kg',
+        'value': latest?.formattedWeight ?? 'Not recorded',
         'icon': Icons.scale,
         'idx': '02 / 05'
       },
       {
         'label': 'AGE',
-        'value': latest?.formattedAge ?? '2y 3m',
+        'value': latest?.formattedAge ?? 'Not recorded',
         'icon': Icons.calendar_today,
         'idx': '03 / 05'
       },
       {
         'label': 'GENDER',
-        'value': latest?.gender ?? 'Boy',
+        'value': latest?.gender ?? 'Not recorded',
         'icon': Icons.person_outline,
         'idx': '04 / 05'
       },
       {
         'label': 'BMI',
-        'value': latest?.formattedBmi ?? '16.6',
+        'value': latest?.formattedBmi ?? 'Not recorded',
         'icon': Icons.monitor_weight_outlined,
         'idx': '05 / 05'
       },
@@ -762,14 +844,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ? const Color(0xFF4B9962)
                     : const Color(0xFFBCE4BC)),
           ),
-          child: Text('Health status : ${latest?.status ?? "Healthy"}',
+          child: Text('Health status : ${latest?.status ?? "Not recorded"}',
               style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF065F46))),
         ),
         const SizedBox(height: 10),
-        Text('A clear record of growth, scans, and clinical notes.',
+        Text('A clear record of growth measurements and screenings.',
             style: TextStyle(fontSize: 13, color: _secondaryText)),
         const SizedBox(height: 16),
 
@@ -835,7 +917,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Align(
             alignment: Alignment.centerLeft,
             child: _buildSectionHeader('PREVIOUS SCANS & RECORDS',
-                right: '${vitalsList.length.toString().padLeft(2, '0')} entries')),
+                right:
+                    '${vitalsList.length.toString().padLeft(2, '0')} entries')),
         const SizedBox(height: 8),
         if (vitalsList.isEmpty)
           Container(
@@ -874,9 +957,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               fontWeight: FontWeight.w900,
                               color: _secondaryText)),
                       Text(dateStr,
-                          style: TextStyle(fontSize: 11.5, color: _secondaryText)),
+                          style:
+                              TextStyle(fontSize: 11.5, color: _secondaryText)),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                      'MUAC: ${VitalsRecord.value(record.muacCm, 'cm')}  •  Head circumference: ${VitalsRecord.value(record.headCircumferenceCm, 'cm')}  •  Waist: ${VitalsRecord.value(record.waistCm, 'cm')}',
+                      style: TextStyle(fontSize: 12, color: _secondaryText)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -887,13 +975,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               color: _primaryText)),
                       const SizedBox(width: 8),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                          color:
+                              const Color(0xFF10B981).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(record.gender,
+                        child: Text(record.gender ?? 'Not recorded',
                             style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -911,55 +1000,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _statCol('AGE', record.formattedAge),
                     ],
                   ),
+                  if (record.prediction != null) ...[
+                    const SizedBox(height: 10),
+                    Text('AI screening: ${record.prediction}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, color: _primaryText)),
+                  ],
+                  if (record.risk != null)
+                    Text('Risk / status: ${record.risk}',
+                        style: TextStyle(color: _secondaryText)),
+                  if (record.recommendation != null) ...[
+                    const SizedBox(height: 4),
+                    Text(record.recommendation!,
+                        style: TextStyle(color: _secondaryText, height: 1.35)),
+                  ],
                 ],
               ),
             );
           }).toList(),
         const SizedBox(height: 18),
 
-        // DOCTOR'S PRESCRIPTION
-        Align(
-            alignment: Alignment.centerLeft,
-            child:
-                _buildSectionHeader("DOCTOR'S PRESCRIPTION", right: '03 / 03')),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _cardColor,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _cardBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Continue the current care plan',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: _primaryText)),
-              const SizedBox(height: 6),
-              Text(
-                  'Keep regular meals, hydration, and outdoor play consistent. Bring this record to the next pediatric review.',
-                  style: TextStyle(
-                      fontSize: 13, color: _secondaryText, height: 1.4)),
-              const SizedBox(height: 10),
-              Text('📄 REVIEW AT NEXT VISIT',
-                  style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                      color: _secondaryText)),
-            ],
-          ),
-        ),
         const SizedBox(height: 20),
 
         ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('PDF Report exported successfully')),
-            );
-          },
+          onPressed: _exportHistoryPdf,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.forestGreen,
             foregroundColor: Colors.white,
@@ -1071,9 +1135,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _showEditChildModal() {
     final nameCtrl = TextEditingController(text: _childName);
-    final ageCtrl = TextEditingController(text: '2');
-    final genderCtrl = TextEditingController(text: _gender.toLowerCase());
-    final statusCtrl = TextEditingController(text: _status);
 
     showDialog(
       context: context,
@@ -1088,16 +1149,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               TextField(
                   controller: nameCtrl,
                   decoration: const InputDecoration(labelText: 'Name')),
-              TextField(
-                  controller: ageCtrl,
-                  decoration: const InputDecoration(labelText: 'Age')),
-              TextField(
-                  controller: genderCtrl,
-                  decoration: const InputDecoration(labelText: 'Gender')),
-              TextField(
-                  controller: statusCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Growth status')),
             ],
           ),
         ),
@@ -1108,9 +1159,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onPressed: () {
               setState(() {
                 _childName = nameCtrl.text;
-                _age = '${ageCtrl.text} years, 3 months';
-                _gender = genderCtrl.text;
-                _status = statusCtrl.text;
               });
               Navigator.pop(ctx);
             },

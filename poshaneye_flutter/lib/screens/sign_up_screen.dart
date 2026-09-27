@@ -8,6 +8,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/auth_tabs.dart';
 import 'auth_choice_screen.dart';
 import '../state/session_provider.dart';
+import '../services/api_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   final UserRole role;
@@ -19,6 +20,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  bool _busy = false;
   final _nameController = TextEditingController();
   final _dobController = TextEditingController();
   final _emailController = TextEditingController();
@@ -65,14 +67,73 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  Future<void> _createAccount() async {
+    final parent = widget.role == UserRole.parent;
+    final password = _passwordController.text;
+    if (password.length < 8 || password != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Enter matching passwords with at least 8 characters.')));
+      return;
+    }
+    final body = <String, dynamic>{
+      'email': _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      'password': password,
+      'confirmPassword': _confirmPasswordController.text,
+      if (parent) ...{
+        'childName': _nameController.text.trim(),
+        'dob': _parseDob(),
+      } else ...{
+        'name': _nameController.text.trim(),
+        'hospitalId': _hospitalIdController.text.trim(),
+      },
+    };
+    if (_nameController.text.trim().isEmpty ||
+        (parent && _dobController.text.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Complete all required fields.')));
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final created = await ApiService.signUp(parent: parent, body: body);
+      final id = (created[parent ? 'childId' : 'workerId'] ?? '').toString();
+      final session =
+          await ApiService.login(id: id, password: password, parent: parent);
+      if (!mounted) return;
+      final name =
+          parent ? _nameController.text.trim() : _nameController.text.trim();
+      ProviderScope.containerOf(context, listen: false)
+          .read(sessionProvider.notifier)
+          .signInAs(name,
+              childId: parent ? id : null,
+              accessToken: session['access_token']?.toString(),
+              dateOfBirth: session['dateOfBirth']?.toString());
+      context.go('/app', extra: name);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not create account: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _parseDob() {
+    final bits = _dobController.text.split('-');
+    if (bits.length != 3) return '';
+    return '${bits[2]}-${bits[1]}-${bits[0]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isParent = widget.role == UserRole.parent;
     final title = isParent ? l10n.createAccountTitle : l10n.joinClinician;
-    final subtitle = isParent
-        ? l10n.parentSignUpSubtitle
-        : l10n.healthcareSignUpSubtitle;
+    final subtitle =
+        isParent ? l10n.parentSignUpSubtitle : l10n.healthcareSignUpSubtitle;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -241,15 +302,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    final enteredName = _nameController.text.trim();
-                    final fallback = widget.role == UserRole.parent ? 'Aarav' : 'Dr. Priya';
-                    final childName = enteredName.isNotEmpty ? enteredName : fallback;
-                    ProviderScope.containerOf(context, listen: false)
-                        .read(sessionProvider.notifier)
-                        .signInAs(childName);
-                    context.go('/app', extra: childName);
-                  },
+                  onPressed: _busy ? null : _createAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryForest,
                     foregroundColor: Colors.white,
@@ -261,14 +314,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        l10n.createAccountButton,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
+                      if (_busy)
+                        const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                      else
+                        Text(
+                          l10n.createAccountButton,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
                         ),
-                      ),
                       const SizedBox(width: 8),
                       const Icon(Icons.arrow_forward_rounded, size: 18),
                     ],

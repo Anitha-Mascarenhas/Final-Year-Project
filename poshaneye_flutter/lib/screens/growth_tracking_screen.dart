@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/vitals_provider.dart';
+import '../state/session_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/l10n_extension.dart';
 import 'profile_screen.dart';
@@ -20,7 +21,8 @@ class GrowthTrackingScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<GrowthTrackingScreen> createState() => _GrowthTrackingScreenState();
+  ConsumerState<GrowthTrackingScreen> createState() =>
+      _GrowthTrackingScreenState();
 }
 
 /// Body-only version of Growth Tracking (rendered inside MainScaffold for tab 1).
@@ -34,7 +36,8 @@ class GrowthTrackingScreenBody extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<GrowthTrackingScreenBody> createState() => _GrowthTrackingBodyState();
+  ConsumerState<GrowthTrackingScreenBody> createState() =>
+      _GrowthTrackingBodyState();
 }
 
 class _GrowthTrackingScreenState extends ConsumerState<GrowthTrackingScreen>
@@ -147,6 +150,93 @@ class _GrowthVitalsCalculatorScreenState
   @override
   String get childName => widget.childName;
 
+  final _vitalsFormKey = GlobalKey<FormState>();
+  late final TextEditingController _yearsInput = TextEditingController();
+  late final TextEditingController _monthsInput = TextEditingController();
+  late final Map<String, TextEditingController> _measureInputs = {
+    'height_cm': TextEditingController(),
+    'weight_kg': TextEditingController(),
+    'head_circumference_cm': TextEditingController(),
+    'waist_cm': TextEditingController(),
+    'muac_cm': TextEditingController(),
+  };
+  String? _genderInput;
+  bool _savingVitals = false;
+
+  DateTime? get _childDateOfBirth {
+    final value = ref.read(sessionProvider).dateOfBirth;
+    if (value == null) return null;
+    return DateTime.tryParse(value);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final dob = _childDateOfBirth;
+    if (dob != null) {
+      final age = _ageAt(dob, DateTime.now());
+      _yearsInput.text = '${age.$1}';
+      _monthsInput.text = '${age.$2}';
+    }
+  }
+
+  (int, int) _ageAt(DateTime dob, DateTime today) {
+    var years = today.year - dob.year;
+    var months = today.month - dob.month;
+    if (today.day < dob.day) months--;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (years < 0) return (0, 0);
+    return (years, months);
+  }
+
+  @override
+  void dispose() {
+    _yearsInput.dispose();
+    _monthsInput.dispose();
+    for (final c in _measureInputs.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _saveVitals() async {
+    if (!_vitalsFormKey.currentState!.validate()) return;
+    final session = ref.read(sessionProvider);
+    if (session.childId == null || session.accessToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign in to save measurements.')));
+      return;
+    }
+    final payload = <String, dynamic>{
+      'age_years': int.parse(_yearsInput.text),
+      'age_months': int.parse(_monthsInput.text),
+      'gender': _genderInput,
+    };
+    for (final entry in _measureInputs.entries) {
+      final text = entry.value.text.trim();
+      payload[entry.key] = text.isEmpty ? null : double.parse(text);
+    }
+    setState(() => _savingVitals = true);
+    try {
+      await ref
+          .read(vitalsProvider.notifier)
+          .recordVitals(session.childId!, session.accessToken!, payload);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vitals saved successfully.')));
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not save vitals: $e')));
+    } finally {
+      if (mounted) setState(() => _savingVitals = false);
+    }
+  }
+
   @override
   void Function(double weight, double height)? get onCalculatorSaved =>
       widget.onSaved;
@@ -156,13 +246,86 @@ class _GrowthVitalsCalculatorScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFEAF1E9),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: _buildCalculatorView(),
-        ),
+        child: Form(
+            key: _vitalsFormKey,
+            child: ListView(padding: const EdgeInsets.all(20), children: [
+              Row(children: [
+                IconButton(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: const Icon(Icons.arrow_back)),
+                const Text('Log Vitals',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))
+              ]),
+              const SizedBox(height: 18),
+              _vitalInput(
+                  'Age (Years)${_childDateOfBirth == null ? '' : ' (calculated)'} *',
+                  _yearsInput,
+                  integer: true,
+                  requiredField: true,
+                  readOnly: _childDateOfBirth != null,
+                  maxValue: null),
+              _vitalInput(
+                  'Age (Months)${_childDateOfBirth == null ? '' : ' (calculated)'} *',
+                  _monthsInput,
+                  integer: true,
+                  requiredField: true,
+                  readOnly: _childDateOfBirth != null,
+                  maxValue: 11),
+              _vitalInput('Height (cm)', _measureInputs['height_cm']!),
+              _vitalInput('Weight (kg)', _measureInputs['weight_kg']!),
+              _vitalInput('Head Circumference (cm)',
+                  _measureInputs['head_circumference_cm']!),
+              _vitalInput('Waist (cm)', _measureInputs['waist_cm']!),
+              _vitalInput('MUAC (cm)', _measureInputs['muac_cm']!),
+              DropdownButtonFormField<String>(
+                  value: _genderInput,
+                  decoration:
+                      const InputDecoration(labelText: 'Gender (optional)'),
+                  items: const [
+                    DropdownMenuItem(value: 'Boy', child: Text('Boy')),
+                    DropdownMenuItem(value: 'Girl', child: Text('Girl'))
+                  ],
+                  onChanged: (v) => setState(() => _genderInput = v)),
+              const SizedBox(height: 24),
+              SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                      onPressed: _savingVitals ? null : _saveVitals,
+                      child: _savingVitals
+                          ? const CircularProgressIndicator()
+                          : const Text('Save Vitals'))),
+            ])),
       ),
     );
   }
+
+  Widget _vitalInput(String label, TextEditingController controller,
+          {bool integer = false,
+          bool requiredField = false,
+          bool readOnly = false,
+          int? maxValue}) =>
+      Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: TextFormField(
+            controller: controller,
+            readOnly: readOnly,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: integer
+                ? [FilteringTextInputFormatter.digitsOnly]
+                : [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+            decoration: InputDecoration(
+                labelText: label, border: const OutlineInputBorder()),
+            validator: (value) {
+              final text = value?.trim() ?? '';
+              if (text.isEmpty) return requiredField ? 'Required' : null;
+              final number = num.tryParse(text);
+              if (number == null || number < 0 || (!integer && number == 0))
+                return 'Enter a valid ${integer ? 'age' : 'measurement'}';
+              if (maxValue != null && number > maxValue)
+                return 'Must be between 0 and $maxValue';
+              return null;
+            },
+          ));
 }
 
 // Shared mixin holding all state and build methods for Growth Tracking.
@@ -1041,7 +1204,8 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                             height: 68,
                             decoration: BoxDecoration(
                               color: _calcGender == 'Boy'
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                  ? const Color(0xFF10B981)
+                                      .withValues(alpha: 0.15)
                                   : const Color(0xFFF3F4F6),
                               shape: BoxShape.circle,
                             ),
@@ -1092,7 +1256,8 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                             height: 68,
                             decoration: BoxDecoration(
                               color: _calcGender == 'Girl'
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                  ? const Color(0xFF10B981)
+                                      .withValues(alpha: 0.15)
                                   : const Color(0xFFF3F4F6),
                               shape: BoxShape.circle,
                             ),
@@ -1239,8 +1404,7 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                           ),
                           const SizedBox(height: 8),
                           GestureDetector(
-                            onTap: () =>
-                                _updateCalcAgeYears(_calcAgeYears + 1),
+                            onTap: () => _updateCalcAgeYears(_calcAgeYears + 1),
                             child: Text('${_calcAgeYears + 1}',
                                 style: const TextStyle(
                                     fontSize: 18,
@@ -1337,11 +1501,9 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                       onPointerSignal: (pointerSignal) {
                         if (pointerSignal is PointerScrollEvent) {
                           final delta = pointerSignal.scrollDelta.dy / 10.0;
-                          final next =
-                              (_calcWeight + delta).clamp(2.0, 80.0);
+                          final next = (_calcWeight + delta).clamp(2.0, 80.0);
                           setState(() {
-                            _calcWeight =
-                                double.parse(next.toStringAsFixed(1));
+                            _calcWeight = double.parse(next.toStringAsFixed(1));
                             if (!_weightFocusNode.hasFocus) {
                               _weightController.text =
                                   _calcWeight.toStringAsFixed(1);
@@ -1353,11 +1515,9 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                         behavior: HitTestBehavior.opaque,
                         onHorizontalDragUpdate: (details) {
                           final delta = details.primaryDelta! / 5.0;
-                          final next =
-                              (_calcWeight + delta).clamp(2.0, 80.0);
+                          final next = (_calcWeight + delta).clamp(2.0, 80.0);
                           setState(() {
-                            _calcWeight =
-                                double.parse(next.toStringAsFixed(1));
+                            _calcWeight = double.parse(next.toStringAsFixed(1));
                             if (!_weightFocusNode.hasFocus) {
                               _weightController.text =
                                   _calcWeight.toStringAsFixed(1);
@@ -1759,26 +1919,12 @@ mixin _GrowthTrackingMixin<T extends ConsumerStatefulWidget>
                 setState(() => _calcStep = 5);
               } else {
                 // Save to profile and switch back to Trends with animated numbers
-                ref.read(vitalsProvider.notifier).addRecord(
-                  childName: childName,
-                  gender: _calcGender,
-                  ageYears: _calcAgeYears,
-                  ageMonths: _calcAgeMonths,
-                  weight: _calcWeight,
-                  height: _calcHeight,
-                  status: 'On Track',
-                );
-
                 final savedCallback = onCalculatorSaved;
                 if (savedCallback != null) {
                   savedCallback(_calcWeight, _calcHeight);
                   Navigator.of(context).pop();
                 } else {
                   setState(() {
-                    _currentWeight = _calcWeight;
-                    _currentHeight = _calcHeight;
-                    _weightMilestones[4]['child'] = _calcWeight;
-                    _heightMilestones[4]['child'] = _calcHeight;
                     _selectedSegment = 0;
                     _counterController.forward(from: 0.0);
                   });
@@ -2008,9 +2154,8 @@ class _HeightRulerPainter extends CustomPainter {
           style: TextStyle(
             fontSize: isCenterVal ? 16 : 13.5,
             fontWeight: isCenterVal ? FontWeight.w900 : FontWeight.w600,
-            color: isCenterVal
-                ? const Color(0xFF0C2417)
-                : const Color(0xFF678270),
+            color:
+                isCenterVal ? const Color(0xFF0C2417) : const Color(0xFF678270),
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -2042,8 +2187,6 @@ class _HeightRulerPainter extends CustomPainter {
   bool shouldRepaint(covariant _HeightRulerPainter oldDelegate) =>
       oldDelegate.value != value || oldDelegate.activeColor != activeColor;
 }
-
-
 
 class _MeasurementRulerWidget extends StatefulWidget {
   final double value;
@@ -2297,14 +2440,18 @@ class _BoySilhouettePainter extends CustomPainter {
     canvas.drawRRect(torso, paint);
 
     // Legs
-    final leftLeg = RRect.fromRectAndRadius(const Rect.fromLTRB(10.5, 27, 15, 39), const Radius.circular(2.5));
-    final rightLeg = RRect.fromRectAndRadius(const Rect.fromLTRB(17, 27, 21.5, 39), const Radius.circular(2.5));
+    final leftLeg = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(10.5, 27, 15, 39), const Radius.circular(2.5));
+    final rightLeg = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(17, 27, 21.5, 39), const Radius.circular(2.5));
     canvas.drawRRect(leftLeg, paint);
     canvas.drawRRect(rightLeg, paint);
 
     // Arms
-    final leftArm = RRect.fromRectAndRadius(const Rect.fromLTRB(6.5, 18, 9, 28), const Radius.circular(2.5));
-    final rightArm = RRect.fromRectAndRadius(const Rect.fromLTRB(23, 18, 25.5, 28), const Radius.circular(2.5));
+    final leftArm = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(6.5, 18, 9, 28), const Radius.circular(2.5));
+    final rightArm = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(23, 18, 25.5, 28), const Radius.circular(2.5));
     canvas.drawRRect(leftArm, paint);
     canvas.drawRRect(rightArm, paint);
   }
@@ -2358,14 +2505,18 @@ class _GirlSilhouettePainter extends CustomPainter {
     canvas.drawPath(dressPath, paint);
 
     // Legs
-    final leftLeg = RRect.fromRectAndRadius(const Rect.fromLTRB(11, 28, 14.5, 39), const Radius.circular(2.5));
-    final rightLeg = RRect.fromRectAndRadius(const Rect.fromLTRB(17.5, 28, 21, 39), const Radius.circular(2.5));
+    final leftLeg = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(11, 28, 14.5, 39), const Radius.circular(2.5));
+    final rightLeg = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(17.5, 28, 21, 39), const Radius.circular(2.5));
     canvas.drawRRect(leftLeg, paint);
     canvas.drawRRect(rightLeg, paint);
 
     // Arms
-    final leftArm = RRect.fromRectAndRadius(const Rect.fromLTRB(6.5, 18, 9.5, 26), const Radius.circular(2.5));
-    final rightArm = RRect.fromRectAndRadius(const Rect.fromLTRB(22.5, 18, 25.5, 26), const Radius.circular(2.5));
+    final leftArm = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(6.5, 18, 9.5, 26), const Radius.circular(2.5));
+    final rightArm = RRect.fromRectAndRadius(
+        const Rect.fromLTRB(22.5, 18, 25.5, 26), const Radius.circular(2.5));
     canvas.drawRRect(leftArm, paint);
     canvas.drawRRect(rightArm, paint);
   }

@@ -1,10 +1,10 @@
 class PredictionResult {
   final String prediction;
-  final double confidence;
+  final double? confidence;
   final Map<String, double> probabilities;
   final String status;
-  final String risk;
-  final String recommendation;
+  final String? risk;
+  final String? recommendation;
 
   PredictionResult({
     required this.prediction,
@@ -26,12 +26,11 @@ class PredictionResult {
 
     return PredictionResult(
       prediction: pred,
-      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      confidence: (json['confidence'] as num?)?.toDouble(),
       probabilities: parsedProbabilities,
       status: json['status'] as String? ?? _capitalize(pred),
-      risk: json['risk'] as String? ?? 'Low Risk',
-      recommendation: json['recommendation'] as String? ??
-          'Child growth is on track. Maintain balanced nutrition.',
+      risk: json['risk'] as String?,
+      recommendation: json['recommendation'] as String?,
     );
   }
 
@@ -43,11 +42,11 @@ class PredictionResult {
   Map<String, dynamic> toJson() {
     return {
       'prediction': prediction,
-      'confidence': confidence,
+      if (confidence != null) 'confidence': confidence,
       'probabilities': probabilities,
       'status': status,
-      'risk': risk,
-      'recommendation': recommendation,
+      if (risk != null) 'risk': risk,
+      if (recommendation != null) 'recommendation': recommendation,
     };
   }
 }

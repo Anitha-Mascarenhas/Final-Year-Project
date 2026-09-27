@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../state/session_provider.dart';
+import '../state/vitals_provider.dart';
 import '../widgets/interactive_bottom_nav.dart';
 import 'home_dashboard_screen.dart';
 import 'growth_tracking_screen.dart';
@@ -10,7 +13,7 @@ import 'role_selection_screen.dart';
 /// Central scaffold that owns the bottom navigation state.
 /// All main tab screens are rendered within this widget so that
 /// switching tabs never pushes a new route onto the stack.
-class MainScaffold extends StatefulWidget {
+class MainScaffold extends ConsumerStatefulWidget {
   final String childName;
   final int initialIndex;
 
@@ -21,16 +24,30 @@ class MainScaffold extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  ConsumerState<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldState extends ConsumerState<MainScaffold> {
   late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadVitals());
+  }
+
+  Future<void> _loadVitals() async {
+    final session = ref.read(sessionProvider);
+    if (session.childId != null && session.accessToken != null) {
+      try {
+        await ref
+            .read(vitalsProvider.notifier)
+            .loadForChild(session.childId!, session.accessToken!);
+      } catch (_) {
+        /* screens show the empty state; refresh is available on re-entry */
+      }
+    }
   }
 
   void _onTabSelected(int idx) {

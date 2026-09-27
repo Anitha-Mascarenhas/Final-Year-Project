@@ -8,6 +8,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/auth_tabs.dart';
 import 'auth_choice_screen.dart';
 import '../state/session_provider.dart';
+import '../services/api_service.dart';
 
 class SignInScreen extends StatefulWidget {
   final UserRole role;
@@ -19,8 +20,7 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  static const _demoParentChildId = 'PE-1048';
-  static const _demoParentPassword = '12345678';
+  bool _busy = false;
 
   final _idController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -32,7 +32,7 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  void _signIn() {
+  Future<void> _signIn() async {
     final l10n = context.l10n;
     final enteredId = _idController.text.trim().toUpperCase();
     final enteredPassword = _passwordController.text;
@@ -42,18 +42,26 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    if (widget.role == UserRole.parent &&
-        (enteredId != _demoParentChildId ||
-            enteredPassword != _demoParentPassword)) {
-      _showError(l10n.errorIncorrectIdPassword);
-      return;
+    setState(() => _busy = true);
+    try {
+      final result = await ApiService.login(
+          id: enteredId,
+          password: enteredPassword,
+          parent: widget.role == UserRole.parent);
+      if (!mounted) return;
+      final childName = result['childName']?.toString() ?? 'Health worker';
+      ProviderScope.containerOf(context, listen: false)
+          .read(sessionProvider.notifier)
+          .signInAs(childName,
+              childId: result['childId']?.toString(),
+              accessToken: result['access_token']?.toString(),
+              dateOfBirth: result['dateOfBirth']?.toString());
+      context.go('/app', extra: childName);
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-
-    final childName = widget.role == UserRole.parent ? 'Aarav' : 'Dr. Priya';
-    ProviderScope.containerOf(context, listen: false)
-        .read(sessionProvider.notifier)
-        .signInAs(childName);
-    context.go('/app', extra: childName);
   }
 
   void _showError(String message) {
@@ -67,14 +75,12 @@ class _SignInScreenState extends State<SignInScreen> {
     final l10n = context.l10n;
     final isParent = widget.role == UserRole.parent;
     final title = isParent ? l10n.welcomeBack : l10n.clinicalSignIn;
-    final subtitle = isParent
-        ? l10n.parentSignInSubtitle
-        : l10n.healthcareSignInSubtitle;
+    final subtitle =
+        isParent ? l10n.parentSignInSubtitle : l10n.healthcareSignInSubtitle;
     final idLabel = isParent ? l10n.childIdLabel : l10n.hospitalIdLabel;
     final idHint = isParent ? l10n.childIdHint : l10n.hospitalIdHint;
-    final idIcon = isParent
-        ? Icons.verified_user_outlined
-        : Icons.local_hospital_outlined;
+    final idIcon =
+        isParent ? Icons.verified_user_outlined : Icons.local_hospital_outlined;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -157,7 +163,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _signIn,
+                  onPressed: _busy ? null : _signIn,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryForest,
                     foregroundColor: Colors.white,
@@ -169,14 +175,21 @@ class _SignInScreenState extends State<SignInScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        l10n.continueButton,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
+                      if (_busy)
+                        const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                      else
+                        Text(
+                          l10n.continueButton,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
                         ),
-                      ),
                       const SizedBox(width: 8),
                       const Icon(Icons.arrow_forward_rounded, size: 18),
                     ],

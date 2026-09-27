@@ -3,10 +3,16 @@ import json
 import pandas as pd
 
 from datetime import datetime
+from pathlib import Path
 
 from face_landmarks import FaceLandmarkExtractor
 from pose_landmarks import PoseLandmarkExtractor
 from hand_landmarks import HandLandmarkExtractor
+
+OUTPUT_DIR = Path(__file__).resolve().parent / "outputs"
+(OUTPUT_DIR / "visualizations").mkdir(parents=True, exist_ok=True)
+(OUTPUT_DIR / "json").mkdir(parents=True, exist_ok=True)
+(OUTPUT_DIR / "csv").mkdir(parents=True, exist_ok=True)
 
 # ----------------------------------
 # Initialize Extractors
@@ -250,7 +256,7 @@ while True:
     # Save Output
     # ----------------------------------
 
-    if key == ord("s"):
+    if key in (ord("s"), ord("S")):
 
         if (
             face_landmarks is None
@@ -287,24 +293,17 @@ while True:
         # Save Visualization
         # ----------------------------------
 
-        image_path = (
-            f"outputs/visualizations/"
-            f"capture_{timestamp_file}.jpg"
-        )
+        image_path = OUTPUT_DIR / "visualizations" / f"capture_{timestamp_file}.jpg"
 
-        cv2.imwrite(
-            image_path,
-            frame
-        )
+        if not cv2.imwrite(str(image_path), frame):
+            print(f"Could not save visualization: {image_path}")
+            continue
 
         # ----------------------------------
         # Save JSON
         # ----------------------------------
 
-        json_path = (
-            f"outputs/json/"
-            f"capture_{timestamp_file}.json"
-        )
+        json_path = OUTPUT_DIR / "json" / f"capture_{timestamp_file}.json"
 
         with open(json_path, "w") as f:
 
@@ -373,10 +372,7 @@ while True:
             ]
         )
 
-        csv_path = (
-            f"outputs/csv/"
-            f"capture_{timestamp_file}.csv"
-        )
+        csv_path = OUTPUT_DIR / "csv" / f"capture_{timestamp_file}.csv"
 
         df.to_csv(
             csv_path,

@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../state/vitals_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/l10n_extension.dart';
 import '../widgets/card_swap_stack.dart';
@@ -27,7 +30,7 @@ class HomeDashboardScreen extends StatelessWidget {
 
 /// Body content for the Home tab — no Scaffold, no bottom nav.
 /// Rendered inside MainScaffold.
-class HomeDashboardScreenBody extends StatefulWidget {
+class HomeDashboardScreenBody extends ConsumerStatefulWidget {
   final String childName;
   final ValueChanged<int>? onNavRequested;
   final VoidCallback? onScanPressed;
@@ -40,16 +43,18 @@ class HomeDashboardScreenBody extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<HomeDashboardScreenBody> createState() =>
+  ConsumerState<HomeDashboardScreenBody> createState() =>
       _HomeDashboardScreenBodyState();
 }
 
-class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
+class _HomeDashboardScreenBodyState
+    extends ConsumerState<HomeDashboardScreenBody> {
   int _currentCardIndex = 0;
   bool _isDarkMode = false;
 
   @override
   Widget build(BuildContext context) {
+    final latestVitals = ref.watch(latestVitalsProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = math.max(300.0, screenWidth - 44);
 
@@ -67,7 +72,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
               const SizedBox(height: 18),
               _buildGreeting(),
               const SizedBox(height: 22),
-              _buildRotatingCardStack(cardWidth),
+              _buildRotatingCardStack(cardWidth, latestVitals),
               const SizedBox(height: 14),
               _buildDotsIndicator(),
               const SizedBox(height: 26),
@@ -235,16 +240,17 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
     );
   }
 
-  Widget _buildRotatingCardStack(double cardWidth) {
+  Widget _buildRotatingCardStack(double cardWidth, VitalsRecord? latestVitals) {
     final l10n = context.l10n;
     return Container(
-      height: 235,
+      // Allow room for the full vitals card and the two stacked cards behind it.
+      height: 278,
       margin: const EdgeInsets.symmetric(horizontal: 10),
       child: CardSwapStack(
         currentIndex: _currentCardIndex,
         onCardChanged: (index) => setState(() => _currentCardIndex = index),
         cardWidth: cardWidth,
-        cardHeight: 190,
+        cardHeight: 232,
         cardDistance: 14,
         verticalDistance: 12,
         autoSwapDuration: const Duration(seconds: 5),
@@ -252,7 +258,7 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
         cards: [
           // Card 0: Current Vitals
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -270,7 +276,10 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                       ),
                     ),
                     Text(
-                      l10n.updatedDaysAgo,
+                      latestVitals?.recordedAt == null
+                          ? 'Not recorded'
+                          : DateFormat('d MMM yyyy')
+                              .format(latestVitals!.recordedAt!),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -279,16 +288,47 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildVitalColumn(l10n.weightLabel, '46.2', 'kg'),
-                    _buildVitalColumn(l10n.heightLabel, '149.9', 'cm'),
-                    _buildVitalColumn(l10n.muacLabel, '14.5', 'cm'),
+                    Expanded(
+                        child: _buildVitalColumn(
+                            l10n.weightLabel,
+                            latestVitals?.weightKg == null
+                                ? 'Not recorded'
+                                : '${latestVitals!.weightKg} kg',
+                            '')),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: _buildVitalColumn(
+                            l10n.heightLabel,
+                            latestVitals?.heightCm == null
+                                ? 'Not recorded'
+                                : '${latestVitals!.heightCm} cm',
+                            '')),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: _buildVitalColumn(
+                            l10n.muacLabel,
+                            latestVitals?.muacCm == null
+                                ? 'Not recorded'
+                                : '${latestVitals!.muacCm} cm',
+                            '')),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
+                Text(
+                    'Age: ${latestVitals?.ageLabel ?? 'Not recorded'}  •  BMI: ${latestVitals?.formattedBmi ?? 'Not recorded'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF4D6053))),
+                const SizedBox(height: 2),
+                Text(
+                    'Head circumference: ${VitalsRecord.value(latestVitals?.headCircumferenceCm, 'cm')}  •  Waist: ${VitalsRecord.value(latestVitals?.waistCm, 'cm')}',
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF4D6053))),
               ],
             ),
           ),
@@ -430,27 +470,16 @@ class _HomeDashboardScreenBodyState extends State<HomeDashboardScreenBody> {
           ),
         ),
         const SizedBox(height: 6),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF163224),
-                  letterSpacing: -0.6,
-                ),
-              ),
-              TextSpan(
-                text: ' $unit',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF163224),
-                ),
-              ),
-            ],
+        Text(
+          unit.isEmpty ? value : '$value $unit',
+          softWrap: true,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF163224),
+            letterSpacing: -0.3,
           ),
         ),
       ],

@@ -131,7 +131,13 @@ async def login_parent(data):
         role="parent"
     )
 
+    from services.child_service import get_child_by_id
+    child = await get_child_by_id(parent["childId"])
+
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "childId": parent["childId"],
+        "childName": child.get("childName", "Child") if child else "Child",
+        "dateOfBirth": child.get("dob") if child else None,
     }

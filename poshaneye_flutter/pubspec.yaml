@@ -22,6 +22,8 @@ dependencies:
   image_picker: ^1.2.3
   video_player: ^2.14.0
   http: ^1.2.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 # Vendored fork of camera_android_camerax 0.6.30: binds ImageAnalysis only when a
 # frame stream is actually used, fixing "No supported surface combination is found"
@@ -37,4 +39,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/models/face_landmarker.task
+    - assets/models/pose_landmarker.task
   generate: true
