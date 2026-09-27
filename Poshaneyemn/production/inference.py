@@ -64,12 +64,25 @@ class HybridProductionPredictor:
         # 1. image features (128-d MobileNetV2 embedding)
         image_features = extract_image_features(self._get_image_extractor(), image_rgb)
 
-        # 2. CV features (MediaPipe)
-        cv_features = extract_cv_features(image_rgb[:, :, ::-1], self._get_holistic())
-        shoulder_width = cv_features.get("shoulder_width", float("nan"))
+        # 2. CV features (MediaPipe) scaled to AnthroVision training resolution (1800px width reference)
+        H, W = image_rgb.shape[:2]
+        scale_factor = 1800.0 / float(W) if W > 0 else 1.0
 
-        # 3. segmentation features (DeepLabV3+), scale-normalized by shoulder width
-        seg_features = self._get_seg().extract_features(image_rgb, shoulder_width)
+        cv_features = extract_cv_features(image_rgb[:, :, ::-1], self._get_holistic())
+        cv_features_scaled = dict(cv_features)
+        pixel_cols = [
+            "face_width", "face_height", "eye_distance", "mouth_width", "jaw_width",
+            "shoulder_width", "left_upper_arm_length", "right_upper_arm_length",
+            "left_forearm_length", "right_forearm_length", "left_total_arm_length", "right_total_arm_length"
+        ]
+        for col in pixel_cols:
+            val = cv_features_scaled.get(col, float("nan"))
+            if np.isfinite(val):
+                cv_features_scaled[col] = val * scale_factor
+
+        # 3. segmentation features (DeepLabV3+), scale-normalized by shoulder width in ref training scale
+        sw_ref = cv_features_scaled.get("shoulder_width", float("nan"))
+        seg_features = self._get_seg().extract_features(image_rgb, sw_ref)
 
         # 4. anthropometrics incl. derived BMI
         anthro = dict(anthropometrics)
@@ -78,7 +91,7 @@ class HybridProductionPredictor:
         ))
 
         # 5. identical preprocessing
-        x = self.preprocessor.transform_single(image_features, cv_features, seg_features, anthro)[0]
+        x = self.preprocessor.transform_single(image_features, cv_features_scaled, seg_features, anthro)[0]
 
         # Temporary data-flow trace (debug only; enable with POSHANEYE_TRACE=1).
         import os

@@ -27,8 +27,9 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) {
-      debugPrint('[API] platform = web | base URL = http://localhost:8000');
-      return 'http://localhost:8000';
+      final url = _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://10.128.40.32:8000';
+      debugPrint('[API] platform = web | base URL = $url');
+      return url;
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       final url =
           _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://127.0.0.1:8000';
@@ -164,6 +165,9 @@ class ApiService {
       final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
 
+      debugPrint('[API] predict response status code: ${response.statusCode}');
+      debugPrint('[API] predict response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonBody = json.decode(response.body);
         return PredictionResult.fromJson(jsonBody);
@@ -179,10 +183,10 @@ class ApiService {
       }
     } on ApiException {
       rethrow;
-    } catch (e) {
-      debugPrint('API request error: $e');
-      throw ApiException(
-          'Unable to connect to server. Please check the backend and try again.');
+    } catch (e, stackTrace) {
+      debugPrint('[API] Exception during predictImage ($baseUrl/predict): $e');
+      debugPrint('[API] StackTrace: $stackTrace');
+      throw ApiException('Unable to connect to server. Please check the backend and try again.');
     }
   }
 }
