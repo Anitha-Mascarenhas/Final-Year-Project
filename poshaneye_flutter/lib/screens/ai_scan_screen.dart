@@ -77,22 +77,37 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     {
       'name': 'Albatross',
       'subtitle': 'Graceful Ocean Soarer',
+<<<<<<< HEAD
+      'emoji': '🪶',
+      'video': '/videos/video1.mp4',
+=======
       'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂªÃƒâ€šÃ‚Â¶',
       'video': '/videos/albatross.mp4',
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video1.mp4',
     },
     {
       'name': 'Shark',
       'subtitle': 'Swift Friendly Swimmer',
+<<<<<<< HEAD
+      'emoji': '🦈',
+      'video': '/videos/video2.mp4',
+=======
       'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¦Ãƒâ€¹Ã¢â‚¬Â ',
       'video': '/videos/shark.mp4',
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video2.mp4',
     },
     {
       'name': 'Cheetah',
       'subtitle': 'Lightning Fast Runner',
+<<<<<<< HEAD
+      'emoji': '🐆',
+      'video': '/videos/video3.mp4',
+=======
       'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ',
       'video': '/videos/cheetah.mp4',
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video3.mp4',
     },
   ];
@@ -117,14 +132,17 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     if (_mascotVideoControllers.containsKey(index)) {
       final controller = _mascotVideoControllers[index];
       if (controller != null && controller.value.isInitialized) {
-        controller.seekTo(Duration.zero);
-        controller.setVolume(0.0);
-        controller.play();
+        if (index == _selectedMascotIndex) {
+          controller.seekTo(Duration.zero);
+          controller.setVolume(0.0);
+          controller.play();
+        }
       }
       return;
     }
 
     final primaryPath = _mascots[index]['video'] as String;
+    final fallbackPath = _mascots[index]['fallback'] as String;
     final fullUrl = _resolveFullUrl(primaryPath);
 
     final Uri videoUri = Uri.parse(fullUrl);
@@ -144,12 +162,36 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
         controller.setVolume(0.0);
         if (index == _selectedMascotIndex) {
           controller.play();
+        } else {
+          controller.pause();
         }
       }
     }).catchError((err) {
+<<<<<<< HEAD
+      debugPrint('Mascot primary video load error ($fullUrl): $err');
+      final fallbackUrl = _resolveFullUrl(fallbackPath);
+      final fallbackController = VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
+      fallbackController.initialize().then((_) {
+        if (mounted) {
+          setState(() {
+            _mascotVideoControllers[index] = fallbackController;
+          });
+          fallbackController.setLooping(true);
+          fallbackController.setVolume(0.0);
+          if (index == _selectedMascotIndex) {
+            fallbackController.play();
+          } else {
+            fallbackController.pause();
+          }
+        }
+      }).catchError((e) {
+        debugPrint('Mascot fallback video load error ($fallbackUrl): $e');
+      });
+=======
       _mascotVideoFailures.add(index);
       debugPrint('Mascot video load error ($fullUrl): $err');
       if (mounted) setState(() {});
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     });
   }
 
@@ -165,12 +207,29 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       _selectedMascotIndex = index;
     });
 
-    _loadMascotVideo(index);
+    if (_mascotVideoControllers.containsKey(index)) {
+      final controller = _mascotVideoControllers[index];
+      if (controller != null && controller.value.isInitialized) {
+        controller.seekTo(Duration.zero);
+        controller.setVolume(0.0);
+        controller.play();
+        setState(() {});
+      } else {
+        _loadMascotVideo(index);
+      }
+    } else {
+      _loadMascotVideo(index);
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    // Preload mascot videos so they play instantly upon clicking
+    for (int i = 0; i < _mascots.length; i++) {
+      _loadMascotVideo(i);
+    }
+
     // Laser up and down sweep
     _laserController = AnimationController(
       vsync: this,
@@ -1357,7 +1416,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           ),
           const SizedBox(height: 14),
 
-          // 1. Animated Card Swap Deck Stack (Selector Deck)
+          // 1. Minimized Static Mascot Cards (Aligned Horizontally)
           MascotCardSwapDeck(
             mascots: _mascots,
             selectedIndex: _selectedMascotIndex,
@@ -1368,6 +1427,80 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           const SizedBox(height: 18),
 
           // 2. DEDICATED FULL VIDEO FRAME (Plays the Clicked Mascot Video!)
+<<<<<<< HEAD
+          GestureDetector(
+            onTap: () {
+              if (activeController != null && activeController.value.isInitialized) {
+                if (activeController.value.isPlaying) {
+                  activeController.pause();
+                } else {
+                  activeController.play();
+                }
+                setState(() {});
+              }
+            },
+            child: Container(
+              height: 240,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF09120D),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFF3FFF80), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3FFF80).withOpacity(0.24),
+                    blurRadius: 22,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (isVideoReady)
+                      FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: activeController.value.size.width > 0
+                              ? activeController.value.size.width
+                              : 320,
+                          height: activeController.value.size.height > 0
+                              ? activeController.value.size.height
+                              : 240,
+                          child: VideoPlayer(activeController),
+                        ),
+                      )
+                    else
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3FFF80).withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(active['emoji'],
+                                  style: const TextStyle(fontSize: 48)),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Loading ${active['name']}...',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Initializing Mascot Stream',
+                              style:
+                                  TextStyle(color: Colors.white60, fontSize: 12),
+                            ),
+=======
           Container(
             height: 240,
             width: double.infinity,
@@ -1421,85 +1554,120 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                             Colors.black87,
                             Colors.black45,
                             Colors.transparent,
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
                           ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 21,
-                                backgroundColor: Colors.white24,
-                                child: Text(active['emoji'],
-                                    style: const TextStyle(fontSize: 22)),
+
+                    // Bottom Info & Status Bar
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 14),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black87,
+                              Colors.black45,
+                              Colors.transparent,
+                            ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 21,
+                                  backgroundColor: Colors.white24,
+                                  child: Text(active['emoji'],
+                                      style: const TextStyle(fontSize: 22)),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      active['name'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      active['subtitle'],
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: (activeController != null &&
+                                        activeController.value.isPlaying)
+                                    ? const Color(0xFF3FFF80).withOpacity(0.18)
+                                    : Colors.white12,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: (activeController != null &&
+                                          activeController.value.isPlaying)
+                                      ? const Color(0xFF3FFF80).withOpacity(0.6)
+                                      : Colors.white30,
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    active['name'],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: (activeController != null &&
+                                              activeController.value.isPlaying)
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white70,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    active['subtitle'],
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
+                                    (activeController != null &&
+                                            activeController.value.isPlaying)
+                                        ? 'PLAYING'
+                                        : 'PAUSED',
+                                    style: TextStyle(
+                                      color: (activeController != null &&
+                                              activeController.value.isPlaying)
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white70,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF3FFF80).withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFF3FFF80).withOpacity(0.6),
-                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF3FFF80),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'PLAYING',
-                                  style: TextStyle(
-                                    color: Color(0xFF3FFF80),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -2529,7 +2697,7 @@ class _MascotAnimationFallbackState extends State<_MascotAnimationFallback>
       );
 }
 
-class MascotCardSwapDeck extends StatefulWidget {
+class MascotCardSwapDeck extends StatelessWidget {
   final List<Map<String, dynamic>> mascots;
   final int selectedIndex;
   final Function(int) onMascotSelected;
@@ -2542,107 +2710,14 @@ class MascotCardSwapDeck extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MascotCardSwapDeck> createState() => _MascotCardSwapDeckState();
-}
-
-class _MascotCardSwapDeckState extends State<MascotCardSwapDeck>
-    with SingleTickerProviderStateMixin {
-  late List<int> _order;
-  late AnimationController _animController;
-
-  @override
-  void initState() {
-    super.initState();
-    _order = List.generate(widget.mascots.length, (i) => i);
-    // Align deck so top card matches selectedIndex on load
-    while (_order[0] != widget.selectedIndex) {
-      final top = _order.removeAt(0);
-      _order.add(top);
-    }
-
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _animController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (mounted) {
-          _animController.reset();
-        }
-      }
-    });
-  }
-
-  void _onCardTap(int mascotIndex) {
-    if (!_animController.isAnimating) {
-      if (_order[0] != mascotIndex) {
-        setState(() {
-          while (_order[0] != mascotIndex) {
-            final top = _order.removeAt(0);
-            _order.add(top);
-          }
-        });
-        _animController.forward();
-      }
-      widget.onMascotSelected(mascotIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: SizedBox(
-        height: 310,
-        width: double.infinity,
-        child: AnimatedBuilder(
-          animation: _animController,
-          builder: (context, child) {
-            final t = CurvedAnimation(
-              parent: _animController,
-              curve: Curves.elasticOut,
-            ).value;
-
-            return Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: List.generate(_order.length, (i) {
-                final slotIndex = _order.length - 1 - i; // 2, 1, 0
-                final mascotIndex = _order[slotIndex];
-                return _buildCard(slotIndex, mascotIndex, t);
-              }),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard(int slotIndex, int mascotIndex, double t) {
-    // Spatial positioning (Straight card stack alignment)
-    double xOffset = (1 - slotIndex) * 16.0;
-    double yOffset = (1 - slotIndex) * 16.0;
-    double scale = 1.0 - (slotIndex * 0.05);
-
-    if (slotIndex == 0 && _animController.isAnimating) {
-      yOffset += t * 450.0; // Drop front card straight down out of view
-    } else if (slotIndex > 0 && _animController.isAnimating) {
-      xOffset -= (16.0 * t); // Slide left-forward to next slot
-      yOffset += (16.0 * t);
-      scale += (0.05 * t);
-    }
-
-    final mascot = widget.mascots[mascotIndex];
-    final isSelected = mascotIndex == widget.selectedIndex;
-
-    // Distinct theme gradients for each mascot image card
+    // Distinct theme gradients for each mascot card
     final List<List<Color>> mascotGradients = [
+<<<<<<< HEAD
+      [const Color(0xFF0D3B2E), const Color(0xFF0369A1)], // Albatross
+      [const Color(0xFF0F3827), const Color(0xFF0F766E)], // Shark
+      [const Color(0xFF1E2D1A), const Color(0xFFB45309)], // Cheetah
+=======
       [
         const Color(0xFF0F3827),
         const Color(0xFF0369A1),
@@ -2658,51 +2733,55 @@ class _MascotCardSwapDeckState extends State<MascotCardSwapDeck>
         const Color(0xFFB45309),
         const Color(0xFF78350F)
       ], // Cheetah
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     ];
 
-    final cardColors = mascotGradients[mascotIndex % mascotGradients.length];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: List.generate(mascots.length, (index) {
+          final isSelected = index == selectedIndex;
+          final mascot = mascots[index];
+          final gradientColors =
+              mascotGradients[index % mascotGradients.length];
 
-    return Align(
-      alignment: Alignment.center,
-      child: Transform(
-        transform: Matrix4.identity()
-          ..translate(xOffset, yOffset)
-          ..scale(scale),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onTap: () => _onCardTap(mascotIndex),
-          child: Container(
-            width: 285,
-            height: 270,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: (isSelected && slotIndex == 0)
-                    ? const Color(0xFF3FFF80)
-                    : Colors.white30,
-                width: (isSelected && slotIndex == 0) ? 2.5 : 1.0,
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: index == 0 ? 0 : 5,
+                right: index == mascots.length - 1 ? 0 : 5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(slotIndex == 0 ? 0.35 : 0.18),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // High-Definition Gradient Background
-                  Container(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () => onMascotSelected(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    height: 126,
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
                       gradient: LinearGradient(
-                        colors: cardColors,
+                        colors: gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
+<<<<<<< HEAD
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF3FFF80)
+                            : Colors.white.withOpacity(0.18),
+                        width: isSelected ? 2.2 : 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? const Color(0xFF3FFF80).withOpacity(0.35)
+                              : Colors.black.withOpacity(0.25),
+                          blurRadius: isSelected ? 14 : 6,
+                          offset: const Offset(0, 4),
+=======
                     ),
                   ),
 
@@ -2761,63 +2840,138 @@ class _MascotCardSwapDeckState extends State<MascotCardSwapDeck>
                               ),
                             ],
                           ),
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
                         ),
                       ],
                     ),
-                  ),
-
-                  // Bottom Gradient Typography Overlay
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black87,
-                            Colors.black45,
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
                         children: [
-                          Text(
-                            mascot['name'] as String,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          if (slotIndex == 0) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              mascot['subtitle'] as String,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white70,
+                          if (isSelected)
+                            Positioned(
+                              top: -15,
+                              right: -15,
+                              child: Container(
+                                width: 55,
+                                height: 55,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF3FFF80)
+                                      .withOpacity(0.16),
+                                ),
                               ),
                             ),
-                          ],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Mascot Emoji Avatar
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF3FFF80)
+                                            .withOpacity(0.16)
+                                        : Colors.white.withOpacity(0.12),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white24,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    mascot['emoji'] as String? ?? '🐾',
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                                // Mascot Name
+                                Text(
+                                  mascot['name'] as String? ?? '',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w900
+                                        : FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                // Play / Playing Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF3FFF80)
+                                            .withOpacity(0.22)
+                                        : Colors.white.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF3FFF80)
+                                              .withOpacity(0.7)
+                                          : Colors.white12,
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isSelected
+                                            ? Icons.play_arrow_rounded
+                                            : Icons.play_circle_outline,
+                                        size: 11,
+                                        color: isSelected
+                                            ? const Color(0xFF3FFF80)
+                                            : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        isSelected ? 'PLAYING' : 'PLAY',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? const Color(0xFF3FFF80)
+                                              : Colors.white70,
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
 }
+<<<<<<< HEAD
+
+typedef MascotHorizontalSelector = MascotCardSwapDeck;
+
+
+
+
+=======
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698

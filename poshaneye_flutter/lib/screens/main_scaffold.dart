@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+import '../assistant/assistant_context.dart';
+import '../assistant/assistant_tools.dart';
+import '../assistant/voice_assistant_controller.dart';
+=======
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/session_provider.dart';
 import '../state/vitals_provider.dart';
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
 import '../widgets/interactive_bottom_nav.dart';
+import '../widgets/voice_assistant_button.dart';
 import 'home_dashboard_screen.dart';
 import 'growth_tracking_screen.dart';
 import 'ai_scan_screen.dart';
@@ -29,11 +36,57 @@ class MainScaffold extends ConsumerStatefulWidget {
 
 class _MainScaffoldState extends ConsumerState<MainScaffold> {
   late int _currentIndex;
+  late final VoiceAssistantController _assistantController;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+<<<<<<< HEAD
+    _assistantController = VoiceAssistantController(
+      context: AssistantContext(
+        currentScreen: _getScreenName(_currentIndex),
+        childName: widget.childName,
+      ),
+    );
+    _setupAssistantTools();
+  }
+
+  void _setupAssistantTools() {
+    _assistantController.attachTools(
+      AssistantTools(
+        onNavigateHome: () => _onTabSelected(0),
+        onNavigateScreening: _onScanPressed,
+        onNavigateResults: () => _onTabSelected(1),
+        onNavigateNutrition: () => _onTabSelected(3),
+        onNavigateProfile: () => _onTabSelected(4),
+        onGoBack: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            _onTabSelected(0);
+          }
+        },
+        onRepeatCurrentPage: () {
+          debugPrint('[MainScaffold] Repeat page requested for tab $_currentIndex');
+        },
+      ),
+    );
+  }
+
+  String _getScreenName(int index) {
+    switch (index) {
+      case 0:
+        return 'home';
+      case 1:
+        return 'results';
+      case 3:
+        return 'nutrition';
+      case 4:
+        return 'profile';
+      default:
+        return 'home';
+=======
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadVitals());
   }
 
@@ -47,21 +100,42 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       } catch (_) {
         /* screens show the empty state; refresh is available on re-entry */
       }
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     }
   }
 
   void _onTabSelected(int idx) {
     if (idx == 2) return; // Scan is handled by onScanPressed
-    setState(() => _currentIndex = idx);
+    setState(() {
+      _currentIndex = idx;
+    });
+    _assistantController.updateContext(
+      AssistantContext(
+        currentScreen: _getScreenName(idx),
+        childName: widget.childName,
+      ),
+    );
   }
 
   void _onScanPressed() {
+    _assistantController.updateContext(
+      AssistantContext(
+        currentScreen: 'screening',
+        childName: widget.childName,
+      ),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => AiScanScreen(childName: widget.childName),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _assistantController.dispose();
+    super.dispose();
   }
 
   Widget _buildCurrentScreen() {
@@ -99,12 +173,15 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    // For screens that already have their own scroll/layout (Nutrition, Profile),
-    // we overlay the bottom nav; for screens that don't include it, we stack it.
     final bool screenOwnsLayout = _currentIndex == 3 || _currentIndex == 4;
 
+    final Widget assistantButton = Positioned(
+      right: 18,
+      bottom: 96,
+      child: VoiceAssistantButton(controller: _assistantController),
+    );
+
     if (screenOwnsLayout) {
-      // These screens have their own Scaffold — wrap them and overlay the nav
       return Stack(
         children: [
           _buildCurrentScreen(),
@@ -118,6 +195,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
               onScanPressed: _onScanPressed,
             ),
           ),
+          assistantButton,
         ],
       );
     }
@@ -140,9 +218,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
                 onScanPressed: _onScanPressed,
               ),
             ),
+            assistantButton,
           ],
         ),
       ),
     );
   }
 }
+
