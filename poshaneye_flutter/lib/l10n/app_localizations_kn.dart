@@ -72,13 +72,13 @@ class AppLocalizationsKn extends AppLocalizations {
   String get childIdLabel => 'ಮಗುವಿನ ID (CHILD ID)';
 
   @override
-  String get hospitalIdLabel => 'ಆಸ್ಪತ್ರೆಯ ID (HOSPITAL ID)';
+  String get hospitalIdLabel => 'ಕಾರ್ಯಕರ್ತರ ID (WORKER ID)';
 
   @override
-  String get childIdHint => 'ಉದಾ: PE-1048';
+  String get childIdHint => 'ಉದಾ: CHD001';
 
   @override
-  String get hospitalIdHint => 'ಉದಾ: HID-2341';
+  String get hospitalIdHint => 'ಉದಾ: HW001';
 
   @override
   String get passwordLabel => 'ಪಾಸ್‌ವರ್ಡ್';

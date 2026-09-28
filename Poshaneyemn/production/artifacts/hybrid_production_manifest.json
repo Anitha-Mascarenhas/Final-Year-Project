@@ -6,6 +6,7 @@
     "segmentation (DeepLabV3+ 11 features)",
     "anthropometric (8 features)"
   ],
+  "segmentation_normalization": "MediaPipe normalized shoulder span * 512; area features divide by span squared and length features divide by span",
   "total_feature_dim": 168,
   "group_slices": {
     "image": [

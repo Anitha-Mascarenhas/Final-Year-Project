@@ -20,9 +20,10 @@ temp_mediapipe_download*/
 poshaneye_flutter/assets/videos/*.mp4
 Poshaneyemn/experiments/image_model_binary_child_level/cache/
 Poshaneyemn/experiments/upper_arm_segmentation/*.zip
-# Generated Android/Kotlin files
+# Generated Android/Kotlin/Gradle files
 poshaneye_flutter/android/.kotlin/
 poshaneye_flutter/android/.gradle/
+**/.gradle/
 poshaneye_flutter/android/local.properties
 
 # Backend virtual environments
@@ -31,6 +32,7 @@ backend/.venv/
 
 # Large upper-arm segmentation training data
 Poshaneyemn/experiments/upper_arm_segmentation/images/
+Poshaneyemn/experiments/upper_arm_segmentation/images_adish/
 Poshaneyemn/experiments/upper_arm_segmentation/*.zip
 
 # Large training checkpoints / weights
@@ -69,3 +71,4 @@ Poshaneyemn/experiments/image_model_frontal1_only/artifacts/*.tflite
 Poshaneyemn/experiments/cv_features_clean/results/cv_features_clean.csv
 Poshaneyemn/experiments/upper_arm_segmentation/contact_sheet_20.png
 .venv_hybrid/
+.venv-live/

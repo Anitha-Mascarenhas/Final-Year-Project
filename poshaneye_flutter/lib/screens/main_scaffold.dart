@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import '../assistant/assistant_context.dart';
 import '../assistant/assistant_tools.dart';
 import '../assistant/voice_assistant_controller.dart';
+=======
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../state/session_provider.dart';
+import '../state/vitals_provider.dart';
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
 import '../widgets/interactive_bottom_nav.dart';
 import '../widgets/voice_assistant_button.dart';
 import 'home_dashboard_screen.dart';
@@ -14,7 +20,7 @@ import 'role_selection_screen.dart';
 /// Central scaffold that owns the bottom navigation state.
 /// All main tab screens are rendered within this widget so that
 /// switching tabs never pushes a new route onto the stack.
-class MainScaffold extends StatefulWidget {
+class MainScaffold extends ConsumerStatefulWidget {
   final String childName;
   final int initialIndex;
 
@@ -25,10 +31,10 @@ class MainScaffold extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  ConsumerState<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldState extends ConsumerState<MainScaffold> {
   late int _currentIndex;
   late final VoiceAssistantController _assistantController;
 
@@ -36,6 +42,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+<<<<<<< HEAD
     _assistantController = VoiceAssistantController(
       context: AssistantContext(
         currentScreen: _getScreenName(_currentIndex),
@@ -79,6 +86,21 @@ class _MainScaffoldState extends State<MainScaffold> {
         return 'profile';
       default:
         return 'home';
+=======
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadVitals());
+  }
+
+  Future<void> _loadVitals() async {
+    final session = ref.read(sessionProvider);
+    if (session.childId != null && session.accessToken != null) {
+      try {
+        await ref
+            .read(vitalsProvider.notifier)
+            .loadForChild(session.childId!, session.accessToken!);
+      } catch (_) {
+        /* screens show the empty state; refresh is available on re-entry */
+      }
+>>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     }
   }
 

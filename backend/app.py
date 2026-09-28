@@ -4,6 +4,7 @@ load_dotenv()
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import hashlib
 import shutil
 
 from hybrid_predict import (
@@ -28,12 +29,10 @@ app.include_router(test_screening_router)
 
 
 # ── CORS Configuration ──────────────────────────────────────────────
-# Allow any localhost/127.0.0.1 origin on any port.
-# Flutter Web assigns a random development port each run,
-# so we use a regex instead of a fixed list.
+# Allow all origins (localhost, 127.0.0.1, LAN IP 10.128.40.32, etc.) for Flutter Web
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,7 +99,9 @@ async def predict(
     image_bytes = image_path.read_bytes()
 
     # Temporary data-flow trace (remove after verification)
-    print(f"[BACKEND] image_bytes={len(image_bytes)} height_cm={height_cm!r} "
+    print(f"[BACKEND] image_bytes={len(image_bytes)} "
+          f"image_sha256={hashlib.sha256(image_bytes).hexdigest()} "
+          f"height_cm={height_cm!r} "
           f"weight_kg={weight_kg!r} age_years={age_years!r} age_months={age_months!r} "
           f"gender={gender!r}", flush=True)
 

@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/prediction_result.dart';
 
@@ -26,10 +28,12 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) {
-      debugPrint('[API] platform = web | base URL = http://localhost:8000');
-      return 'http://localhost:8000';
+      final url = _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://10.128.40.32:8000';
+      debugPrint('[API] platform = web | base URL = $url');
+      return url;
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      final url = _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://127.0.0.1:8000';
+      final url =
+          _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://127.0.0.1:8000';
       debugPrint('[API] platform = android | base URL = $url '
           '(${_lanIp.isNotEmpty ? 'LAN IP' : 'adb reverse tunnel'})');
       return url;
@@ -40,6 +44,82 @@ class ApiService {
   }
 
   static const Duration _timeout = Duration(seconds: 25);
+
+  static Future<Map<String, dynamic>> _jsonRequest(String method, String path,
+      {Object? body, String? token}) async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+    final uri = Uri.parse('$baseUrl$path');
+    late final http.Response response;
+    try {
+      response = method == 'GET'
+          ? await http.get(uri, headers: headers).timeout(_timeout)
+          : await http
+              .post(uri, headers: headers, body: json.encode(body))
+              .timeout(_timeout);
+    } on http.ClientException {
+      throw ApiException(
+          'Cannot reach the backend at $baseUrl. Start the FastAPI server on port 8000 and check that CORS allows this browser origin.');
+    } on TimeoutException {
+      throw ApiException(
+          'The backend at $baseUrl did not respond in time. Check that FastAPI is running.');
+    }
+    final decoded = response.body.isEmpty
+        ? <String, dynamic>{}
+        : json.decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+          decoded is Map
+              ? '${decoded['detail'] ?? 'Request failed'}'
+              : 'Request failed',
+          response.statusCode);
+    }
+    return (decoded as Map).cast<String, dynamic>();
+  }
+
+  static Future<Map<String, dynamic>> login(
+          {required String id,
+          required String password,
+          required bool parent}) =>
+      _jsonRequest('POST',
+          parent ? '/api/auth/parent/login' : '/api/auth/health-worker/login',
+          body: parent
+              ? {'childId': id, 'password': password}
+              : {'workerId': id, 'password': password});
+
+  static Future<Map<String, dynamic>> signUp(
+          {required bool parent, required Map<String, dynamic> body}) =>
+      _jsonRequest('POST',
+          parent ? '/api/auth/parent/signup' : '/api/auth/health-worker/signup',
+          body: body);
+
+  static Future<List<Map<String, dynamic>>> getScreeningHistory(
+      String childId, String token) async {
+    final uri = Uri.parse(
+        '$baseUrl/api/screenings/history/${Uri.encodeComponent(childId)}');
+    late final http.Response response;
+    try {
+      response = await http.get(uri,
+          headers: {'Authorization': 'Bearer $token'}).timeout(_timeout);
+    } on http.ClientException {
+      throw ApiException(
+          'Cannot reach the backend at $baseUrl. Start the FastAPI server on port 8000 and check that CORS allows this browser origin.');
+    } on TimeoutException {
+      throw ApiException(
+          'The backend at $baseUrl did not respond in time. Check that FastAPI is running.');
+    }
+    if (response.statusCode != 200)
+      throw ApiException(
+          'Unable to load screening history (${response.statusCode}).',
+          response.statusCode);
+    return (json.decode(response.body) as List).cast<Map<String, dynamic>>();
+  }
+
+  static Future<Map<String, dynamic>> recordVitals(
+          String childId, String token, Map<String, dynamic> vitals) =>
+      _jsonRequest(
+          'POST', '/api/screenings/vitals/${Uri.encodeComponent(childId)}',
+          body: vitals, token: token);
 
   /// Check backend health status
   static Future<bool> checkHealth() async {
@@ -81,10 +161,16 @@ class ApiService {
       request.files.add(multipartFile);
       request.fields.addAll(fields);
 
+      debugPrint('[TRACE] flutter_image_sha256=${sha256.convert(imageBytes)}');
+      debugPrint('[TRACE] flutter_image_bytes=${imageBytes.length} '
+          'fields=${request.fields} api_url=$uri');
       debugPrint('[API] predict request sent -> $uri '
           '(image ${imageBytes.length} bytes, fields: ${request.fields.keys.toList()})');
       final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('[API] predict response status code: ${response.statusCode}');
+      debugPrint('[API] predict response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonBody = json.decode(response.body);
@@ -101,8 +187,9 @@ class ApiService {
       }
     } on ApiException {
       rethrow;
-    } catch (e) {
-      debugPrint('API request error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('[API] Exception during predictImage ($baseUrl/predict): $e');
+      debugPrint('[API] StackTrace: $stackTrace');
       throw ApiException('Unable to connect to server. Please check the backend and try again.');
     }
   }

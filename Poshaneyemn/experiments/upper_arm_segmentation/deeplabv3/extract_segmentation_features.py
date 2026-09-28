@@ -10,7 +10,7 @@ Features extracted:
 - left_arm_width, right_arm_width
 - left_arm_height, right_arm_height
 - left_arm_aspect_ratio, right_arm_aspect_ratio
-- Normalized versions using MediaPipe shoulder_width reference
+- Normalized versions using the MediaPipe shoulder span in 512x512 mask coordinates
 
 Guarantees:
 - 100% automated; no manual intervention.
@@ -33,6 +33,7 @@ import tensorflow as tf
 # Setup paths
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
 RESULTS_DIR = SCRIPT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -45,6 +46,7 @@ REPORT_MD = RESULTS_DIR / "extraction_report.md"
 
 # Import model architecture
 from model import build_deeplabv3plus
+from production.runtime_features import extract_cv_features, make_holistic
 
 
 def load_dataset_metadata() -> pd.DataFrame:
@@ -98,7 +100,7 @@ def preprocess_image_for_model(img_path: Path, target_size=(512, 512)) -> Tuple[
 
 def extract_features_from_mask(
     mask: np.ndarray,
-    shoulder_width: Optional[float] = None,
+    shoulder_width_512: Optional[float] = None,
     min_component_area: int = 150
 ) -> Dict[str, float]:
     """
@@ -110,7 +112,7 @@ def extract_features_from_mask(
     - left_arm_width, right_arm_width
     - left_arm_height, right_arm_height
     - left_arm_aspect_ratio, right_arm_aspect_ratio
-    - Scale-normalized versions using shoulder_width reference
+    - Scale-normalized versions using shoulder_width_512 reference
     """
     features = {
         "total_arm_area": 0.0,
@@ -197,9 +199,9 @@ def extract_features_from_mask(
             features["right_arm_height"] = float(comp["height"])
             features["right_arm_aspect_ratio"] = float(comp["aspect_ratio"])
             
-    # Calculate scale-normalized features using MediaPipe shoulder_width
-    if shoulder_width is not None and not np.isnan(shoulder_width) and shoulder_width > 0:
-        sw = float(shoulder_width)
+    # shoulder_width_512 is the normalized MediaPipe span projected into mask space.
+    if shoulder_width_512 is not None and np.isfinite(shoulder_width_512) and shoulder_width_512 > 0:
+        sw = float(shoulder_width_512)
         sw_sq = sw ** 2
         features["total_arm_area_norm"] = float(features["total_arm_area"] / sw_sq)
         
@@ -230,6 +232,7 @@ def run_extraction(batch_size: int = 8):
     model = build_deeplabv3plus(input_shape=(512, 512, 3), num_classes=2)
     model.load_weights(str(WEIGHTS_PATH))
     print("Loaded DeepLabV3+ checkpoint successfully.")
+    holistic = make_holistic()
     
     @tf.function
     def predict_batch(imgs):
@@ -272,11 +275,14 @@ def run_extraction(batch_size: int = 8):
                 if ok:
                     mask = preds[pred_idx]
                     pred_idx += 1
-                    sw = row["shoulder_width"]
-                    feat = extract_features_from_mask(mask, shoulder_width=sw)
+                    original_bgr = cv2.imread(str(FRONTAL_IMAGES_DIR / row["f1_filename"]))
+                    cv_features = extract_cv_features(original_bgr, holistic) if original_bgr is not None else {}
+                    sw_512 = cv_features.get("_shoulder_width_512", np.nan)
+                    feat = extract_features_from_mask(mask, shoulder_width_512=sw_512)
                     successful_count += 1
                 else:
-                    feat = extract_features_from_mask(np.zeros((512, 512), dtype=np.uint8), shoulder_width=np.nan)
+                    sw_512 = np.nan
+                    feat = extract_features_from_mask(np.zeros((512, 512), dtype=np.uint8), shoulder_width_512=np.nan)
                     
                 record = {
                     "child_id": row["child_id"],
@@ -284,18 +290,20 @@ def run_extraction(batch_size: int = 8):
                     "view": row["view"],
                     "image_name": row["image_name"],
                     "shoulder_width_ref": row["shoulder_width"],
+                    "shoulder_width_512": sw_512,
                     **feat
                 }
                 all_results.append(record)
         else:
             for row, _ in batch_meta:
-                feat = extract_features_from_mask(np.zeros((512, 512), dtype=np.uint8), shoulder_width=np.nan)
+                feat = extract_features_from_mask(np.zeros((512, 512), dtype=np.uint8), shoulder_width_512=np.nan)
                 record = {
                     "child_id": row["child_id"],
                     "tag": row["tag"],
                     "view": row["view"],
                     "image_name": row["image_name"],
                     "shoulder_width_ref": row["shoulder_width"],
+                    "shoulder_width_512": np.nan,
                     **feat
                 }
                 all_results.append(record)
@@ -311,6 +319,8 @@ def run_extraction(batch_size: int = 8):
     
     # 4. Save results CSV
     results_df = pd.DataFrame(all_results)
+    if len(results_df) != total_records:
+        raise RuntimeError(f"Extraction lost rows: expected {total_records}, got {len(results_df)}")
     results_df.to_csv(OUTPUT_CSV, index=False)
     print(f"Saved {len(results_df)} records to {OUTPUT_CSV}")
     
@@ -376,7 +386,20 @@ def generate_extraction_report(
     rep.append("2. **NOT Mid-Upper Arm Circumference (MUAC)**: Pixel silhouette width and area must never be conflated with physical tape-measured MUAC.")
     rep.append("3. **Non-Fabrication Policy**: Missing or occluded arms are encoded strictly as NaN and were not imputed during feature extraction.")
     rep.append("4. **Left/Right Coordinate Convention**: Due to binary mask training, left vs right designation strictly reflects image-space horizontal orientation (viewer perspective: $X < 256$ for left, $X \\ge 256$ for right), not verified anatomical chirality.")
-    rep.append("5. **Scale Normalization**: Normalized features use MediaPipe `shoulder_width` as reference ($x / \\text{shoulder\\_width}$ for lengths, $x / \\text{shoulder\\_width}^2$ for areas) to mitigate camera distance variations.\n")
+    rep.append("5. **Scale Normalization**: Normalized features use `shoulder_width_512 = hypot(right_shoulder_x - left_shoulder_x, right_shoulder_y - left_shoulder_y) * 512`, where MediaPipe coordinates are normalized to [0,1]. Lengths divide by this reference and areas divide by its square.\n")
+    rep.append("6. **Production Feature Statistics**: The table below covers the exact 11 segmentation features consumed by the hybrid model.\n")
+    production_cols = [
+        "total_arm_area_norm", "left_arm_area_norm", "right_arm_area_norm",
+        "left_arm_width_norm", "right_arm_width_norm", "left_arm_height_norm",
+        "right_arm_height_norm", "left_arm_aspect_ratio", "right_arm_aspect_ratio",
+        "total_arm_area", "num_arms_detected",
+    ]
+    production_stats = df[production_cols].describe().T[["min", "max", "mean", "std", "50%"]].rename(columns={"50%": "median"}).round(6)
+    rep.append("| Feature | Min | Max | Mean | Std | Median |")
+    rep.append("|---|---:|---:|---:|---:|---:|")
+    for idx, row in production_stats.iterrows():
+        rep.append(f"| `{idx}` | {row['min']} | {row['max']} | {row['mean']} | {row['std']} | {row['median']} |")
+    rep.append("")
     
     with open(REPORT_MD, "w", encoding="utf-8") as f:
         f.write("\n".join(rep))

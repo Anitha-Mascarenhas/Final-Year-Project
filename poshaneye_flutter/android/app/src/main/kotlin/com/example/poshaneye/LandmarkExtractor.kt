@@ -142,6 +142,10 @@ class LandmarkExtractor private constructor(
             "face" to faceMap,
             "pose" to poseMap,
             "pose_visibility" to visMap,
+            // Dimensions let Flutter map normalized points through the same
+            // crop used for its camera preview.
+            "image_width" to bitmap.width,
+            "image_height" to bitmap.height,
         )
     }
 

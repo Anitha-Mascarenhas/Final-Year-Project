@@ -1,0 +1,7 @@
+# Dependencies for live_detection.py only. Keep this environment separate from
+# TensorFlow 2.21, whose Protobuf requirement conflicts with MediaPipe 0.10.14.
+mediapipe==0.10.14
+numpy==1.26.4
+opencv-contrib-python==4.10.0.84
+pandas==2.2.3
+protobuf==4.25.9
