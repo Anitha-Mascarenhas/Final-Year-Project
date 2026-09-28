@@ -26,12 +26,10 @@ app.include_router(test_screening_router)
 
 
 # ── CORS Configuration ──────────────────────────────────────────────
-# Allow any localhost/127.0.0.1 origin on any port.
-# Flutter Web assigns a random development port each run,
-# so we use a regex instead of a fixed list.
+# Allow all origins (localhost, 127.0.0.1, LAN IP 10.128.40.32, etc.) for Flutter Web
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
