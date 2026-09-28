@@ -53,6 +53,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   final ValueNotifier<LandmarkResult?> _liveLandmarksNotifier =
       ValueNotifier<LandmarkResult?>(null);
   bool _cameraFullscreenOpen = false;
+  bool _cameraSwitchInProgress = false;
+  bool _cameraSampleCaptureInProgress = false;
   String _scanGuidance = 'Position the child in the frame';
 
   late AnimationController _laserController;
@@ -268,35 +270,56 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   }
 
   Future<void> _switchCamera() async {
-    if (_captureInProgress || _isCapturing) return;
+    if (_captureInProgress || _isCapturing || _cameraSwitchInProgress) return;
     final current = _cameraController;
     if (current == null || _availableCameras.length < 2) return;
     final currentLens = current.description.lensDirection;
-    final next = _availableCameras.firstWhere(
-      (camera) => camera.lensDirection != currentLens,
-      orElse: () => _availableCameras.first,
-    );
+    final next = currentLens == CameraLensDirection.back
+        ? _availableCameras.firstWhere(
+            (camera) => camera.lensDirection == CameraLensDirection.front,
+            orElse: () => _availableCameras.first,
+          )
+        : _availableCameras.firstWhere(
+            (camera) => camera.lensDirection == CameraLensDirection.back,
+            orElse: () => _availableCameras.firstWhere(
+              (camera) => camera.lensDirection != currentLens,
+              orElse: () => _availableCameras.first,
+            ),
+          );
+    if (next == current.description) return;
+    _cameraSwitchInProgress = true;
     _autoCaptureTimer?.cancel();
     _autoCaptureTimer = null;
-    while (_samplingFrame && mounted) {
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+    try {
+      await _waitForSampleCapture();
+      if (!mounted || _cameraController != current) return;
+      setState(() {
+        _cameraController = null;
+        _isCameraReady = false;
+        _setLiveLandmarks(null);
+        _scanGuidance = 'Switching camera...';
+      });
+      await current.dispose();
+      if (mounted) await _initializeCamera(requestedCamera: next);
+    } finally {
+      _cameraSwitchInProgress = false;
     }
-    if (!mounted || _cameraController != current) return;
-    setState(() {
-      _cameraController = null;
-      _isCameraReady = false;
-      _setLiveLandmarks(null);
-      _scanGuidance = 'Switching camera...';
-    });
-    await current.dispose();
-    if (mounted) await _initializeCamera(requestedCamera: next);
   }
 
   Future<void> _openCameraFullscreen() async {
     final controller = _cameraController;
-    if (!_isCameraReady || controller == null || _cameraFullscreenOpen) return;
+    final previewSize = controller?.value.previewSize;
+    if (!_isCameraReady ||
+        controller == null ||
+        previewSize == null ||
+        _cameraFullscreenOpen) return;
     _cameraFullscreenOpen = true;
+    _autoCaptureTimer?.cancel();
+    _autoCaptureTimer = null;
     try {
+      if (!mounted || _cameraController != controller || !_isCameraReady) {
+        return;
+      }
       await Navigator.of(context).push<void>(MaterialPageRoute<void>(
         builder: (_) => _FullScreenCameraView(
           controller: controller,
@@ -304,14 +327,26 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           mirrorX:
               controller.description.lensDirection == CameraLensDirection.front,
           fallbackImageSize: Size(
-            controller.value.previewSize!.height,
-            controller.value.previewSize!.width,
+            previewSize.height,
+            previewSize.width,
           ),
           onCapture: _captureAndAnalyze,
         ),
       ));
     } finally {
       _cameraFullscreenOpen = false;
+      if (mounted && _autoCaptureArmed && _isCameraReady) {
+        _startAutoCapturePolling();
+      }
+    }
+  }
+
+  Future<void> _waitForSampleCapture() async {
+    final deadline = DateTime.now().add(const Duration(seconds: 3));
+    while (_cameraSampleCaptureInProgress &&
+        mounted &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 30));
     }
   }
 
@@ -655,6 +690,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           _autoCaptured ||
           _isCapturing ||
           _isScanning ||
+          _cameraFullscreenOpen ||
+          _cameraSwitchInProgress ||
           _samplingFrame ||
           _captureInProgress) return;
       if (!_isCameraReady || _cameraController == null) return;
@@ -663,11 +700,13 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       XFile? sampleFile;
       try {
         final controller = _cameraController!;
+        _cameraSampleCaptureInProgress = true;
         sampleFile = await controller.takePicture();
         final bytes = await sampleFile.readAsBytes();
+        _cameraSampleCaptureInProgress = false;
         final landmarks = await HybridLandmarkBridge.extractLandmarks(bytes,
             allowNoFace: true);
-        if (!mounted) return;
+        if (!mounted || _cameraController != controller) return;
 
         final hasAnyLandmarks =
             landmarks.face.isNotEmpty || landmarks.pose.isNotEmpty;
@@ -687,7 +726,9 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           _frameStable = true;
           _scanGuidance = 'Child detected';
         });
-        if (!_isCapturing) {
+        if (!_isCapturing &&
+            !_cameraSwitchInProgress &&
+            !_cameraFullscreenOpen) {
           _isCapturing = true;
           _autoCaptured = true;
           _captureInProgress = true;
@@ -713,6 +754,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
             ? 'Detector unavailable; check connection'
             : 'Adjust position');
       } finally {
+        _cameraSampleCaptureInProgress = false;
         if (sampleFile != null) {
           await deleteCapturedFile(sampleFile.path);
         }
@@ -1922,11 +1964,23 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'AI Model Confidence: $confidenceText  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢  $riskText',
+                'AI Model Confidence: $confidenceText',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF556D5E)),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                riskText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isHealthy
+                        ? const Color(0xFF059669)
+                        : const Color(0xFFDC2626)),
               ),
               const SizedBox(height: 16),
 
@@ -2078,33 +2132,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF445B4E))),
-                        Row(
-                          children: [
-                            Text('Not recorded',
-                                style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF9AA79F))),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                  color: isHealthy
-                                      ? const Color(0xFFDCFCE7)
-                                      : const Color(0xFFFEE2E2),
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                pred?.status.toUpperCase() ?? 'N/A',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: isHealthy
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFF991B1B)),
-                              ),
-                            ),
-                          ],
+                        const Flexible(
+                          child: Text(
+                            'Not recorded',
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF9AA79F)),
+                          ),
                         ),
                       ],
                     ),
