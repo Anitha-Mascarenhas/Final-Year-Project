@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from types import SimpleNamespace
 
 from production.config import (
     ANTHROPOMETRIC_COLUMNS,
@@ -11,6 +12,7 @@ from production.config import (
     SEGMENTATION_FEATURE_COLUMNS,
 )
 from production.fusion import fuse_vectors, group_slice
+from production.runtime_features import extract_cv_features
 
 
 def test_h1_anthropometric_features_reach_classifier(group_slices):
@@ -72,3 +74,22 @@ def test_fusion_order_is_image_cv_seg_anthro(preprocessor, embeddings, dataset):
     slices = group_slice(preprocessor.image_dim)
     assert [slices[k].start for k in ("image", "cv", "segmentation", "anthropometric")] == [0, 128, 149, 160]
     fuse_vectors(np.zeros((1, 128)), np.zeros((1, 21)), np.zeros((1, 11)), np.zeros((1, 8)))
+
+
+def test_segmentation_shoulder_reference_uses_normalized_512_space():
+    landmarks = [SimpleNamespace(x=0.0, y=0.0, visibility=1.0) for _ in range(33)]
+    landmarks[11] = SimpleNamespace(x=0.2, y=0.3, visibility=1.0)
+    landmarks[12] = SimpleNamespace(x=0.7, y=0.5, visibility=1.0)
+    result = SimpleNamespace(
+        face_landmarks=None,
+        pose_landmarks=SimpleNamespace(landmark=landmarks),
+    )
+
+    class FakeHolistic:
+        def process(self, _image):
+            return result
+
+    features = extract_cv_features(np.zeros((100, 200, 3), dtype=np.uint8), FakeHolistic())
+    expected = np.hypot(0.7 - 0.2, 0.5 - 0.3) * 512.0
+    assert features["_shoulder_width_512"] == expected
+    assert features["shoulder_width"] == np.hypot(100.0, 20.0)

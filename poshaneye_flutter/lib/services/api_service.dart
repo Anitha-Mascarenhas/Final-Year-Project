@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/prediction_result.dart';
 
@@ -159,6 +160,9 @@ class ApiService {
       request.files.add(multipartFile);
       request.fields.addAll(fields);
 
+      debugPrint('[TRACE] flutter_image_sha256=${sha256.convert(imageBytes)}');
+      debugPrint('[TRACE] flutter_image_bytes=${imageBytes.length} '
+          'fields=${request.fields} api_url=$uri');
       debugPrint('[API] predict request sent -> $uri '
           '(image ${imageBytes.length} bytes, fields: ${request.fields.keys.toList()})');
       final streamedResponse = await request.send().timeout(_timeout);

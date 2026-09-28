@@ -67,6 +67,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   List<CameraDescription> _availableCameras = const [];
   String? _cameraError;
   bool _isCameraReady = false;
+  bool _cameraInitializationInProgress = false;
   bool _samplingFrame = false;
   bool _captureInProgress = false;
 
@@ -208,6 +209,11 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   }
 
   Future<void> _initializeCamera({CameraDescription? requestedCamera}) async {
+    // Camera permission prompts are process-wide on Android. Recovery paths can
+    // request initialization while the first permission prompt is still open;
+    // do not create a second CameraController in that interval.
+    if (_cameraInitializationInProgress || !mounted) return;
+    _cameraInitializationInProgress = true;
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -256,6 +262,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
             'Camera access is unavailable. Check browser permissions.';
         _isCameraReady = false;
       });
+    } finally {
+      _cameraInitializationInProgress = false;
     }
   }
 

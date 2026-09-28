@@ -70,13 +70,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get childIdLabel => 'CHILD ID';
 
   @override
-  String get hospitalIdLabel => 'HOSPITAL ID';
+  String get hospitalIdLabel => 'WORKER ID';
 
   @override
-  String get childIdHint => 'e.g. PE-1048';
+  String get childIdHint => 'e.g. CHD001';
 
   @override
-  String get hospitalIdHint => 'e.g. HID-2341';
+  String get hospitalIdHint => 'e.g. HW001';
 
   @override
   String get passwordLabel => 'PASSWORD';

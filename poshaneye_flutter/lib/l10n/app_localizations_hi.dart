@@ -71,13 +71,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get childIdLabel => 'चाइल्ड आईडी';
 
   @override
-  String get hospitalIdLabel => 'अस्पताल आईडी';
+  String get hospitalIdLabel => 'वर्कर आईडी';
 
   @override
-  String get childIdHint => 'जैसे PE-1048';
+  String get childIdHint => 'जैसे CHD001';
 
   @override
-  String get hospitalIdHint => 'जैसे HID-2341';
+  String get hospitalIdHint => 'जैसे HW001';
 
   @override
   String get passwordLabel => 'पासवर्ड';
