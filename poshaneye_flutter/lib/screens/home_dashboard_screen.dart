@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../state/vitals_provider.dart';
+import '../state/nutrition_provider.dart';
+import '../state/session_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/l10n_extension.dart';
 import '../widgets/card_swap_stack.dart';
@@ -53,8 +55,32 @@ class _HomeDashboardScreenBodyState
   bool _isDarkMode = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshVitals());
+  }
+
+  Future<void> _refreshVitals() async {
+    final session = ref.read(sessionProvider);
+    if (session.childId == null || session.accessToken == null) return;
+    try {
+      await ref.read(vitalsProvider.notifier)
+          .loadForChild(session.childId!, session.accessToken!);
+    } catch (_) {
+      // The Current Vitals card reads the shared error state and offers retry.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(sessionProvider, (previous, next) {
+      if (previous?.childId != next.childId ||
+          previous?.accessToken != next.accessToken) {
+        _refreshVitals();
+      }
+    });
     final latestVitals = ref.watch(latestVitalsProvider);
+    final vitalsLoadError = ref.watch(vitalsHistoryErrorProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = math.max(300.0, screenWidth - 44);
 
@@ -72,7 +98,7 @@ class _HomeDashboardScreenBodyState
               const SizedBox(height: 18),
               _buildGreeting(),
               const SizedBox(height: 22),
-              _buildRotatingCardStack(cardWidth, latestVitals),
+              _buildRotatingCardStack(cardWidth, latestVitals, vitalsLoadError),
               const SizedBox(height: 14),
               _buildDotsIndicator(),
               const SizedBox(height: 26),
@@ -240,8 +266,14 @@ class _HomeDashboardScreenBodyState
     );
   }
 
-  Widget _buildRotatingCardStack(double cardWidth, VitalsRecord? latestVitals) {
+  Widget _buildRotatingCardStack(
+      double cardWidth, VitalsRecord? latestVitals, String? vitalsLoadError) {
     final l10n = context.l10n;
+    final cachedNutrition = ref.watch(nutritionRecommendationProvider);
+    final childId = ref.watch(sessionProvider).childId;
+    final nutritionPlan = cachedNutrition != null && cachedNutrition['child_id'] == childId
+        ? cachedNutrition['nutrition_plan'] as Map?
+        : null;
     return Container(
       // Allow room for the full vitals card and the two stacked cards behind it.
       height: 278,
@@ -250,7 +282,7 @@ class _HomeDashboardScreenBodyState
         currentIndex: _currentCardIndex,
         onCardChanged: (index) => setState(() => _currentCardIndex = index),
         cardWidth: cardWidth,
-        cardHeight: 232,
+        cardHeight: 252,
         cardDistance: 14,
         verticalDistance: 12,
         autoSwapDuration: const Duration(seconds: 5),
@@ -275,16 +307,30 @@ class _HomeDashboardScreenBodyState
                         letterSpacing: -0.3,
                       ),
                     ),
-                    Text(
-                      latestVitals?.recordedAt == null
-                          ? 'Not recorded'
-                          : DateFormat('d MMM yyyy')
-                              .format(latestVitals!.recordedAt!),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF6C7C70),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          latestVitals?.recordedAt == null
+                              ? 'Not recorded'
+                              : DateFormat('d MMM yyyy')
+                                  .format(latestVitals!.recordedAt!),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6C7C70),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Refresh vitals',
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints.tightFor(
+                              width: 36, height: 36),
+                          onPressed: _refreshVitals,
+                          icon: const Icon(Icons.refresh_rounded,
+                              size: 18, color: Color(0xFF6C7C70)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -319,7 +365,7 @@ class _HomeDashboardScreenBodyState
                 ),
                 const SizedBox(height: 8),
                 Text(
-                    'Age: ${latestVitals?.ageLabel ?? 'Not recorded'}  •  BMI: ${latestVitals?.formattedBmi ?? 'Not recorded'}',
+                    'Age: ${latestVitals?.ageLabel ?? 'Not recorded'}  •  Gender: ${latestVitals?.gender ?? 'Not recorded'}  •  BMI: ${latestVitals?.formattedBmi ?? 'Not recorded'}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -329,6 +375,9 @@ class _HomeDashboardScreenBodyState
                     'Head circumference: ${VitalsRecord.value(latestVitals?.headCircumferenceCm, 'cm')}  •  Waist: ${VitalsRecord.value(latestVitals?.waistCm, 'cm')}',
                     style: const TextStyle(
                         fontSize: 11, color: Color(0xFF4D6053))),
+                if (vitalsLoadError != null)
+                  const Text('Unable to refresh saved vitals.',
+                      style: TextStyle(fontSize: 10, color: Colors.redAccent)),
               ],
             ),
           ),
@@ -423,7 +472,7 @@ class _HomeDashboardScreenBodyState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  l10n.optimalNutritionTitle,
+                  'Personalized nutrition plan',
                   style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
@@ -433,7 +482,8 @@ class _HomeDashboardScreenBodyState
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  l10n.nutritionMilestonesDesc,
+                  nutritionPlan?['summary']?.toString() ??
+                      'Open the plan to generate guidance from the latest screening history.',
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.35,

@@ -1,7 +1,13 @@
 package com.example.poshaneye
 
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
+import android.os.Build
+import android.os.CancellationSignal
 import android.os.Handler
 import android.os.Looper
+import java.util.Locale
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -27,6 +33,65 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "poshaneye/location")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "getRegion") handleRegionLookup(result)
+                else result.notImplemented()
+            }
+    }
+
+    @Suppress("MissingPermission") // Dart requests foreground location permission first.
+    private fun handleRegionLookup(result: MethodChannel.Result) {
+        try {
+            val manager = getSystemService(LOCATION_SERVICE) as LocationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                manager.getCurrentLocation(
+                    LocationManager.NETWORK_PROVIDER,
+                    CancellationSignal(),
+                    mainExecutor
+                ) { location ->
+                    if (location == null) {
+                        result.error("location_unavailable", "Could not obtain a current location.", null)
+                    } else {
+                        reverseGeocode(location, result)
+                    }
+                }
+            } else {
+                val location = manager.getProviders(true)
+                    .asSequence()
+                    .mapNotNull { provider -> manager.getLastKnownLocation(provider) }
+                    .maxByOrNull { it.time }
+                if (location == null) {
+                    result.error("location_unavailable", "Could not obtain a location.", null)
+                } else {
+                    reverseGeocode(location, result)
+                }
+            }
+        } catch (error: Exception) {
+            result.error("location_unavailable", "Location lookup is unavailable.", null)
+        }
+    }
+
+    private fun reverseGeocode(location: Location, result: MethodChannel.Result) {
+        executor.execute {
+            try {
+                val address = Geocoder(applicationContext, Locale.getDefault())
+                    .getFromLocation(location.latitude, location.longitude, 1)
+                    ?.firstOrNull()
+                val region = address?.let {
+                    mapOf(
+                        "country" to (it.countryName ?: ""),
+                        "state" to (it.adminArea ?: ""),
+                        "district" to (it.subAdminArea ?: it.locality ?: "")
+                    ).filterValues(String::isNotBlank)
+                } ?: emptyMap()
+                mainHandler.post { result.success(region) }
+            } catch (error: Exception) {
+                mainHandler.post {
+                    result.error("geocoding_failed", "Could not determine a general region.", null)
+                }
+            }
+        }
     }
 
     private fun handleExtract(imageBytes: ByteArray?, result: MethodChannel.Result) {

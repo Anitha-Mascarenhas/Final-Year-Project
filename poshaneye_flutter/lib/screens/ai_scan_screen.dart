@@ -10,19 +10,23 @@ import '../services/api_service.dart';
 import '../services/hybrid_landmark_bridge.dart';
 import '../state/session_provider.dart';
 import '../state/vitals_provider.dart';
+import '../state/nutrition_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/chime_synthesizer.dart';
 import '../utils/captured_file_cleanup.dart';
 import '../utils/image_picker_helper.dart';
 import '../utils/l10n_extension.dart';
+import 'nutrition_plan_screen.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class AiScanScreen extends ConsumerStatefulWidget {
   final String childName;
+  final String? childId;
 
   const AiScanScreen({
     Key? key,
     this.childName = 'Aarav',
+    this.childId,
   }) : super(key: key);
 
   @override
@@ -77,37 +81,22 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     {
       'name': 'Albatross',
       'subtitle': 'Graceful Ocean Soarer',
-<<<<<<< HEAD
       'emoji': '🪶',
       'video': '/videos/video1.mp4',
-=======
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂªÃƒâ€šÃ‚Â¶',
-      'video': '/videos/albatross.mp4',
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video1.mp4',
     },
     {
       'name': 'Shark',
       'subtitle': 'Swift Friendly Swimmer',
-<<<<<<< HEAD
       'emoji': '🦈',
       'video': '/videos/video2.mp4',
-=======
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¦Ãƒâ€¹Ã¢â‚¬Â ',
-      'video': '/videos/shark.mp4',
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video2.mp4',
     },
     {
       'name': 'Cheetah',
       'subtitle': 'Lightning Fast Runner',
-<<<<<<< HEAD
       'emoji': '🐆',
       'video': '/videos/video3.mp4',
-=======
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ',
-      'video': '/videos/cheetah.mp4',
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
       'fallback': '/videos/video3.mp4',
     },
   ];
@@ -167,7 +156,6 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
         }
       }
     }).catchError((err) {
-<<<<<<< HEAD
       debugPrint('Mascot primary video load error ($fullUrl): $err');
       final fallbackUrl = _resolveFullUrl(fallbackPath);
       final fallbackController = VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
@@ -187,11 +175,6 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       }).catchError((e) {
         debugPrint('Mascot fallback video load error ($fallbackUrl): $e');
       });
-=======
-      _mascotVideoFailures.add(index);
-      debugPrint('Mascot video load error ($fullUrl): $err');
-      if (mounted) setState(() {});
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     });
   }
 
@@ -457,13 +440,12 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
 
     var records = ref.read(vitalsProvider);
     final session = ref.read(sessionProvider);
-    if (records.isEmpty &&
-        session.childId != null &&
-        session.accessToken != null) {
+    final childId = widget.childId ?? session.childId;
+    if (childId != null && session.accessToken != null) {
       try {
         await ref
             .read(vitalsProvider.notifier)
-            .loadForChild(session.childId!, session.accessToken!);
+            .loadForChild(childId, session.accessToken!);
         records = ref.read(vitalsProvider);
       } catch (error) {
         debugPrint('[SCAN] Could not load saved vitals: $error');
@@ -707,12 +689,39 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       // Send the child's anthropometrics with the scan so the backend's
       // production hybrid pipeline (168-feature fusion) can use them. Any field
       // left out is safely imputed server-side (training-split medians).
-      debugPrint('[SCAN] sending current image to /predict '
+      debugPrint('[SCAN] saving confirmed screening through /api/screenings/predict '
           '(bytes=${_pendingScanBytes!.length})');
-      final result = await ApiService.predictImage(
+      final session = ref.read(sessionProvider);
+      final childId = widget.childId ?? session.childId;
+      if (childId == null || session.accessToken == null) {
+        throw ApiException('Sign in and select a child before saving a screening.');
+      }
+      final saved = await ApiService.saveScreening(
         _pendingScanBytes!,
+        childId: childId,
+        token: session.accessToken!,
+        filename: 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
         fields: _anthropometricFields(),
       );
+      final result = PredictionResult.fromJson(saved['screening_result'] is Map
+          ? (saved['screening_result'] as Map).cast<String, dynamic>()
+          : saved);
+      ref.read(vitalsProvider.notifier).addSavedScreening(saved);
+      ref.read(nutritionRecommendationProvider.notifier).clear();
+      try {
+        await ref.read(vitalsProvider.notifier)
+            .loadForChild(childId, session.accessToken!);
+      } catch (error) {
+        debugPrint('[SCAN] Screening saved; history reload failed: $error');
+      }
+      try {
+        await ref.read(nutritionRecommendationProvider.notifier).load(
+              childId: childId,
+              token: session.accessToken!,
+            );
+      } catch (error) {
+        debugPrint('[SCAN] Saved screening; nutrition summary refresh failed: $error');
+      }
 
       if (!mounted) return;
       _spinController.stop();
@@ -1427,7 +1436,6 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           const SizedBox(height: 18),
 
           // 2. DEDICATED FULL VIDEO FRAME (Plays the Clicked Mascot Video!)
-<<<<<<< HEAD
           GestureDetector(
             onTap: () {
               if (activeController != null && activeController.value.isInitialized) {
@@ -1500,61 +1508,6 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                               style:
                                   TextStyle(color: Colors.white60, fontSize: 12),
                             ),
-=======
-          Container(
-            height: 240,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF09120D),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF3FFF80), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3FFF80).withOpacity(0.24),
-                  blurRadius: 22,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (isVideoReady)
-                    FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: activeController.value.size.width > 0
-                            ? activeController.value.size.width
-                            : 320,
-                        height: activeController.value.size.height > 0
-                            ? activeController.value.size.height
-                            : 240,
-                        child: VideoPlayer(activeController),
-                      ),
-                    )
-                  else
-                    _MascotAnimationFallback(
-                      emoji: active['emoji'] as String,
-                      name: active['name'] as String,
-                    ),
-
-                  // Bottom Info & Status Bar
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 14),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black87,
-                            Colors.black45,
-                            Colors.transparent,
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
                           ],
                         ),
                       ),
@@ -2346,7 +2299,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => NutritionPlanScreen(
+                        childName: childName,
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.forestGreen,
                   foregroundColor: Colors.white,
@@ -2713,27 +2674,9 @@ class MascotCardSwapDeck extends StatelessWidget {
   Widget build(BuildContext context) {
     // Distinct theme gradients for each mascot card
     final List<List<Color>> mascotGradients = [
-<<<<<<< HEAD
       [const Color(0xFF0D3B2E), const Color(0xFF0369A1)], // Albatross
       [const Color(0xFF0F3827), const Color(0xFF0F766E)], // Shark
       [const Color(0xFF1E2D1A), const Color(0xFFB45309)], // Cheetah
-=======
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFF0369A1),
-        const Color(0xFF0C4A6E)
-      ], // Albatross
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFF0F766E),
-        const Color(0xFF164E63)
-      ], // Shark
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFFB45309),
-        const Color(0xFF78350F)
-      ], // Cheetah
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     ];
 
     return Padding(
@@ -2767,7 +2710,6 @@ class MascotCardSwapDeck extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-<<<<<<< HEAD
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF3FFF80)
@@ -2781,66 +2723,6 @@ class MascotCardSwapDeck extends StatelessWidget {
                               : Colors.black.withOpacity(0.25),
                           blurRadius: isSelected ? 14 : 6,
                           offset: const Offset(0, 4),
-=======
-                    ),
-                  ),
-
-                  // Center Mascot Emoji Artwork Card Design
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.14),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white30,
-                              width: 1.5,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 16,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            mascot['emoji'] as String,
-                            style: const TextStyle(fontSize: 60),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3FFF80).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color:
-                                    const Color(0xFF3FFF80).withOpacity(0.6)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.play_circle_fill,
-                                  size: 13, color: Color(0xFF3FFF80)),
-                              SizedBox(width: 4),
-                              Text(
-                                'TAP TO PLAY VIDEO',
-                                style: TextStyle(
-                                  color: Color(0xFF3FFF80),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
                         ),
                       ],
                     ),
@@ -2966,12 +2848,5 @@ class MascotCardSwapDeck extends StatelessWidget {
     );
   }
 }
-<<<<<<< HEAD
 
 typedef MascotHorizontalSelector = MascotCardSwapDeck;
-
-
-
-
-=======
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698

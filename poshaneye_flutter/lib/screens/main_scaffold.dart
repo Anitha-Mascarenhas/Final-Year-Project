@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../assistant/assistant_context.dart';
 import '../assistant/assistant_tools.dart';
 import '../assistant/voice_assistant_controller.dart';
-=======
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/session_provider.dart';
-import '../state/vitals_provider.dart';
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
+import '../state/nutrition_provider.dart';
 import '../widgets/interactive_bottom_nav.dart';
 import '../widgets/voice_assistant_button.dart';
 import 'home_dashboard_screen.dart';
@@ -42,7 +39,6 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-<<<<<<< HEAD
     _assistantController = VoiceAssistantController(
       context: AssistantContext(
         currentScreen: _getScreenName(_currentIndex),
@@ -50,6 +46,21 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       ),
     );
     _setupAssistantTools();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadNutritionRecommendation());
+  }
+
+  Future<void> _loadNutritionRecommendation() async {
+    final session = ref.read(sessionProvider);
+    if (session.childId != null && session.accessToken != null) {
+      try {
+        await ref.read(nutritionRecommendationProvider.notifier).load(
+              childId: session.childId!,
+              token: session.accessToken!,
+            );
+      } catch (_) {
+        // Home keeps its neutral prompt until the backend plan is available.
+      }
+    }
   }
 
   void _setupAssistantTools() {
@@ -86,21 +97,6 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         return 'profile';
       default:
         return 'home';
-=======
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadVitals());
-  }
-
-  Future<void> _loadVitals() async {
-    final session = ref.read(sessionProvider);
-    if (session.childId != null && session.accessToken != null) {
-      try {
-        await ref
-            .read(vitalsProvider.notifier)
-            .loadForChild(session.childId!, session.accessToken!);
-      } catch (_) {
-        /* screens show the empty state; refresh is available on re-entry */
-      }
->>>>>>> 9e766e47b3629f1688376fb3dd2b4d5be4238698
     }
   }
 

@@ -146,6 +146,7 @@ class _HealthcareDashboardScreenState extends State<HealthcareDashboardScreen> {
       MaterialPageRoute(
         builder: (_) => ProfileScreen(
           childName: _selectedChild.name,
+          childId: _selectedChild.id,
           initialHistoryView: true,
         ),
       ),
@@ -156,7 +157,10 @@ class _HealthcareDashboardScreenState extends State<HealthcareDashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AiScanScreen(childName: _selectedChild.name),
+        builder: (_) => AiScanScreen(
+          childName: _selectedChild.name,
+          childId: _selectedChild.id,
+        ),
       ),
     );
   }
