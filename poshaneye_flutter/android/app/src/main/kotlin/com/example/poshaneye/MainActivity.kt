@@ -45,16 +45,36 @@ class MainActivity : FlutterActivity() {
         try {
             val manager = getSystemService(LOCATION_SERVICE) as LocationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                manager.getCurrentLocation(
+                val provider = listOf(
                     LocationManager.NETWORK_PROVIDER,
+                    LocationManager.GPS_PROVIDER
+                ).firstOrNull { manager.isProviderEnabled(it) }
+                if (provider == null) {
+                    result.error("location_disabled", "Turn on device location to select regional foods.", null)
+                    return
+                }
+                val cachedLocation = manager.getProviders(true)
+                    .asSequence()
+                    .mapNotNull { enabledProvider -> manager.getLastKnownLocation(enabledProvider) }
+                    .maxByOrNull { it.time }
+                if (cachedLocation != null &&
+                    System.currentTimeMillis() - cachedLocation.time < 12 * 60 * 60 * 1000
+                ) {
+                    reverseGeocode(cachedLocation, result)
+                    return
+                }
+                manager.getCurrentLocation(
+                    provider,
                     CancellationSignal(),
                     mainExecutor
                 ) { location ->
-                    if (location == null) {
-                        result.error("location_unavailable", "Could not obtain a current location.", null)
-                    } else {
-                        reverseGeocode(location, result)
-                    }
+                    val bestLocation = location ?: manager.getProviders(true)
+                        .asSequence()
+                        .mapNotNull { enabledProvider -> manager.getLastKnownLocation(enabledProvider) }
+                        .maxByOrNull { it.time }
+                    if (bestLocation == null) result.error(
+                        "location_unavailable", "Could not obtain a location. Check location permission and device location.", null
+                    ) else reverseGeocode(bestLocation, result)
                 }
             } else {
                 val location = manager.getProviders(true)
