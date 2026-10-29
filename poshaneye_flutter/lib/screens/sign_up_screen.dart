@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,8 @@ import '../widgets/auth_tabs.dart';
 import 'auth_choice_screen.dart';
 import '../state/session_provider.dart';
 import '../services/api_service.dart';
+import '../services/auth_registration.dart';
+import '../widgets/child_id_dialog.dart';
 
 class SignUpScreen extends StatefulWidget {
   final UserRole role;
@@ -27,6 +31,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _hospitalIdController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _registrationRequestId;
+
+  void _invalidateRegistrationRequestId() {
+    _registrationRequestId = null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    for (final controller in [
+      _nameController,
+      _dobController,
+      _emailController,
+      _passwordController,
+      _confirmPasswordController,
+    ]) {
+      controller.addListener(_invalidateRegistrationRequestId);
+    }
+  }
+
+  String _newRegistrationRequestId() {
+    final random = Random.secure();
+    return List.generate(32, (_) => random.nextInt(16).toRadixString(16))
+        .join();
+  }
 
   @override
   void dispose() {
@@ -68,6 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _createAccount() async {
+    if (_busy) return;
     final parent = widget.role == UserRole.parent;
     final password = _passwordController.text;
     if (password.length < 8 || password != _confirmPasswordController.text) {
@@ -98,24 +128,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
     setState(() => _busy = true);
     try {
-      final created = await ApiService.signUp(parent: parent, body: body);
-      final id = (created[parent ? 'childId' : 'workerId'] ?? '').toString();
+      late final String id;
+      if (parent) {
+        body['registrationRequestId'] =
+            _registrationRequestId ??= _newRegistrationRequestId();
+        id = await registerParentAndReadChildId(
+          register: () => ApiService.signUp(parent: true, body: body),
+        );
+        if (!mounted) return;
+        await showChildIdDialog(
+          context,
+          childId: id,
+          childName: _nameController.text.trim(),
+        );
+        if (!mounted) return;
+      } else {
+        final created = await ApiService.signUp(parent: false, body: body);
+        id = (created['workerId'] ?? '').toString().trim();
+        if (id.isEmpty) {
+          throw ApiException(
+              'The server did not return the assigned worker ID.');
+        }
+      }
       final session =
           await ApiService.login(id: id, password: password, parent: parent);
       if (!mounted) return;
+      final accessToken = session['access_token']?.toString();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw ApiException('The server did not return an access token.');
+      }
       final name =
           parent ? _nameController.text.trim() : _nameController.text.trim();
       ProviderScope.containerOf(context, listen: false)
           .read(sessionProvider.notifier)
           .signInAs(name,
               childId: parent ? id : null,
-              accessToken: session['access_token']?.toString(),
+              accessToken: accessToken,
               dateOfBirth: session['dateOfBirth']?.toString());
       context.go('/app', extra: name);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Could not create account: $e')));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

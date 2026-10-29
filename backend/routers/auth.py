@@ -11,7 +11,8 @@ from services.auth_service import (
     create_parent_account,
     create_health_worker_account,
     login_health_worker,
-    login_parent
+    login_parent,
+    ensure_parent_registration_index,
 )
 
 
@@ -25,6 +26,7 @@ router = APIRouter(
 async def parent_signup(data: ParentSignupRequest):
 
     try:
+        await ensure_parent_registration_index()
         result = await create_parent_account(data)
 
         return result
