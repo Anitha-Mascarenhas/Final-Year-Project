@@ -1,29 +1,22 @@
 # PoshanEye - Flutter Authentication & Home Dashboard
 
 ## Setup & Local Video Assets
-This project requires 3 large MP4 video files (~130 MB each) that are excluded from Git repository history via `.gitignore`.
-
-After cloning the repository, every team member must manually place the three video files inside the local static asset directories:
+Mascot videos are large MP4 files and are excluded from Git via `.gitignore`.
+To enable video playback on both Flutter mobile and web, obtain these files
+from a teammate and place them in `assets/videos/`:
 
 ```
-public/videos/
-├── video1.mp4
-├── video2.mp4
-└── video3.mp4
+assets/videos/
+├── albatross.mp4
+├── cheetah.mp4
+└── shark.mp4
 ```
 
-(For Flutter Web builds, place copies or links in `web/videos/` as well):
-```
-web/videos/
-├── video1.mp4
-├── video2.mp4
-└── video3.mp4
-```
-
-### Expected Videos:
-- `video1.mp4` (Albatross interactive mascot)
-- `video2.mp4` (Shark interactive mascot)
-- `video3.mp4` (Cheetah interactive mascot)
+The app loads these as Flutter assets. If an asset is missing, mascot mode
+shows its animated preview instead of remaining on a loading screen. Web
+deployments may also provide the legacy static files under `web/videos/`
+(`video1.mp4` for Albatross, `video2.mp4` for Shark, and `video3.mp4` for
+Cheetah) as a web-only fallback.
 
 ---
 

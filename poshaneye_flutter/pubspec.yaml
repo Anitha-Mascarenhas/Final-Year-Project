@@ -57,4 +57,5 @@ flutter:
   assets:
     - assets/models/face_landmarker.task
     - assets/models/pose_landmarker.task
+    - assets/videos/
   generate: true

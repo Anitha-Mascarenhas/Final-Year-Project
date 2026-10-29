@@ -95,108 +95,167 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       'name': 'Albatross',
       'subtitle': 'Graceful Ocean Soarer',
       'emoji': '🪶',
-      'video': '/videos/video1.mp4',
-      'fallback': '/videos/video1.mp4',
+      'video': 'assets/videos/albatross.mp4',
+      'webFallback': '/videos/video1.mp4',
     },
     {
       'name': 'Shark',
       'subtitle': 'Swift Friendly Swimmer',
       'emoji': '🦈',
-      'video': '/videos/video2.mp4',
-      'fallback': '/videos/video2.mp4',
+      'video': 'assets/videos/shark.mp4',
+      'webFallback': '/videos/video2.mp4',
     },
     {
       'name': 'Cheetah',
       'subtitle': 'Lightning Fast Runner',
       'emoji': '🐆',
-      'video': '/videos/video3.mp4',
-      'fallback': '/videos/video3.mp4',
+      'video': 'assets/videos/cheetah.mp4',
+      'webFallback': '/videos/video3.mp4',
     },
   ];
 
   final Map<int, VideoPlayerController> _mascotVideoControllers = {};
+  final Set<int> _mascotVideosLoading = {};
   final Set<int> _mascotVideoFailures = {};
 
-  String _resolveFullUrl(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    try {
-      final origin = Uri.base.origin;
-      if (origin.isNotEmpty && origin != 'null') {
-        final cleanPath = path.startsWith('/') ? path : '/$path';
-        return '$origin$cleanPath';
-      }
-    } catch (_) {}
-    return path;
+  void _loadMascotVideo(int index) {
+    if (_mascotVideoFailures.contains(index) ||
+        _mascotVideosLoading.contains(index)) {
+      return;
+    }
+
+    final controller = _mascotVideoControllers[index];
+    if (controller != null && controller.value.isInitialized) return;
+
+    _mascotVideosLoading.add(index);
+    unawaited(_initializeMascotVideo(index));
   }
 
-  void _loadMascotVideo(int index) {
-    if (_mascotVideoFailures.contains(index)) return;
-    if (_mascotVideoControllers.containsKey(index)) {
-      final controller = _mascotVideoControllers[index];
-      if (controller != null && controller.value.isInitialized) {
-        if (index == _selectedMascotIndex) {
-          controller.seekTo(Duration.zero);
-          controller.setVolume(0.0);
-          controller.play();
-        }
-      }
-      return;
-    }
+  Future<VideoPlayerController> _createMascotVideoController(int index) async {
+    final assetPath = _mascots[index]['video'] as String;
+    final assetController = VideoPlayerController.asset(assetPath);
+    try {
+      await assetController.initialize();
+      return assetController;
+    } catch (error) {
+      await assetController.dispose();
+      debugPrint('Mascot asset load error ($assetPath): $error');
+      if (!kIsWeb) rethrow;
 
-    final primaryPath = _mascots[index]['video'] as String;
-    final fallbackPath = _mascots[index]['fallback'] as String;
-    final fullUrl = _resolveFullUrl(primaryPath);
-
-    final Uri videoUri = Uri.parse(fullUrl);
-    if (!videoUri.hasScheme || videoUri.host.isEmpty) {
-      // The project has no bundled mascot videos. Relative web paths cannot be
-      // passed to Android's network player; use the animated Flutter fallback.
-      _mascotVideoFailures.add(index);
-      return;
-    }
-    final controller = VideoPlayerController.networkUrl(videoUri);
-    controller.initialize().then((_) {
-      if (mounted) {
-        setState(() {
-          _mascotVideoControllers[index] = controller;
-        });
-        controller.setLooping(true);
-        controller.setVolume(0.0);
-        if (index == _selectedMascotIndex) {
-          controller.play();
-        } else {
-          controller.pause();
-        }
+      final webPath = _mascots[index]['webFallback'] as String;
+      final webUri = Uri.base.resolve(webPath);
+      final webController = VideoPlayerController.networkUrl(webUri);
+      try {
+        await webController.initialize();
+        return webController;
+      } catch (_) {
+        await webController.dispose();
+        rethrow;
       }
-    }).catchError((err) {
-      debugPrint('Mascot primary video load error ($fullUrl): $err');
-      final fallbackUrl = _resolveFullUrl(fallbackPath);
-      final fallbackController =
-          VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
-      fallbackController.initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _mascotVideoControllers[index] = fallbackController;
-          });
-          fallbackController.setLooping(true);
-          fallbackController.setVolume(0.0);
-          if (index == _selectedMascotIndex) {
-            fallbackController.play();
-          } else {
-            fallbackController.pause();
-          }
-        }
-      }).catchError((e) {
-        debugPrint('Mascot fallback video load error ($fallbackUrl): $e');
-      });
+    }
+  }
+
+  void _watchMascotVideoErrors(
+    int index,
+    VideoPlayerController controller,
+  ) {
+    controller.addListener(() {
+      if (controller.value.hasError) {
+        unawaited(_failMascotVideo(
+          index,
+          controller,
+          controller.value.errorDescription ?? 'Unknown playback error',
+        ));
+      }
     });
+  }
+
+  Future<void> _failMascotVideo(
+    int index,
+    VideoPlayerController controller,
+    String error,
+  ) async {
+    if (!_mascotVideoFailures.add(index)) return;
+    debugPrint('Mascot video error ($index): $error');
+    if (mounted) {
+      setState(() {
+        _mascotVideoControllers.remove(index);
+        _mascotVideosLoading.remove(index);
+      });
+    }
+    try {
+      await controller.dispose();
+    } catch (disposeError) {
+      debugPrint('Mascot video disposal error ($index): $disposeError');
+    }
+  }
+
+  Future<void> _initializeMascotVideo(int index) async {
+    VideoPlayerController? controller;
+    try {
+      controller = await _createMascotVideoController(index);
+      await controller.setLooping(true);
+      await controller.setVolume(0.0);
+      _watchMascotVideoErrors(index, controller);
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _mascotVideoControllers[index] = controller!;
+        _mascotVideosLoading.remove(index);
+      });
+
+      if (index == _selectedMascotIndex) {
+        await _playMascotVideo(index, controller);
+      } else {
+        await controller.pause();
+      }
+    } catch (error) {
+      debugPrint('Mascot video initialization error: $error');
+      if (controller != null) {
+        await _failMascotVideo(index, controller, error.toString());
+      } else if (mounted) {
+        setState(() {
+          _mascotVideosLoading.remove(index);
+          _mascotVideoFailures.add(index);
+        });
+      }
+    }
+  }
+
+  Future<void> _playMascotVideo(
+    int index,
+    VideoPlayerController controller, {
+    bool restart = false,
+  }) async {
+    try {
+      if (restart) await controller.seekTo(Duration.zero);
+      await controller.setVolume(0.0);
+      await controller.play();
+    } catch (error) {
+      await _failMascotVideo(index, controller, error.toString());
+    }
+  }
+
+  Future<void> _pauseMascotVideo(
+    int index,
+    VideoPlayerController controller,
+  ) async {
+    try {
+      await controller.pause();
+    } catch (error) {
+      debugPrint('Mascot video pause error ($index): $error');
+    }
   }
 
   void _selectMascot(int index) {
     playChime();
     _mascotVideoControllers.forEach((key, controller) {
       if (key != index) {
-        controller.pause();
+        unawaited(_pauseMascotVideo(key, controller));
       }
     });
 
@@ -207,10 +266,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     if (_mascotVideoControllers.containsKey(index)) {
       final controller = _mascotVideoControllers[index];
       if (controller != null && controller.value.isInitialized) {
-        controller.seekTo(Duration.zero);
-        controller.setVolume(0.0);
-        controller.play();
-        setState(() {});
+        unawaited(_playMascotVideo(index, controller, restart: true));
       } else {
         _loadMascotVideo(index);
       }
@@ -1616,9 +1672,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               if (activeController != null &&
                   activeController.value.isInitialized) {
                 if (activeController.value.isPlaying) {
-                  activeController.pause();
+                  unawaited(_pauseMascotVideo(
+                    _selectedMascotIndex,
+                    activeController,
+                  ));
                 } else {
-                  activeController.play();
+                  unawaited(_playMascotVideo(
+                    _selectedMascotIndex,
+                    activeController,
+                  ));
                 }
                 setState(() {});
               }
@@ -1655,6 +1717,12 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                               : 240,
                           child: VideoPlayer(activeController),
                         ),
+                      )
+                    else if (_mascotVideoFailures
+                        .contains(_selectedMascotIndex))
+                      _MascotAnimationFallback(
+                        emoji: active['emoji'] as String,
+                        name: active['name'] as String,
                       )
                     else
                       Center(
