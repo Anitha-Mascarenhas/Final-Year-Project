@@ -217,19 +217,19 @@ abstract class AppLocalizations {
   /// No description provided for @hospitalIdLabel.
   ///
   /// In en, this message translates to:
-  /// **'HOSPITAL ID'**
+  /// **'WORKER ID'**
   String get hospitalIdLabel;
 
   /// No description provided for @childIdHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. PE-1048'**
+  /// **'e.g. CHD001'**
   String get childIdHint;
 
   /// No description provided for @hospitalIdHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. HID-2341'**
+  /// **'e.g. HW001'**
   String get hospitalIdHint;
 
   /// No description provided for @passwordLabel.

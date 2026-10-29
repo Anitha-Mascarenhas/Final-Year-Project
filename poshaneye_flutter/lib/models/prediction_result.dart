@@ -22,7 +22,7 @@ class PredictionResult {
       parsedProbabilities[key] = (value as num).toDouble();
     });
 
-    final pred = json['prediction'] as String? ?? 'healthy';
+    final pred = json['prediction'] as String? ?? '';
 
     return PredictionResult(
       prediction: pred,

@@ -174,9 +174,10 @@ def main() -> None:
             img = cv2.imread(str(path))
             if img is None:
                 continue
-            sw = row["shoulder_width"]
-            sw = float(sw) if pd.notna(sw) else None
-            feats = seg_extractor.extract_features(img[:, :, ::-1], sw)
+            cv_feats = _quick_cv(img, holistic)
+            sw_512 = cv_feats.get("_shoulder_width_512")
+            sw_512 = float(sw_512) if sw_512 is not None and np.isfinite(sw_512) else None
+            feats = seg_extractor.extract_features(img[:, :, ::-1], sw_512)
             for col in SEGMENTATION_FEATURE_COLUMNS:
                 train_df.loc[idx, col] = feats[col]
         del seg_extractor
@@ -248,6 +249,7 @@ def main() -> None:
         "model_family": "SVC(kernel='rbf', C=1.0, class_weight='balanced') [existing repo classifier]",
         "fusion_order": ["image (MobileNetV2 128-d embedding)", "cv (MediaPipe 21 features)",
                          "segmentation (DeepLabV3+ 11 features)", "anthropometric (8 features)"],
+        "segmentation_normalization": "MediaPipe normalized shoulder span * 512; area features divide by span squared and length features divide by span",
         "total_feature_dim": int(X_train_full.shape[1]),
         "group_slices": {k: [s.start, s.stop] for k, s in slices.items()},
         "classifier_artifacts": [SVM_FILENAME, SVM_FILENAME.replace(".joblib", "_portable.json")],

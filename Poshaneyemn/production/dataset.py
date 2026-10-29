@@ -60,8 +60,16 @@ def _load_frontal1_cv_features() -> pd.DataFrame:
 
 def _load_segmentation_features() -> pd.DataFrame:
     seg = pd.read_csv(SEG_FEATURES_CSV)
+    if "shoulder_width_512" not in seg.columns:
+        raise ValueError(
+            f"{SEG_FEATURES_CSV} uses the old pixel shoulder-width normalization. "
+            "Regenerate segmentation_features.csv with extract_segmentation_features.py "
+            "before building or training the production dataset."
+        )
     seg["child_id"] = pd.to_numeric(seg["child_id"], errors="coerce").astype("Int64")
-    keep = ["child_id"] + [c for c in seg.columns if c not in {"child_id", "tag", "view", "image_name", "shoulder_width_ref"}]
+    keep = ["child_id"] + [c for c in seg.columns if c not in {
+        "child_id", "tag", "view", "image_name", "shoulder_width_ref", "shoulder_width_512",
+    }]
     seg = seg[keep].drop_duplicates(subset=["child_id"], keep="first")
     return seg
 

@@ -54,6 +54,7 @@ def extract_cv_features(image_bgr: np.ndarray, holistic: Any) -> dict[str, float
     H, W = image_bgr.shape[:2]
     res = holistic.process(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
     out: dict[str, float] = {c: float("nan") for c in CV_FEATURE_COLUMNS}
+    out["_shoulder_width_512"] = float("nan")
 
     if res is None:
         return out
@@ -92,6 +93,16 @@ def extract_cv_features(image_bgr: np.ndarray, holistic: Any) -> dict[str, float
 
         if ls is not None and rs is not None:
             out["shoulder_width"] = float(np.hypot(*(rs - ls)))
+            # Keep the shoulder span in normalized landmark coordinates too. The
+            # segmentation mask is always 512x512, so its matching reference is
+            # this normalized span projected into that coordinate system.
+            lmk_l, lmk_r = lm[11], lm[12]
+            if (lmk_l.visibility is None or lmk_l.visibility >= _MIN_POSE_VISIBILITY) and (
+                lmk_r.visibility is None or lmk_r.visibility >= _MIN_POSE_VISIBILITY
+            ):
+                out["_shoulder_width_512"] = float(
+                    np.hypot(lmk_r.x - lmk_l.x, lmk_r.y - lmk_l.y) * 512.0
+                )
 
         def arm(sh, el, wr, side: str) -> None:
             if sh is None or el is None:
@@ -162,22 +173,22 @@ class SegmentationFeatureExtractor:
         logits = self.model(batch, training=False)
         return np.asarray(tf.argmax(logits, axis=-1)[0]).astype(np.uint8)
 
-    def extract_features(self, image_rgb: np.ndarray, shoulder_width: float | None) -> dict[str, float]:
+    def extract_features(self, image_rgb: np.ndarray, shoulder_width_512: float | None) -> dict[str, float]:
         """Mask -> connected components -> the 11 production segmentation features.
 
-        Geometry matches extract_features_from_mask() in the existing extraction code;
-        the scale normalization uses the MediaPipe shoulder_width reference so the
-        features are comparable across camera distances.
+        Geometry matches extract_features_from_mask() in the extraction code. Scale
+        normalization uses the normalized MediaPipe shoulder span projected into the
+        mask's 512x512 coordinate space.
         """
         import cv2
 
         import cv2  # noqa: F811  (local import keeps module import lightweight)
 
         mask = self.predict_mask(image_rgb)
-        return self.features_from_mask(mask, shoulder_width)
+        return self.features_from_mask(mask, shoulder_width_512)
 
     @staticmethod
-    def features_from_mask(mask: np.ndarray, shoulder_width: float | None) -> dict[str, float]:
+    def features_from_mask(mask: np.ndarray, shoulder_width_512: float | None) -> dict[str, float]:
         out: dict[str, float] = {c: float("nan") for c in SEGMENTATION_FEATURE_COLUMNS}
         out["total_arm_area"] = 0.0
         out["num_arms_detected"] = 0.0
@@ -222,8 +233,8 @@ class SegmentationFeatureExtractor:
             out["right_arm_height"] = float(right["height"])
             out["right_arm_aspect_ratio"] = float(right["height"] / right["width"]) if right["width"] > 0 else float("nan")
 
-        if shoulder_width is not None and np.isfinite(shoulder_width) and shoulder_width > 0:
-            sw, sw_sq = float(shoulder_width), float(shoulder_width) ** 2
+        if shoulder_width_512 is not None and np.isfinite(shoulder_width_512) and shoulder_width_512 > 0:
+            sw, sw_sq = float(shoulder_width_512), float(shoulder_width_512) ** 2
             out["total_arm_area_norm"] = out["total_arm_area"] / sw_sq
             if np.isfinite(out.get("left_arm_area", float("nan"))):
                 out["left_arm_area_norm"] = out["left_arm_area"] / sw_sq

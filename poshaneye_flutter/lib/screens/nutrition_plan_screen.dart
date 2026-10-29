@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/nutrition_location_service.dart';
+import '../state/nutrition_provider.dart';
+import '../state/session_provider.dart';
 import '../utils/l10n_extension.dart';
+import '../theme/app_theme.dart';
 import '../widgets/interactive_eye_logo.dart';
 
-class NutritionPlanScreen extends StatefulWidget {
+class NutritionPlanScreen extends ConsumerStatefulWidget {
   final String childName;
 
   const NutritionPlanScreen({
@@ -13,7 +17,8 @@ class NutritionPlanScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NutritionPlanScreen> createState() => _NutritionPlanScreenState();
+  ConsumerState<NutritionPlanScreen> createState() =>
+      _NutritionPlanScreenState();
 }
 
 class _MealData {
@@ -24,7 +29,7 @@ class _MealData {
   int currentOptionIndex = 0;
   bool isExpanded = false;
   bool isSwapping = false;
-  final List<Map<String, String>> options;
+  List<Map<String, String>> options;
 
   _MealData({
     required this.id,
@@ -35,11 +40,16 @@ class _MealData {
   });
 }
 
-class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
+class _NutritionPlanScreenState extends ConsumerState<NutritionPlanScreen> {
   bool _isDarkMode = false;
   Timer? _timer;
   final int _startMinutes = 8 * 60; // 8:00 AM
   final int _endMinutes = 19 * 60; // 7:00 PM
+  bool _mealsInitialized = false;
+  bool _isLocationLoading = false;
+  String _locationStatus =
+      'Location is optional; screening results set the nutrition support focus.';
+  Map<String, String> _activeRegion = const {};
 
   @override
   void initState() {
@@ -47,6 +57,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRegionalFoods());
   }
 
   @override
@@ -84,6 +95,8 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_mealsInitialized) return;
+    _mealsInitialized = true;
     final l10n = context.l10n;
     _meals = [
       _MealData(
@@ -103,7 +116,8 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                 'Nutritional value: Approx. 220 kcal · 7 g protein · 5 g fiber',
           },
           {
-            'title': 'Steamed idli with mild vegetable sambar & coconut drizzle',
+            'title':
+                'Steamed idli with mild vegetable sambar & coconut drizzle',
             'nutrition':
                 'Nutritional value: Approx. 205 kcal · 6.5 g protein · 4.5 g fiber',
           },
@@ -171,6 +185,134 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
     ];
   }
 
+  Future<void> _loadRegionalFoods({bool requestLocation = false}) async {
+    if (requestLocation && _isLocationLoading) return;
+    final session = ref.read(sessionProvider);
+    if (session.childId == null || session.accessToken == null) {
+      _showPlanUnavailable(
+          'Sign in and select a child to load screening-based meal ideas.');
+      return;
+    }
+
+    var region = <String, String>{};
+    try {
+      if (requestLocation) {
+        setState(() {
+          _isLocationLoading = true;
+          _locationStatus = 'Getting an approximate region…';
+        });
+        try {
+          final detected = await NutritionLocationService.requestRegion();
+          if (detected == null || detected.isEmpty) {
+            if (mounted) {
+              setState(() {
+                _isLocationLoading = false;
+                _locationStatus =
+                    'Region unavailable. Check location permission and device location, then retry.';
+              });
+            }
+            return;
+          }
+          region = detected;
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              _isLocationLoading = false;
+              _locationStatus =
+                  'Region lookup timed out. The screening-based plan is still available; retry for local foods.';
+            });
+          }
+          return;
+        }
+      }
+      final response =
+          await ref.read(nutritionRecommendationProvider.notifier).load(
+                childId: session.childId!,
+                token: session.accessToken!,
+                region: region,
+              );
+      final plan = response['nutrition_plan'] is Map
+          ? (response['nutrition_plan'] as Map).cast<String, dynamic>()
+          : <String, dynamic>{};
+      final regionalMeals =
+          plan['meal_plan'] is List ? plan['meal_plan'] as List : const [];
+      final selectedRegion = response['region'] is Map
+          ? (response['region'] as Map).cast<String, dynamic>()
+          : <String, dynamic>{};
+      final regionLabel = [selectedRegion['state'], selectedRegion['country']]
+          .where((part) => part != null && part.toString().isNotEmpty)
+          .join(', ');
+
+      if (!mounted) return;
+      setState(() {
+        _isLocationLoading = false;
+        _activeRegion = region;
+        _locationStatus = region.isEmpty
+            ? 'No region selected. Food suggestions use general availability.'
+            : 'Using ${[
+                region['state'],
+                region['country']
+              ].where((part) => part != null && part.toString().isNotEmpty).join(', ')} for practical food ideas.';
+        for (final raw in regionalMeals) {
+          if (raw is! Map) continue;
+          final mealPlan = raw.cast<String, dynamic>();
+          final name = (mealPlan['meal'] ?? '').toString().toLowerCase();
+          final meal = _meals.cast<_MealData?>().firstWhere(
+                (item) => item != null && name.contains(item.id),
+                orElse: () => null,
+              );
+          if (meal == null) continue;
+          final options = mealPlan['food_options'] is List
+              ? (mealPlan['food_options'] as List)
+              : const [];
+          final regionalOptions = options
+              .map((item) => item.toString().trim())
+              .where((item) => item.isNotEmpty)
+              .map((item) => {
+                    'title': item,
+                    'nutrition': regionLabel.isEmpty
+                        ? 'Food ideas selected from available local foods. Serve in an age-appropriate texture and portion.'
+                        : 'Food ideas selected for $regionLabel. Serve in an age-appropriate texture and portion.',
+                  })
+              .toList();
+          if (regionalOptions.isNotEmpty) {
+            meal.options = regionalOptions;
+            meal.currentOptionIndex = 0;
+          }
+        }
+      });
+    } catch (error) {
+      debugPrint('[NUTRITION] Could not load regional meal options: $error');
+      if (requestLocation && mounted) {
+        setState(() {
+          _isLocationLoading = false;
+          _locationStatus =
+              'Region found, but food suggestions could not refresh. Tap Allow to retry.';
+        });
+      } else {
+        _showPlanUnavailable(
+            'Screening-based meal ideas are temporarily unavailable. Try again when connected.');
+      }
+    }
+  }
+
+  void _showPlanUnavailable(String message) {
+    if (!mounted) return;
+    setState(() {
+      _locationStatus = message;
+      for (final meal in _meals) {
+        meal.options = [
+          {
+            'title': message,
+            'nutrition':
+                'The child’s screening report is needed to select the nutrition support focus.',
+          },
+        ];
+        meal.currentOptionIndex = 0;
+      }
+    });
+  }
+
   void _swapMeal(_MealData meal) async {
     if (meal.isSwapping) return;
     setState(() => meal.isSwapping = true);
@@ -201,6 +343,7 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildLocationAccess(),
                       _buildTitle(),
                       const SizedBox(height: 10),
                       _buildTimelineList(),
@@ -210,6 +353,50 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationAccess() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: _softSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _cardBorder),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.location_on_outlined, size: 18, color: _secondaryText),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Child screening determines nutrition support. Location only helps select practical regional foods. $_locationStatus',
+                style: TextStyle(
+                    fontSize: 11.5, color: _secondaryText, height: 1.25),
+              ),
+            ),
+            if (_activeRegion.isEmpty && !_isLocationLoading)
+              TextButton(
+                onPressed: () => _loadRegionalFoods(requestLocation: true),
+                style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8)),
+                child: const Text('Allow'),
+              )
+            else if (_isLocationLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -527,7 +714,9 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                         child: Row(
                           children: [
                             Text(
-                              meal.isExpanded ? context.l10n.readLess : context.l10n.readMore,
+                              meal.isExpanded
+                                  ? context.l10n.readLess
+                                  : context.l10n.readMore,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
@@ -561,7 +750,9 @@ class _NutritionPlanScreenState extends State<NutritionPlanScreen> {
                                     size: 16, color: _primaryText),
                             const SizedBox(width: 6),
                             Text(
-                              meal.isSwapping ? context.l10n.swapping : context.l10n.swapOption,
+                              meal.isSwapping
+                                  ? context.l10n.swapping
+                                  : context.l10n.swapOption,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,

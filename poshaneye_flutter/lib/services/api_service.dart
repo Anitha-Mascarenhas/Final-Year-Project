@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/prediction_result.dart';
 
@@ -27,8 +28,9 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) {
-      debugPrint('[API] platform = web | base URL = http://localhost:8000');
-      return 'http://localhost:8000';
+      final url = _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://10.128.40.32:8000';
+      debugPrint('[API] platform = web | base URL = $url');
+      return url;
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       final url =
           _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://127.0.0.1:8000';
@@ -66,6 +68,13 @@ class ApiService {
         ? <String, dynamic>{}
         : json.decode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == 404 && path.startsWith('/api/nutrition/')) {
+        debugPrint(
+            '[API] Nutrition route missing on ${baseUrl}; restart the backend from the updated backend/app.py.');
+        throw ApiException(
+            'The backend you are connected to does not have the nutrition endpoint yet. Restart FastAPI from this project’s backend folder, then tap Retry.',
+            response.statusCode);
+      }
       throw ApiException(
           decoded is Map
               ? '${decoded['detail'] ?? 'Request failed'}'
@@ -119,6 +128,24 @@ class ApiService {
           'POST', '/api/screenings/vitals/${Uri.encodeComponent(childId)}',
           body: vitals, token: token);
 
+  static Future<Map<String, dynamic>> getNutritionRecommendation({
+    required String childId,
+    required String token,
+    required Map<String, String> region,
+    List<String> allergies = const [],
+    List<String> dietaryPreferences = const [],
+  }) =>
+      _jsonRequest(
+        'POST',
+        '/api/nutrition/recommendation/${Uri.encodeComponent(childId)}',
+        token: token,
+        body: {
+          'region': region,
+          'allergies': allergies,
+          'dietary_preferences': dietaryPreferences,
+        },
+      );
+
   /// Check backend health status
   static Future<bool> checkHealth() async {
     try {
@@ -159,10 +186,16 @@ class ApiService {
       request.files.add(multipartFile);
       request.fields.addAll(fields);
 
+      debugPrint('[TRACE] flutter_image_sha256=${sha256.convert(imageBytes)}');
+      debugPrint('[TRACE] flutter_image_bytes=${imageBytes.length} '
+          'fields=${request.fields} api_url=$uri');
       debugPrint('[API] predict request sent -> $uri '
           '(image ${imageBytes.length} bytes, fields: ${request.fields.keys.toList()})');
       final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('[API] predict response status code: ${response.statusCode}');
+      debugPrint('[API] predict response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonBody = json.decode(response.body);
@@ -179,10 +212,57 @@ class ApiService {
       }
     } on ApiException {
       rethrow;
-    } catch (e) {
-      debugPrint('API request error: $e');
-      throw ApiException(
-          'Unable to connect to server. Please check the backend and try again.');
+    } catch (e, stackTrace) {
+      debugPrint('[API] Exception during predictImage ($baseUrl/predict): $e');
+      debugPrint('[API] StackTrace: $stackTrace');
+      throw ApiException('Unable to connect to server. Please check the backend and try again.');
+    }
+  }
+
+  /// Run and persist one authenticated screening for the selected child.
+  static Future<Map<String, dynamic>> saveScreening(
+    Uint8List imageBytes, {
+    required String childId,
+    required String token,
+    String filename = 'child_image.jpg',
+    required Map<String, String> fields,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/screenings/predict/${Uri.encodeComponent(childId)}'),
+    )..headers['Authorization'] = 'Bearer $token';
+    request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
+    request.fields.addAll(fields);
+    try {
+      final streamed = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamed);
+      final body = response.body.isEmpty ? <String, dynamic>{} : json.decode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(body is Map ? '${body['detail'] ?? 'Screening failed'}' : 'Screening failed', response.statusCode);
+      }
+      final saved = (body as Map).cast<String, dynamic>();
+      final vitals = (saved['vitals'] as Map?)?.cast<String, dynamic>();
+      final result = saved['screening_result'];
+      if (saved['screeningId'] == null || result is! Map || vitals == null) {
+        throw ApiException(
+            'The backend returned an old screening response. Restart the updated backend before saving scans.');
+      }
+      for (final field in const ['height_cm', 'weight_kg']) {
+        final submitted = double.tryParse(fields[field] ?? '');
+        final persisted = vitals[field];
+        if (submitted != null &&
+            (persisted is! num || (persisted.toDouble() - submitted).abs() > 0.01)) {
+          throw ApiException(
+              'The backend did not confirm the saved $field value. Restart the updated backend and retry this scan.');
+        }
+      }
+      return saved;
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException('The backend did not respond in time.');
+    } catch (_) {
+      throw ApiException('Unable to connect to the backend. Please try again.');
     }
   }
 }

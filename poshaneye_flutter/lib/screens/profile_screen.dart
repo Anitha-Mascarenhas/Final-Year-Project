@@ -16,12 +16,14 @@ import '../widgets/interactive_eye_logo.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   final String childName;
+  final String? childId;
   final VoidCallback? onLogout;
   final bool initialHistoryView;
 
   const ProfileScreen({
     Key? key,
     this.childName = 'Aarav',
+    this.childId,
     this.onLogout,
     this.initialHistoryView = false,
   }) : super(key: key);
@@ -59,6 +61,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     _childName = widget.childName;
     _isHistoryView = widget.initialHistoryView;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final session = ref.read(sessionProvider);
+      final id = widget.childId ?? session.childId;
+      if (id != null && session.accessToken != null) {
+        ref
+            .read(vitalsProvider.notifier)
+            .loadForChild(id, session.accessToken!)
+            .then<void>((_) {}, onError: (_) {});
+      }
+    });
   }
 
   Future<void> _pickChildImage() async {
@@ -785,9 +797,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildHistoryView() {
     final vitalsList = ref.watch(vitalsProvider).toList();
+    final historyError = ref.watch(vitalsHistoryErrorProvider);
     final latest = ref.watch(latestVitalsProvider);
     final session = ref.watch(sessionProvider);
-    final childId = session.childId ?? 'Not recorded';
+    final childId = widget.childId ?? session.childId ?? 'Not recorded';
     final age = latest?.formattedAge ?? 'Not recorded';
     final gender = latest?.gender ?? 'Not recorded';
     final status = latest?.status ?? 'Not recorded';
@@ -971,7 +984,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 right:
                     '${vitalsList.length.toString().padLeft(2, '0')} entries')),
         const SizedBox(height: 8),
-        if (vitalsList.isEmpty)
+        if (historyError != null)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: _cardBorder),
+            ),
+            child: Column(children: [
+              Text('Unable to load screening history.',
+                  style: TextStyle(color: _secondaryText)),
+              TextButton(
+                onPressed: (widget.childId ?? session.childId) == null || session.accessToken == null
+                    ? null
+                    : () => ref.read(vitalsProvider.notifier)
+                        .loadForChild(widget.childId ?? session.childId!, session.accessToken!),
+                child: const Text('Retry'),
+              ),
+            ]),
+          )
+        else if (vitalsList.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -1056,10 +1089,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Text('AI screening: ${record.prediction}',
                         style: TextStyle(
                             fontWeight: FontWeight.w700, color: _primaryText)),
+                    if (record.confidence != null)
+                      Text('Confidence: ${(record.confidence! * 100).toStringAsFixed(1)}%',
+                          style: TextStyle(color: _secondaryText)),
                   ],
                   if (record.risk != null)
                     Text('Risk / status: ${record.risk}',
                         style: TextStyle(color: _secondaryText)),
+                  if (record.probabilities.isNotEmpty)
+                    Text('Class scores: ${record.probabilities.entries.map((e) => '${e.key} ${(e.value * 100).toStringAsFixed(1)}%').join(' • ')}',
+                        style: TextStyle(color: _secondaryText, fontSize: 12)),
                   if (record.recommendation != null) ...[
                     const SizedBox(height: 4),
                     Text(record.recommendation!,

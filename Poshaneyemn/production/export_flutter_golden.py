@@ -36,7 +36,7 @@ def main() -> None:
     img = cv2.imread(str(path))
     image_features = extract_image_features(extractor, img[:, :, ::-1])
     cv_feats = extract_cv_features(img, holistic)
-    sw = cv_feats.get("shoulder_width")
+    sw = cv_feats.get("_shoulder_width_512")
     seg_feats = seg.extract_features(img[:, :, ::-1], float(sw) if sw is not None and np.isfinite(sw) else None)
     anthro = {
         "age_months": float(row["age_months"]),

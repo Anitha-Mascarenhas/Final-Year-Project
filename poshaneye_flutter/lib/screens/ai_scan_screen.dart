@@ -10,19 +10,23 @@ import '../services/api_service.dart';
 import '../services/hybrid_landmark_bridge.dart';
 import '../state/session_provider.dart';
 import '../state/vitals_provider.dart';
+import '../state/nutrition_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/chime_synthesizer.dart';
 import '../utils/captured_file_cleanup.dart';
 import '../utils/image_picker_helper.dart';
 import '../utils/l10n_extension.dart';
+import 'nutrition_plan_screen.dart';
 import '../widgets/interactive_eye_logo.dart';
 
 class AiScanScreen extends ConsumerStatefulWidget {
   final String childName;
+  final String? childId;
 
   const AiScanScreen({
     Key? key,
     this.childName = 'Aarav',
+    this.childId,
   }) : super(key: key);
 
   @override
@@ -53,6 +57,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   final ValueNotifier<LandmarkResult?> _liveLandmarksNotifier =
       ValueNotifier<LandmarkResult?>(null);
   bool _cameraFullscreenOpen = false;
+  bool _cameraSwitchInProgress = false;
+  bool _cameraSampleCaptureInProgress = false;
   String _scanGuidance = 'Position the child in the frame';
 
   late AnimationController _laserController;
@@ -67,6 +73,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   List<CameraDescription> _availableCameras = const [];
   String? _cameraError;
   bool _isCameraReady = false;
+  bool _cameraInitializationInProgress = false;
   bool _samplingFrame = false;
   bool _captureInProgress = false;
 
@@ -74,22 +81,22 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     {
       'name': 'Albatross',
       'subtitle': 'Graceful Ocean Soarer',
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂªÃƒâ€šÃ‚Â¶',
-      'video': '/videos/albatross.mp4',
+      'emoji': '🪶',
+      'video': '/videos/video1.mp4',
       'fallback': '/videos/video1.mp4',
     },
     {
       'name': 'Shark',
       'subtitle': 'Swift Friendly Swimmer',
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¦Ãƒâ€¹Ã¢â‚¬Â ',
-      'video': '/videos/shark.mp4',
+      'emoji': '🦈',
+      'video': '/videos/video2.mp4',
       'fallback': '/videos/video2.mp4',
     },
     {
       'name': 'Cheetah',
       'subtitle': 'Lightning Fast Runner',
-      'emoji': 'ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ',
-      'video': '/videos/cheetah.mp4',
+      'emoji': '🐆',
+      'video': '/videos/video3.mp4',
       'fallback': '/videos/video3.mp4',
     },
   ];
@@ -114,14 +121,17 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     if (_mascotVideoControllers.containsKey(index)) {
       final controller = _mascotVideoControllers[index];
       if (controller != null && controller.value.isInitialized) {
-        controller.seekTo(Duration.zero);
-        controller.setVolume(0.0);
-        controller.play();
+        if (index == _selectedMascotIndex) {
+          controller.seekTo(Duration.zero);
+          controller.setVolume(0.0);
+          controller.play();
+        }
       }
       return;
     }
 
     final primaryPath = _mascots[index]['video'] as String;
+    final fallbackPath = _mascots[index]['fallback'] as String;
     final fullUrl = _resolveFullUrl(primaryPath);
 
     final Uri videoUri = Uri.parse(fullUrl);
@@ -141,12 +151,30 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
         controller.setVolume(0.0);
         if (index == _selectedMascotIndex) {
           controller.play();
+        } else {
+          controller.pause();
         }
       }
     }).catchError((err) {
-      _mascotVideoFailures.add(index);
-      debugPrint('Mascot video load error ($fullUrl): $err');
-      if (mounted) setState(() {});
+      debugPrint('Mascot primary video load error ($fullUrl): $err');
+      final fallbackUrl = _resolveFullUrl(fallbackPath);
+      final fallbackController = VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
+      fallbackController.initialize().then((_) {
+        if (mounted) {
+          setState(() {
+            _mascotVideoControllers[index] = fallbackController;
+          });
+          fallbackController.setLooping(true);
+          fallbackController.setVolume(0.0);
+          if (index == _selectedMascotIndex) {
+            fallbackController.play();
+          } else {
+            fallbackController.pause();
+          }
+        }
+      }).catchError((e) {
+        debugPrint('Mascot fallback video load error ($fallbackUrl): $e');
+      });
     });
   }
 
@@ -162,12 +190,29 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       _selectedMascotIndex = index;
     });
 
-    _loadMascotVideo(index);
+    if (_mascotVideoControllers.containsKey(index)) {
+      final controller = _mascotVideoControllers[index];
+      if (controller != null && controller.value.isInitialized) {
+        controller.seekTo(Duration.zero);
+        controller.setVolume(0.0);
+        controller.play();
+        setState(() {});
+      } else {
+        _loadMascotVideo(index);
+      }
+    } else {
+      _loadMascotVideo(index);
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    // Preload mascot videos so they play instantly upon clicking
+    for (int i = 0; i < _mascots.length; i++) {
+      _loadMascotVideo(i);
+    }
+
     // Laser up and down sweep
     _laserController = AnimationController(
       vsync: this,
@@ -208,6 +253,11 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   }
 
   Future<void> _initializeCamera({CameraDescription? requestedCamera}) async {
+    // Camera permission prompts are process-wide on Android. Recovery paths can
+    // request initialization while the first permission prompt is still open;
+    // do not create a second CameraController in that interval.
+    if (_cameraInitializationInProgress || !mounted) return;
+    _cameraInitializationInProgress = true;
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -256,39 +306,62 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
             'Camera access is unavailable. Check browser permissions.';
         _isCameraReady = false;
       });
+    } finally {
+      _cameraInitializationInProgress = false;
     }
   }
 
   Future<void> _switchCamera() async {
-    if (_captureInProgress || _isCapturing) return;
+    if (_captureInProgress || _isCapturing || _cameraSwitchInProgress) return;
     final current = _cameraController;
     if (current == null || _availableCameras.length < 2) return;
     final currentLens = current.description.lensDirection;
-    final next = _availableCameras.firstWhere(
-      (camera) => camera.lensDirection != currentLens,
-      orElse: () => _availableCameras.first,
-    );
+    final next = currentLens == CameraLensDirection.back
+        ? _availableCameras.firstWhere(
+            (camera) => camera.lensDirection == CameraLensDirection.front,
+            orElse: () => _availableCameras.first,
+          )
+        : _availableCameras.firstWhere(
+            (camera) => camera.lensDirection == CameraLensDirection.back,
+            orElse: () => _availableCameras.firstWhere(
+              (camera) => camera.lensDirection != currentLens,
+              orElse: () => _availableCameras.first,
+            ),
+          );
+    if (next == current.description) return;
+    _cameraSwitchInProgress = true;
     _autoCaptureTimer?.cancel();
     _autoCaptureTimer = null;
-    while (_samplingFrame && mounted) {
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+    try {
+      await _waitForSampleCapture();
+      if (!mounted || _cameraController != current) return;
+      setState(() {
+        _cameraController = null;
+        _isCameraReady = false;
+        _setLiveLandmarks(null);
+        _scanGuidance = 'Switching camera...';
+      });
+      await current.dispose();
+      if (mounted) await _initializeCamera(requestedCamera: next);
+    } finally {
+      _cameraSwitchInProgress = false;
     }
-    if (!mounted || _cameraController != current) return;
-    setState(() {
-      _cameraController = null;
-      _isCameraReady = false;
-      _setLiveLandmarks(null);
-      _scanGuidance = 'Switching camera...';
-    });
-    await current.dispose();
-    if (mounted) await _initializeCamera(requestedCamera: next);
   }
 
   Future<void> _openCameraFullscreen() async {
     final controller = _cameraController;
-    if (!_isCameraReady || controller == null || _cameraFullscreenOpen) return;
+    final previewSize = controller?.value.previewSize;
+    if (!_isCameraReady ||
+        controller == null ||
+        previewSize == null ||
+        _cameraFullscreenOpen) return;
     _cameraFullscreenOpen = true;
+    _autoCaptureTimer?.cancel();
+    _autoCaptureTimer = null;
     try {
+      if (!mounted || _cameraController != controller || !_isCameraReady) {
+        return;
+      }
       await Navigator.of(context).push<void>(MaterialPageRoute<void>(
         builder: (_) => _FullScreenCameraView(
           controller: controller,
@@ -296,14 +369,26 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           mirrorX:
               controller.description.lensDirection == CameraLensDirection.front,
           fallbackImageSize: Size(
-            controller.value.previewSize!.height,
-            controller.value.previewSize!.width,
+            previewSize.height,
+            previewSize.width,
           ),
           onCapture: _captureAndAnalyze,
         ),
       ));
     } finally {
       _cameraFullscreenOpen = false;
+      if (mounted && _autoCaptureArmed && _isCameraReady) {
+        _startAutoCapturePolling();
+      }
+    }
+  }
+
+  Future<void> _waitForSampleCapture() async {
+    final deadline = DateTime.now().add(const Duration(seconds: 3));
+    while (_cameraSampleCaptureInProgress &&
+        mounted &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 30));
     }
   }
 
@@ -355,13 +440,12 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
 
     var records = ref.read(vitalsProvider);
     final session = ref.read(sessionProvider);
-    if (records.isEmpty &&
-        session.childId != null &&
-        session.accessToken != null) {
+    final childId = widget.childId ?? session.childId;
+    if (childId != null && session.accessToken != null) {
       try {
         await ref
             .read(vitalsProvider.notifier)
-            .loadForChild(session.childId!, session.accessToken!);
+            .loadForChild(childId, session.accessToken!);
         records = ref.read(vitalsProvider);
       } catch (error) {
         debugPrint('[SCAN] Could not load saved vitals: $error');
@@ -605,12 +689,39 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       // Send the child's anthropometrics with the scan so the backend's
       // production hybrid pipeline (168-feature fusion) can use them. Any field
       // left out is safely imputed server-side (training-split medians).
-      debugPrint('[SCAN] sending current image to /predict '
+      debugPrint('[SCAN] saving confirmed screening through /api/screenings/predict '
           '(bytes=${_pendingScanBytes!.length})');
-      final result = await ApiService.predictImage(
+      final session = ref.read(sessionProvider);
+      final childId = widget.childId ?? session.childId;
+      if (childId == null || session.accessToken == null) {
+        throw ApiException('Sign in and select a child before saving a screening.');
+      }
+      final saved = await ApiService.saveScreening(
         _pendingScanBytes!,
+        childId: childId,
+        token: session.accessToken!,
+        filename: 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
         fields: _anthropometricFields(),
       );
+      final result = PredictionResult.fromJson(saved['screening_result'] is Map
+          ? (saved['screening_result'] as Map).cast<String, dynamic>()
+          : saved);
+      ref.read(vitalsProvider.notifier).addSavedScreening(saved);
+      ref.read(nutritionRecommendationProvider.notifier).clear();
+      try {
+        await ref.read(vitalsProvider.notifier)
+            .loadForChild(childId, session.accessToken!);
+      } catch (error) {
+        debugPrint('[SCAN] Screening saved; history reload failed: $error');
+      }
+      try {
+        await ref.read(nutritionRecommendationProvider.notifier).load(
+              childId: childId,
+              token: session.accessToken!,
+            );
+      } catch (error) {
+        debugPrint('[SCAN] Saved screening; nutrition summary refresh failed: $error');
+      }
 
       if (!mounted) return;
       _spinController.stop();
@@ -647,6 +758,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           _autoCaptured ||
           _isCapturing ||
           _isScanning ||
+          _cameraFullscreenOpen ||
+          _cameraSwitchInProgress ||
           _samplingFrame ||
           _captureInProgress) return;
       if (!_isCameraReady || _cameraController == null) return;
@@ -655,11 +768,13 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       XFile? sampleFile;
       try {
         final controller = _cameraController!;
+        _cameraSampleCaptureInProgress = true;
         sampleFile = await controller.takePicture();
         final bytes = await sampleFile.readAsBytes();
+        _cameraSampleCaptureInProgress = false;
         final landmarks = await HybridLandmarkBridge.extractLandmarks(bytes,
             allowNoFace: true);
-        if (!mounted) return;
+        if (!mounted || _cameraController != controller) return;
 
         final hasAnyLandmarks =
             landmarks.face.isNotEmpty || landmarks.pose.isNotEmpty;
@@ -679,7 +794,9 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           _frameStable = true;
           _scanGuidance = 'Child detected';
         });
-        if (!_isCapturing) {
+        if (!_isCapturing &&
+            !_cameraSwitchInProgress &&
+            !_cameraFullscreenOpen) {
           _isCapturing = true;
           _autoCaptured = true;
           _captureInProgress = true;
@@ -705,6 +822,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
             ? 'Detector unavailable; check connection'
             : 'Adjust position');
       } finally {
+        _cameraSampleCaptureInProgress = false;
         if (sampleFile != null) {
           await deleteCapturedFile(sampleFile.path);
         }
@@ -1307,7 +1425,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           ),
           const SizedBox(height: 14),
 
-          // 1. Animated Card Swap Deck Stack (Selector Deck)
+          // 1. Minimized Static Mascot Cards (Aligned Horizontally)
           MascotCardSwapDeck(
             mascots: _mascots,
             selectedIndex: _selectedMascotIndex,
@@ -1318,138 +1436,191 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           const SizedBox(height: 18),
 
           // 2. DEDICATED FULL VIDEO FRAME (Plays the Clicked Mascot Video!)
-          Container(
-            height: 240,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF09120D),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF3FFF80), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3FFF80).withOpacity(0.24),
-                  blurRadius: 22,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (isVideoReady)
-                    FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: activeController.value.size.width > 0
-                            ? activeController.value.size.width
-                            : 320,
-                        height: activeController.value.size.height > 0
-                            ? activeController.value.size.height
-                            : 240,
-                        child: VideoPlayer(activeController),
-                      ),
-                    )
-                  else
-                    _MascotAnimationFallback(
-                      emoji: active['emoji'] as String,
-                      name: active['name'] as String,
-                    ),
-
-                  // Bottom Info & Status Bar
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 14),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black87,
-                            Colors.black45,
-                            Colors.transparent,
+          GestureDetector(
+            onTap: () {
+              if (activeController != null && activeController.value.isInitialized) {
+                if (activeController.value.isPlaying) {
+                  activeController.pause();
+                } else {
+                  activeController.play();
+                }
+                setState(() {});
+              }
+            },
+            child: Container(
+              height: 240,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF09120D),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFF3FFF80), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3FFF80).withOpacity(0.24),
+                    blurRadius: 22,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (isVideoReady)
+                      FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: activeController.value.size.width > 0
+                              ? activeController.value.size.width
+                              : 320,
+                          height: activeController.value.size.height > 0
+                              ? activeController.value.size.height
+                              : 240,
+                          child: VideoPlayer(activeController),
+                        ),
+                      )
+                    else
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3FFF80).withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(active['emoji'],
+                                  style: const TextStyle(fontSize: 48)),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Loading ${active['name']}...',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Initializing Mascot Stream',
+                              style:
+                                  TextStyle(color: Colors.white60, fontSize: 12),
+                            ),
                           ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 21,
-                                backgroundColor: Colors.white24,
-                                child: Text(active['emoji'],
-                                    style: const TextStyle(fontSize: 22)),
+
+                    // Bottom Info & Status Bar
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 14),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black87,
+                              Colors.black45,
+                              Colors.transparent,
+                            ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 21,
+                                  backgroundColor: Colors.white24,
+                                  child: Text(active['emoji'],
+                                      style: const TextStyle(fontSize: 22)),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      active['name'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      active['subtitle'],
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: (activeController != null &&
+                                        activeController.value.isPlaying)
+                                    ? const Color(0xFF3FFF80).withOpacity(0.18)
+                                    : Colors.white12,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: (activeController != null &&
+                                          activeController.value.isPlaying)
+                                      ? const Color(0xFF3FFF80).withOpacity(0.6)
+                                      : Colors.white30,
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    active['name'],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: (activeController != null &&
+                                              activeController.value.isPlaying)
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white70,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    active['subtitle'],
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
+                                    (activeController != null &&
+                                            activeController.value.isPlaying)
+                                        ? 'PLAYING'
+                                        : 'PAUSED',
+                                    style: TextStyle(
+                                      color: (activeController != null &&
+                                              activeController.value.isPlaying)
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white70,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF3FFF80).withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFF3FFF80).withOpacity(0.6),
-                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF3FFF80),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'PLAYING',
-                                  style: TextStyle(
-                                    color: Color(0xFF3FFF80),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1914,11 +2085,23 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'AI Model Confidence: $confidenceText  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢  $riskText',
+                'AI Model Confidence: $confidenceText',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF556D5E)),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                riskText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isHealthy
+                        ? const Color(0xFF059669)
+                        : const Color(0xFFDC2626)),
               ),
               const SizedBox(height: 16),
 
@@ -2070,33 +2253,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF445B4E))),
-                        Row(
-                          children: [
-                            Text('Not recorded',
-                                style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF9AA79F))),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                  color: isHealthy
-                                      ? const Color(0xFFDCFCE7)
-                                      : const Color(0xFFFEE2E2),
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                pred?.status.toUpperCase() ?? 'N/A',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: isHealthy
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFF991B1B)),
-                              ),
-                            ),
-                          ],
+                        const Flexible(
+                          child: Text(
+                            'Not recorded',
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF9AA79F)),
+                          ),
                         ),
                       ],
                     ),
@@ -2134,7 +2299,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => NutritionPlanScreen(
+                        childName: childName,
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.forestGreen,
                   foregroundColor: Colors.white,
@@ -2485,7 +2658,7 @@ class _MascotAnimationFallbackState extends State<_MascotAnimationFallback>
       );
 }
 
-class MascotCardSwapDeck extends StatefulWidget {
+class MascotCardSwapDeck extends StatelessWidget {
   final List<Map<String, dynamic>> mascots;
   final int selectedIndex;
   final Function(int) onMascotSelected;
@@ -2498,282 +2671,182 @@ class MascotCardSwapDeck extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MascotCardSwapDeck> createState() => _MascotCardSwapDeckState();
-}
-
-class _MascotCardSwapDeckState extends State<MascotCardSwapDeck>
-    with SingleTickerProviderStateMixin {
-  late List<int> _order;
-  late AnimationController _animController;
-
-  @override
-  void initState() {
-    super.initState();
-    _order = List.generate(widget.mascots.length, (i) => i);
-    // Align deck so top card matches selectedIndex on load
-    while (_order[0] != widget.selectedIndex) {
-      final top = _order.removeAt(0);
-      _order.add(top);
-    }
-
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _animController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (mounted) {
-          _animController.reset();
-        }
-      }
-    });
-  }
-
-  void _onCardTap(int mascotIndex) {
-    if (!_animController.isAnimating) {
-      if (_order[0] != mascotIndex) {
-        setState(() {
-          while (_order[0] != mascotIndex) {
-            final top = _order.removeAt(0);
-            _order.add(top);
-          }
-        });
-        _animController.forward();
-      }
-      widget.onMascotSelected(mascotIndex);
-    }
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: SizedBox(
-        height: 310,
-        width: double.infinity,
-        child: AnimatedBuilder(
-          animation: _animController,
-          builder: (context, child) {
-            final t = CurvedAnimation(
-              parent: _animController,
-              curve: Curves.elasticOut,
-            ).value;
-
-            return Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: List.generate(_order.length, (i) {
-                final slotIndex = _order.length - 1 - i; // 2, 1, 0
-                final mascotIndex = _order[slotIndex];
-                return _buildCard(slotIndex, mascotIndex, t);
-              }),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard(int slotIndex, int mascotIndex, double t) {
-    // Spatial positioning (Straight card stack alignment)
-    double xOffset = (1 - slotIndex) * 16.0;
-    double yOffset = (1 - slotIndex) * 16.0;
-    double scale = 1.0 - (slotIndex * 0.05);
-
-    if (slotIndex == 0 && _animController.isAnimating) {
-      yOffset += t * 450.0; // Drop front card straight down out of view
-    } else if (slotIndex > 0 && _animController.isAnimating) {
-      xOffset -= (16.0 * t); // Slide left-forward to next slot
-      yOffset += (16.0 * t);
-      scale += (0.05 * t);
-    }
-
-    final mascot = widget.mascots[mascotIndex];
-    final isSelected = mascotIndex == widget.selectedIndex;
-
-    // Distinct theme gradients for each mascot image card
+    // Distinct theme gradients for each mascot card
     final List<List<Color>> mascotGradients = [
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFF0369A1),
-        const Color(0xFF0C4A6E)
-      ], // Albatross
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFF0F766E),
-        const Color(0xFF164E63)
-      ], // Shark
-      [
-        const Color(0xFF0F3827),
-        const Color(0xFFB45309),
-        const Color(0xFF78350F)
-      ], // Cheetah
+      [const Color(0xFF0D3B2E), const Color(0xFF0369A1)], // Albatross
+      [const Color(0xFF0F3827), const Color(0xFF0F766E)], // Shark
+      [const Color(0xFF1E2D1A), const Color(0xFFB45309)], // Cheetah
     ];
 
-    final cardColors = mascotGradients[mascotIndex % mascotGradients.length];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: List.generate(mascots.length, (index) {
+          final isSelected = index == selectedIndex;
+          final mascot = mascots[index];
+          final gradientColors =
+              mascotGradients[index % mascotGradients.length];
 
-    return Align(
-      alignment: Alignment.center,
-      child: Transform(
-        transform: Matrix4.identity()
-          ..translate(xOffset, yOffset)
-          ..scale(scale),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onTap: () => _onCardTap(mascotIndex),
-          child: Container(
-            width: 285,
-            height: 270,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: (isSelected && slotIndex == 0)
-                    ? const Color(0xFF3FFF80)
-                    : Colors.white30,
-                width: (isSelected && slotIndex == 0) ? 2.5 : 1.0,
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: index == 0 ? 0 : 5,
+                right: index == mascots.length - 1 ? 0 : 5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(slotIndex == 0 ? 0.35 : 0.18),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // High-Definition Gradient Background
-                  Container(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () => onMascotSelected(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    height: 126,
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
                       gradient: LinearGradient(
-                        colors: cardColors,
+                        colors: gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                    ),
-                  ),
-
-                  // Center Mascot Emoji Artwork Card Design
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.14),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white30,
-                              width: 1.5,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 16,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            mascot['emoji'] as String,
-                            style: const TextStyle(fontSize: 60),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3FFF80).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color:
-                                    const Color(0xFF3FFF80).withOpacity(0.6)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.play_circle_fill,
-                                  size: 13, color: Color(0xFF3FFF80)),
-                              SizedBox(width: 4),
-                              Text(
-                                'TAP TO PLAY VIDEO',
-                                style: TextStyle(
-                                  color: Color(0xFF3FFF80),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF3FFF80)
+                            : Colors.white.withOpacity(0.18),
+                        width: isSelected ? 2.2 : 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? const Color(0xFF3FFF80).withOpacity(0.35)
+                              : Colors.black.withOpacity(0.25),
+                          blurRadius: isSelected ? 14 : 6,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                  ),
-
-                  // Bottom Gradient Typography Overlay
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black87,
-                            Colors.black45,
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
                         children: [
-                          Text(
-                            mascot['name'] as String,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          if (slotIndex == 0) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              mascot['subtitle'] as String,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white70,
+                          if (isSelected)
+                            Positioned(
+                              top: -15,
+                              right: -15,
+                              child: Container(
+                                width: 55,
+                                height: 55,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF3FFF80)
+                                      .withOpacity(0.16),
+                                ),
                               ),
                             ),
-                          ],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Mascot Emoji Avatar
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF3FFF80)
+                                            .withOpacity(0.16)
+                                        : Colors.white.withOpacity(0.12),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF3FFF80)
+                                          : Colors.white24,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    mascot['emoji'] as String? ?? '🐾',
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                                // Mascot Name
+                                Text(
+                                  mascot['name'] as String? ?? '',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w900
+                                        : FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                // Play / Playing Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF3FFF80)
+                                            .withOpacity(0.22)
+                                        : Colors.white.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF3FFF80)
+                                              .withOpacity(0.7)
+                                          : Colors.white12,
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isSelected
+                                            ? Icons.play_arrow_rounded
+                                            : Icons.play_circle_outline,
+                                        size: 11,
+                                        color: isSelected
+                                            ? const Color(0xFF3FFF80)
+                                            : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        isSelected ? 'PLAYING' : 'PLAY',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? const Color(0xFF3FFF80)
+                                              : Colors.white70,
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
 }
+
+typedef MascotHorizontalSelector = MascotCardSwapDeck;

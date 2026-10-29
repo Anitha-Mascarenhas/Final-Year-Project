@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
@@ -50,13 +51,17 @@ class _SignInScreenState extends State<SignInScreen> {
           parent: widget.role == UserRole.parent);
       if (!mounted) return;
       final childName = result['childName']?.toString() ?? 'Health worker';
+      final childId = result['childId']?.toString();
       ProviderScope.containerOf(context, listen: false)
           .read(sessionProvider.notifier)
           .signInAs(childName,
-              childId: result['childId']?.toString(),
+              childId: childId,
               accessToken: result['access_token']?.toString(),
               dateOfBirth: result['dateOfBirth']?.toString());
       if (widget.role == UserRole.parent) {
+        // Show child ID popup before navigating
+        await _showChildIdDialog(childId ?? enteredId, childName);
+        if (!mounted) return;
         context.go('/app', extra: childName);
       } else {
         context.go('/healthcare-dashboard');
@@ -66,6 +71,133 @@ class _SignInScreenState extends State<SignInScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _showChildIdDialog(String childId, String childName) async {
+    bool copied = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          backgroundColor: AppColors.background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryForest.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.badge_outlined,
+                  color: AppColors.primaryForest,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Welcome, $childName!',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Save your Child ID — you\'ll need it every time you sign in.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.textSubtle,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Child ID box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryForest.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.primaryForest.withOpacity(0.25),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      childId,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryForest,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: childId));
+                        setState(() => copied = true);
+                      },
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: copied
+                            ? const Icon(Icons.check_circle_rounded,
+                                key: ValueKey('check'),
+                                color: Colors.green,
+                                size: 22)
+                            : const Icon(Icons.copy_rounded,
+                                key: ValueKey('copy'),
+                                color: AppColors.textSubtle,
+                                size: 22),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryForest,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'Got it, Continue',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showError(String message) {

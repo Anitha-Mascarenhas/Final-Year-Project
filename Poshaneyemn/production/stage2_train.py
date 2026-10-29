@@ -20,6 +20,7 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     confusion_matrix,
     f1_score,
+    precision_recall_fscore_support,
     precision_score,
     recall_score,
 )
@@ -76,13 +77,10 @@ def main() -> None:
             img = cv2.imread(str(path))
             if img is None:
                 continue
-            sw_raw = row["shoulder_width"]
-            sw = float(sw_raw) if pd.notna(sw_raw) else None
-            if sw is None:
-                cv_feats = _quick_cv(img, holistic)
-                sw = cv_feats.get("shoulder_width")
-                sw = float(sw) if sw is not None and np.isfinite(sw) else None
-            feats = seg_extractor.extract_features(img[:, :, ::-1], sw)
+            cv_feats = _quick_cv(img, holistic)
+            sw_512 = cv_feats.get("_shoulder_width_512")
+            sw_512 = float(sw_512) if sw_512 is not None and np.isfinite(sw_512) else None
+            feats = seg_extractor.extract_features(img[:, :, ::-1], sw_512)
             for col in SEGMENTATION_FEATURE_COLUMNS:
                 train_df.loc[idx, col] = feats[col]
         train_df.to_csv(RESULTS_DIR / SEG_FEAT_TRAIN_CSV, index=False)
@@ -90,8 +88,6 @@ def main() -> None:
     print("[pre] fitting preprocessing strictly on the train split...")
     pre = HybridPreprocessor()
     pre.fit(image_train, train_df, train_df, train_df)
-    pre.save(ARTIFACT_DIR / PREPROCESSOR_JSON)
-
     X_train = pre.transform(image_train, train_df, train_df, train_df)
     X_test = pre.transform(image_test, test_df, test_df, test_df)
     slices = group_slice(pre.image_dim)
@@ -128,10 +124,13 @@ def main() -> None:
         print(f"RF   {ARM_NAMES[arm_key]:45s} acc={rf_results['accuracy']:.4f} "
               f"bacc={rf_results['balanced_accuracy']:.4f} macroF1={rf_results['macro_f1']:.4f}")
         if arm_key == "full":
-            full_artifacts = {"svc": svc, "portable": portable}
+            full_artifacts = {"svc": svc, "portable": portable, "test_pred": pred}
 
     svc = full_artifacts["svc"]
     portable = full_artifacts["portable"]
+    # Persist preprocessing only after every requested training/evaluation arm has
+    # completed, so a failed fit does not leave mixed old/new production artifacts.
+    pre.save(ARTIFACT_DIR / PREPROCESSOR_JSON)
     joblib.dump(svc, ARTIFACT_DIR / SVM_FILENAME)
     portable.save(ARTIFACT_DIR / SVM_FILENAME.replace(".joblib", "_portable.json"))
     with open(ARTIFACT_DIR / LABEL_MAP_JSON, "w", encoding="utf-8") as fh:
@@ -142,6 +141,7 @@ def main() -> None:
         "model_family": "SVC(kernel='rbf', C=1.0, class_weight='balanced') [existing repo classifier]",
         "fusion_order": ["image (MobileNetV2 128-d embedding)", "cv (MediaPipe 21 features)",
                          "segmentation (DeepLabV3+ 11 features)", "anthropometric (8 features)"],
+        "segmentation_normalization": "MediaPipe normalized shoulder span * 512; area features divide by span squared and length features divide by span",
         "total_feature_dim": int(X_train.shape[1]),
         "group_slices": {k: [s.start, s.stop] for k, s in slices.items()},
         "classifier_artifacts": [SVM_FILENAME, SVM_FILENAME.replace(".joblib", "_portable.json")],
@@ -170,6 +170,20 @@ def main() -> None:
         rows.append(row)
     metrics_df = pd.DataFrame(rows)
     metrics_df.to_csv(RESULTS_DIR / "modality_comparison.csv", index=False)
+    class_precision, class_recall, class_f1, class_support = precision_recall_fscore_support(
+        y_test, full_artifacts["test_pred"], labels=list(range(len(CLASS_NAMES))), zero_division=0,
+    )
+    per_class_metrics = {
+        CLASS_NAMES[i]: {
+            "precision": float(class_precision[i]),
+            "recall": float(class_recall[i]),
+            "f1": float(class_f1[i]),
+            "support": int(class_support[i]),
+        }
+        for i in range(len(CLASS_NAMES))
+    }
+    with open(RESULTS_DIR / "test_per_class_metrics.json", "w", encoding="utf-8") as fh:
+        json.dump(per_class_metrics, fh, indent=2)
     with open(RESULTS_DIR / "confusion_matrices.json", "w", encoding="utf-8") as fh:
         json.dump(cms, fh, indent=2)
 
@@ -197,6 +211,18 @@ def main() -> None:
         _md(metrics_df[metrics_df["model"] == "RandomForest_Balanced"], ["arm", "accuracy", "macro_f1", "balanced_accuracy"]),
         "",
         "## Confusion matrices (SVM, rows=true, cols=pred; classes: healthy / underweight / stunted / stunted and underweight)",
+        "",
+        "## Full-model test metrics by class",
+        "",
+        "| Class | Precision | Recall | F1 | Support |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for class_name, values in per_class_metrics.items():
+        lines.append(
+            f"| {class_name} | {values['precision']:.4f} | {values['recall']:.4f} "
+            f"| {values['f1']:.4f} | {values['support']} |"
+        )
+    lines += [
         "",
     ]
     for arm_name, cm in cms.items():

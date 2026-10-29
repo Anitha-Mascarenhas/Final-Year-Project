@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from hybrid_predict import run_hybrid_prediction, extract_anthropometrics
@@ -52,6 +52,14 @@ def calculate_bmi(height_cm: Optional[float], weight_kg: Optional[float]) -> Opt
 async def predict_for_child(
     child_id: str,
     file: UploadFile = File(...),
+    age_years: Optional[int] = Form(default=None),
+    age_months: Optional[int] = Form(default=None),
+    gender: Optional[str] = Form(default=None),
+    height_cm: Optional[float] = Form(default=None),
+    weight_kg: Optional[float] = Form(default=None),
+    head_circumference_cm: Optional[float] = Form(default=None),
+    waist_cm: Optional[float] = Form(default=None),
+    muac_cm: Optional[float] = Form(default=None),
     current_user: dict = Depends(get_current_user)
 ):
     # 1. Verify that the child exists
@@ -93,22 +101,50 @@ async def predict_for_child(
 
     try:
         # 6. Run the PRODUCTION hybrid ML prediction (168-feature fusion + SVM)
+        captured_age_years = age_years if age_years is not None else child.get("age")
+        captured_age_months = age_months
+        if (captured_age_years is None or captured_age_months is None) and child.get("dob"):
+            try:
+                dob = datetime.fromisoformat(str(child["dob"]).replace("Z", "+00:00"))
+                today = datetime.now(timezone.utc).date()
+                born = dob.date()
+                dob_age_years = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+                dob_age_months = (today.month - born.month) % 12
+                if today.day < born.day:
+                    dob_age_months = (dob_age_months - 1) % 12
+                if captured_age_years is None:
+                    captured_age_years = dob_age_years
+                if captured_age_months is None:
+                    captured_age_months = dob_age_months
+            except (TypeError, ValueError):
+                pass
+        raw_vitals = {
+            "age_years": captured_age_years,
+            "age_months": captured_age_months,
+            "gender": gender if gender is not None else child.get("gender"),
+            "height_cm": height_cm,
+            "weight_kg": weight_kg,
+            "head_circumference_cm": head_circumference_cm,
+            "waist_cm": waist_cm,
+            "muac_cm": muac_cm,
+        }
         prediction_result = run_hybrid_prediction(
-            image_path.read_bytes(),
-            extract_anthropometrics({
-                "gender": child.get("gender"),
-                "age_years": child.get("age"),
-                "height_cm": child.get("height"),
-                "weight_kg": child.get("weight"),
-            }),
+            image_path.read_bytes(), extract_anthropometrics(raw_vitals)
         )
+        vitals = {
+            **raw_vitals,
+            "bmi": calculate_bmi(height_cm, weight_kg),
+            "recorded_at": datetime.now(timezone.utc),
+        }
 
         # 7. Save prediction to MongoDB
         screening = await create_screening(
             child_id=child_id,
             prediction=prediction_result["prediction"],
             confidence=prediction_result["confidence"],
-            probabilities=prediction_result["probabilities"]
+            probabilities=prediction_result["probabilities"],
+            vitals=vitals,
+            screening_result=prediction_result,
         )
 
         # 8. Return result
