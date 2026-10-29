@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 import '../models/prediction_result.dart';
 import '../services/api_service.dart';
@@ -36,7 +37,7 @@ class AiScanScreen extends ConsumerStatefulWidget {
 enum _ScanState { scanner, mascot, measurements, result }
 
 class _AiScanScreenState extends ConsumerState<AiScanScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   _ScanState _state = _ScanState.scanner;
   Uint8List?
       _pendingScanBytes; // photo captured, awaiting measurements confirmation
@@ -58,6 +59,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       ValueNotifier<LandmarkResult?>(null);
   bool _cameraFullscreenOpen = false;
   bool _cameraSwitchInProgress = false;
+  bool _resumeCameraAfterLifecycle = false;
   bool _cameraSampleCaptureInProgress = false;
   String _scanGuidance = 'Position the child in the frame';
 
@@ -70,12 +72,23 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   late Animation<double> _counterAnimation;
 
   CameraController? _cameraController;
+  Future<void>? _cameraDisposal;
   List<CameraDescription> _availableCameras = const [];
+  CameraLensDirection? _preferredCameraDirection;
   String? _cameraError;
   bool _isCameraReady = false;
   bool _cameraInitializationInProgress = false;
+  bool _cameraPermissionPermanentlyDenied = false;
   bool _samplingFrame = false;
   bool _captureInProgress = false;
+
+  bool get _canSwitchCamera =>
+      _availableCameras.any(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      ) &&
+      _availableCameras.any(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+      );
 
   final List<Map<String, dynamic>> _mascots = [
     {
@@ -158,7 +171,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     }).catchError((err) {
       debugPrint('Mascot primary video load error ($fullUrl): $err');
       final fallbackUrl = _resolveFullUrl(fallbackPath);
-      final fallbackController = VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
+      final fallbackController =
+          VideoPlayerController.networkUrl(Uri.parse(fallbackUrl));
       fallbackController.initialize().then((_) {
         if (mounted) {
           setState(() {
@@ -208,6 +222,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Preload mascot videos so they play instantly upon clicking
     for (int i = 0; i < _mascots.length; i++) {
       _loadMascotVideo(i);
@@ -258,14 +273,29 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     // do not create a second CameraController in that interval.
     if (_cameraInitializationInProgress || !mounted) return;
     _cameraInitializationInProgress = true;
+    CameraDescription? selectedCamera;
     try {
+      final pendingDisposal = _cameraDisposal;
+      if (pendingDisposal != null) {
+        await pendingDisposal;
+        if (identical(_cameraDisposal, pendingDisposal)) {
+          _cameraDisposal = null;
+        }
+      }
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
         throw CameraException(
             'NoCamera', 'No camera was found on this device.');
       }
 
-      final selectedCamera = requestedCamera ??
+      selectedCamera = requestedCamera ??
+          (_preferredCameraDirection == null
+              ? null
+              : cameras.cast<CameraDescription?>().firstWhere(
+                    (camera) =>
+                        camera?.lensDirection == _preferredCameraDirection,
+                    orElse: () => null,
+                  )) ??
           cameras.firstWhere(
             (camera) => camera.lensDirection == CameraLensDirection.front,
             orElse: () => cameras.first,
@@ -277,13 +307,20 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       );
       await controller.initialize();
 
-      if (!mounted) {
+      if (!mounted ||
+          (WidgetsBinding.instance.lifecycleState != null &&
+              WidgetsBinding.instance.lifecycleState !=
+                  AppLifecycleState.resumed)) {
         await controller.dispose();
+        _resumeCameraAfterLifecycle = mounted;
         return;
       }
       setState(() {
         _availableCameras = cameras;
         _cameraController = controller;
+        _preferredCameraDirection = selectedCamera!.lensDirection;
+        _resumeCameraAfterLifecycle = false;
+        _cameraPermissionPermanentlyDenied = false;
         _isCameraReady = true;
         _cameraError = null;
         _autoCaptureArmed =
@@ -296,55 +333,135 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     } on CameraException catch (error) {
       if (!mounted) return;
       setState(() {
-        _cameraError = _cameraErrorMessage(error);
+        _cameraError = _cameraErrorMessage(error, selectedCamera);
+        _cameraPermissionPermanentlyDenied =
+            error.code == 'CameraAccessDeniedWithoutPrompt';
         _isCameraReady = false;
       });
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Camera initialization error: $error');
       if (!mounted) return;
       setState(() {
-        _cameraError =
-            'Camera access is unavailable. Check browser permissions.';
+        _cameraError = selectedCamera?.lensDirection == CameraLensDirection.back
+            ? 'The rear camera could not be started. You can try again or use the front camera.'
+            : 'Camera access is unavailable. Check camera permissions and try again.';
+        _cameraPermissionPermanentlyDenied = false;
         _isCameraReady = false;
       });
     } finally {
       _cameraInitializationInProgress = false;
+      if (_resumeCameraAfterLifecycle &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+          mounted &&
+          _state == _ScanState.scanner) {
+        _resumeCameraAfterLifecycle = false;
+        scheduleMicrotask(() => _initializeCamera());
+      }
     }
   }
 
   Future<void> _switchCamera() async {
     if (_captureInProgress || _isCapturing || _cameraSwitchInProgress) return;
     final current = _cameraController;
-    if (current == null || _availableCameras.length < 2) return;
+    if (current == null || !_canSwitchCamera) return;
     final currentLens = current.description.lensDirection;
-    final next = currentLens == CameraLensDirection.back
-        ? _availableCameras.firstWhere(
-            (camera) => camera.lensDirection == CameraLensDirection.front,
-            orElse: () => _availableCameras.first,
-          )
-        : _availableCameras.firstWhere(
-            (camera) => camera.lensDirection == CameraLensDirection.back,
-            orElse: () => _availableCameras.firstWhere(
-              (camera) => camera.lensDirection != currentLens,
-              orElse: () => _availableCameras.first,
-            ),
-          );
+    final nextLens = currentLens == CameraLensDirection.back
+        ? CameraLensDirection.front
+        : currentLens == CameraLensDirection.front
+            ? CameraLensDirection.back
+            : null;
+    if (nextLens == null) return;
+    final next = _availableCameras.firstWhere(
+      (camera) => camera.lensDirection == nextLens,
+    );
     if (next == current.description) return;
     _cameraSwitchInProgress = true;
     _autoCaptureTimer?.cancel();
     _autoCaptureTimer = null;
+    final previousGuidance = _scanGuidance;
+    setState(() {
+      _scanGuidance = 'Switching camera...';
+    });
     try {
-      await _waitForSampleCapture();
+      final sampleFinished = await _waitForSampleCapture();
+      if (!sampleFinished) {
+        if (mounted) {
+          setState(() {
+            _scanGuidance = previousGuidance;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Camera is busy. Please try switching again.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
       if (!mounted || _cameraController != current) return;
       setState(() {
         _cameraController = null;
         _isCameraReady = false;
         _setLiveLandmarks(null);
-        _scanGuidance = 'Switching camera...';
       });
       await current.dispose();
-      if (mounted) await _initializeCamera(requestedCamera: next);
+      if (!mounted) return;
+      await _initializeCamera(requestedCamera: next);
+      if (_cameraController?.description == next || !mounted) return;
+
+      final message = _cameraError ??
+          'The ${nextLens == CameraLensDirection.back ? 'rear' : 'front'} camera could not be started.';
+      await _initializeCamera(requestedCamera: current.description);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$message${_cameraController != null ? ' Continuing with the previous camera.' : ''}',
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       _cameraSwitchInProgress = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _autoCaptureTimer?.cancel();
+      _autoCaptureTimer = null;
+      final controller = _cameraController;
+      if (controller != null &&
+          _state == _ScanState.scanner &&
+          !_captureInProgress) {
+        _resumeCameraAfterLifecycle = true;
+      }
+      if (controller != null && !_captureInProgress) {
+        _cameraController = null;
+        _isCameraReady = false;
+        _setLiveLandmarks(null);
+        _cameraDisposal = controller.dispose();
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _resumeCameraAfterLifecycle) {
+      if (_state != _ScanState.scanner) {
+        _resumeCameraAfterLifecycle = false;
+      } else if (!_cameraInitializationInProgress &&
+          !_cameraSwitchInProgress &&
+          !_captureInProgress) {
+        _resumeCameraAfterLifecycle = false;
+        unawaited(_initializeCamera());
+      }
     }
   }
 
@@ -383,13 +500,31 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     }
   }
 
-  Future<void> _waitForSampleCapture() async {
-    final deadline = DateTime.now().add(const Duration(seconds: 3));
+  Future<bool> _waitForSampleCapture() async {
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
     while (_cameraSampleCaptureInProgress &&
         mounted &&
         DateTime.now().isBefore(deadline)) {
       await Future<void>.delayed(const Duration(milliseconds: 30));
     }
+    return mounted && !_cameraSampleCaptureInProgress;
+  }
+
+  Future<void> _openCameraSettings() async {
+    final opened = await openAppSettings();
+    if (!mounted) return;
+    if (opened) {
+      _resumeCameraAfterLifecycle = true;
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content:
+            Text('Could not open app settings. Enable camera access there.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _dismissCameraFullscreenForCapture() {
@@ -403,11 +538,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     _liveLandmarksNotifier.value = landmarks;
   }
 
-  String _cameraErrorMessage(CameraException error) {
+  String _cameraErrorMessage(CameraException error, CameraDescription? camera) {
+    if (camera?.lensDirection == CameraLensDirection.back) {
+      return 'The rear camera could not be started. You can try again or use the front camera.';
+    }
     switch (error.code) {
       case 'CameraAccessDenied':
-      case 'CameraAccessDeniedWithoutPrompt':
         return 'Camera permission was denied. Allow camera access to use AI Scan.';
+      case 'CameraAccessDeniedWithoutPrompt':
+        return 'Camera permission is disabled. Open app settings to allow camera access.';
       case 'CameraAccessRestricted':
         return 'Camera access is restricted on this device.';
       case 'CameraNotFound':
@@ -505,6 +644,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _heightController.dispose();
     _weightController.dispose();
     _ageYearsController.dispose();
@@ -513,7 +653,9 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     _autoCaptureTimer?.cancel();
     _scanSweepController.dispose();
     _scanPulseController.dispose();
-    _cameraController?.dispose();
+    final cameraController = _cameraController;
+    _cameraController = null;
+    if (cameraController != null) unawaited(cameraController.dispose());
     for (final controller in _mascotVideoControllers.values) {
       controller.dispose();
     }
@@ -689,12 +831,14 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       // Send the child's anthropometrics with the scan so the backend's
       // production hybrid pipeline (168-feature fusion) can use them. Any field
       // left out is safely imputed server-side (training-split medians).
-      debugPrint('[SCAN] saving confirmed screening through /api/screenings/predict '
+      debugPrint(
+          '[SCAN] saving confirmed screening through /api/screenings/predict '
           '(bytes=${_pendingScanBytes!.length})');
       final session = ref.read(sessionProvider);
       final childId = widget.childId ?? session.childId;
       if (childId == null || session.accessToken == null) {
-        throw ApiException('Sign in and select a child before saving a screening.');
+        throw ApiException(
+            'Sign in and select a child before saving a screening.');
       }
       final saved = await ApiService.saveScreening(
         _pendingScanBytes!,
@@ -709,7 +853,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
       ref.read(vitalsProvider.notifier).addSavedScreening(saved);
       ref.read(nutritionRecommendationProvider.notifier).clear();
       try {
-        await ref.read(vitalsProvider.notifier)
+        await ref
+            .read(vitalsProvider.notifier)
             .loadForChild(childId, session.accessToken!);
       } catch (error) {
         debugPrint('[SCAN] Screening saved; history reload failed: $error');
@@ -720,7 +865,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
               token: session.accessToken!,
             );
       } catch (error) {
-        debugPrint('[SCAN] Saved screening; nutrition summary refresh failed: $error');
+        debugPrint(
+            '[SCAN] Saved screening; nutrition summary refresh failed: $error');
       }
 
       if (!mounted) return;
@@ -970,7 +1116,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
   Widget _cameraActionButton({
     required String tooltip,
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) =>
       Material(
         color: const Color(0xCC0C2417),
@@ -1082,7 +1228,7 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (_availableCameras.length > 1)
+                        if (_canSwitchCamera)
                           _cameraActionButton(
                             tooltip:
                                 _cameraController?.description.lensDirection ==
@@ -1090,7 +1236,10 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                                     ? 'Switch to back camera'
                                     : 'Switch to front camera',
                             icon: Icons.flip_camera_android,
-                            onPressed: _switchCamera,
+                            onPressed:
+                                _cameraSwitchInProgress || _captureInProgress
+                                    ? null
+                                    : _switchCamera,
                           ),
                         const SizedBox(width: 8),
                         _cameraActionButton(
@@ -1128,10 +1277,25 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                               ),
                               if (_cameraError != null) ...[
                                 const SizedBox(height: 12),
-                                TextButton.icon(
-                                  onPressed: _initializeCamera,
-                                  icon: const Icon(Icons.refresh, size: 16),
-                                  label: const Text('Try again'),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 8,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: _initializeCamera,
+                                      icon: const Icon(Icons.refresh, size: 16),
+                                      label: const Text('Try again'),
+                                    ),
+                                    if (_cameraPermissionPermanentlyDenied)
+                                      TextButton.icon(
+                                        onPressed: _openCameraSettings,
+                                        icon: const Icon(
+                                          Icons.settings,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Open settings'),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ],
@@ -1143,8 +1307,10 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
 
                 // Corner Brackets
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _CornerBracketPainter(),
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _CornerBracketPainter(),
+                    ),
                   ),
                 ),
 
@@ -1157,23 +1323,25 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                       top: top,
                       left: 20,
                       right: 20,
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2AE196),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF2AE196).withOpacity(0.8),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
+                      child: IgnorePointer(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2AE196),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF2AE196)
+                                        .withOpacity(0.8),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -1438,7 +1606,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
           // 2. DEDICATED FULL VIDEO FRAME (Plays the Clicked Mascot Video!)
           GestureDetector(
             onTap: () {
-              if (activeController != null && activeController.value.isInitialized) {
+              if (activeController != null &&
+                  activeController.value.isInitialized) {
                 if (activeController.value.isPlaying) {
                   activeController.pause();
                 } else {
@@ -1488,7 +1657,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF3FFF80).withOpacity(0.12),
+                                color:
+                                    const Color(0xFF3FFF80).withOpacity(0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: Text(active['emoji'],
@@ -1505,8 +1675,8 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
                             const SizedBox(height: 4),
                             const Text(
                               'Initializing Mascot Stream',
-                              style:
-                                  TextStyle(color: Colors.white60, fontSize: 12),
+                              style: TextStyle(
+                                  color: Colors.white60, fontSize: 12),
                             ),
                           ],
                         ),
@@ -2739,8 +2909,8 @@ class MascotCardSwapDeck extends StatelessWidget {
                                 height: 55,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFF3FFF80)
-                                      .withOpacity(0.16),
+                                  color:
+                                      const Color(0xFF3FFF80).withOpacity(0.16),
                                 ),
                               ),
                             ),
