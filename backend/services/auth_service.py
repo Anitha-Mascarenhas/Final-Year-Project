@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pymongo.errors import DuplicateKeyError
 from services.hospital_service import get_hospital_by_id
 
 from db.mongodb import (
@@ -24,6 +25,34 @@ async def create_parent_account(data):
     if data.password != data.confirmPassword:
         raise ValueError("Passwords do not match")
 
+    email = data.email.strip().casefold() if data.email else None
+    request_id = getattr(data, "registrationRequestId", None)
+
+    if request_id:
+        existing = await parents_collection.find_one(
+            {"registrationRequestId": request_id}
+        )
+        if existing:
+            child = await children_collection.find_one(
+                {"childId": existing["childId"]}
+            )
+            same_request = (
+                child is not None
+                and child.get("childName") == data.childName
+                and child.get("dob") == data.dob.isoformat()
+                and existing.get("email") == email
+                and verify_password(data.password, existing["passwordHash"])
+            )
+            if not same_request:
+                raise ValueError("This registration request was already used")
+            return {
+                "childId": existing["childId"],
+                "message": "Account created successfully",
+            }
+
+    if email and await parents_collection.find_one({"email": email}):
+        raise ValueError("An account with this email already exists")
+
     child_id = await generate_child_id()
 
     child_document = {
@@ -36,18 +65,52 @@ async def create_parent_account(data):
     parent_document = {
         "childId": child_id,
         "passwordHash": hash_password(data.password),
-        "email": data.email,
+        "email": email,
         "createdAt": datetime.now(timezone.utc)
     }
+    if request_id:
+        parent_document["registrationRequestId"] = request_id
 
-    await children_collection.insert_one(child_document)
-
-    await parents_collection.insert_one(parent_document)
+    child_insert = await children_collection.insert_one(child_document)
+    try:
+        await parents_collection.insert_one(parent_document)
+    except DuplicateKeyError:
+        await children_collection.delete_one({"_id": child_insert.inserted_id})
+        if request_id:
+            existing = await parents_collection.find_one(
+                {"registrationRequestId": request_id}
+            )
+            if existing:
+                child = await children_collection.find_one(
+                    {"childId": existing["childId"]}
+                )
+                if (
+                    child is not None
+                    and child.get("childName") == data.childName
+                    and child.get("dob") == data.dob.isoformat()
+                    and existing.get("email") == email
+                    and verify_password(data.password, existing["passwordHash"])
+                ):
+                    return {
+                        "childId": existing["childId"],
+                        "message": "Account created successfully",
+                    }
+        raise ValueError("An account with this email already exists")
+    except Exception:
+        await children_collection.delete_one({"_id": child_insert.inserted_id})
+        raise
 
     return {
         "childId": child_id,
         "message": "Account created successfully"
     }
+
+
+async def ensure_parent_registration_index():
+    """Make registration retries idempotent even when requests arrive concurrently."""
+    await parents_collection.create_index(
+        "registrationRequestId", unique=True, sparse=True
+    )
 
 #This is the function to create a health worker account. It takes in the data from the HealthWorkerSignupRequest schema, checks if the passwords match, generates a unique worker ID, hashes the password, and inserts the new health worker document into the health_workers_collection in MongoDB. Finally, it returns a success message along with the generated worker ID.
 

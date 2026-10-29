@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
@@ -10,6 +9,7 @@ import '../widgets/auth_tabs.dart';
 import 'auth_choice_screen.dart';
 import '../state/session_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/child_id_dialog.dart';
 
 class SignInScreen extends StatefulWidget {
   final UserRole role;
@@ -34,6 +34,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> _signIn() async {
+    if (_busy) return;
     final l10n = context.l10n;
     final enteredId = _idController.text.trim().toUpperCase();
     final enteredPassword = _passwordController.text;
@@ -51,153 +52,34 @@ class _SignInScreenState extends State<SignInScreen> {
           parent: widget.role == UserRole.parent);
       if (!mounted) return;
       final childName = result['childName']?.toString() ?? 'Health worker';
-      final childId = result['childId']?.toString();
+      final childId = result['childId']?.toString().trim();
+      if (widget.role == UserRole.parent && !isValidChildId(childId)) {
+        throw ApiException(
+            'Login succeeded, but the server did not return the assigned Child ID.');
+      }
+      final accessToken = result['access_token']?.toString();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw ApiException('The server did not return an access token.');
+      }
       ProviderScope.containerOf(context, listen: false)
           .read(sessionProvider.notifier)
           .signInAs(childName,
-              childId: childId,
-              accessToken: result['access_token']?.toString(),
+              childId: widget.role == UserRole.parent ? childId : null,
+              accessToken: accessToken,
               dateOfBirth: result['dateOfBirth']?.toString());
       if (widget.role == UserRole.parent) {
-        // Show child ID popup before navigating
-        await _showChildIdDialog(childId ?? enteredId, childName);
+        await showChildIdDialog(context,
+            childId: childId!, childName: childName);
         if (!mounted) return;
         context.go('/app', extra: childName);
       } else {
         context.go('/healthcare-dashboard');
       }
     } catch (e) {
-      _showError(e.toString());
+      if (mounted) _showError(e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  Future<void> _showChildIdDialog(String childId, String childName) async {
-    bool copied = false;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          backgroundColor: AppColors.background,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryForest.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.badge_outlined,
-                  color: AppColors.primaryForest,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Welcome, $childName!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                  letterSpacing: -0.4,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Save your Child ID — you\'ll need it every time you sign in.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: AppColors.textSubtle,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Child ID box
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryForest.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.primaryForest.withOpacity(0.25),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      childId,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.primaryForest,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: childId));
-                        setState(() => copied = true);
-                      },
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: copied
-                            ? const Icon(Icons.check_circle_rounded,
-                                key: ValueKey('check'),
-                                color: Colors.green,
-                                size: 22)
-                            : const Icon(Icons.copy_rounded,
-                                key: ValueKey('copy'),
-                                color: AppColors.textSubtle,
-                                size: 22),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryForest,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: const Text(
-                    'Got it, Continue',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _showError(String message) {
