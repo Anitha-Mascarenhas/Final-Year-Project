@@ -112,7 +112,6 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
         icon = Icons.warning_amber_rounded;
         break;
       case VoiceAssistantState.idle:
-      default:
         bg = AppColors.accentSageLight;
         fg = AppColors.primaryForest;
         label = 'Ready';
@@ -242,8 +241,11 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
               const SizedBox(height: 10),
 
               // Status and Greeting
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   const Text(
                     'AI Health & Growth Companion',
@@ -381,6 +383,25 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (controller.lastSources.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: controller.lastSources.map((source) {
+                          final url = source['url'] ?? '';
+                          return Text(
+                            url.isEmpty
+                                ? source['title'] ?? ''
+                                : '${source['title']}: $url',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 10,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ],
                 ),
               ),

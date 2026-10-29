@@ -67,7 +67,6 @@ async def health_worker_login(
             status_code=401,
             detail=str(e)
         )
-
 #This is the endpoint for parent login. It takes in a ParentLoginRequest object, which contains the necessary information for logging in a parent account. The endpoint calls the login_parent function from the auth_service module to handle the login logic. If the login is successful, it returns the result. If there is a ValueError (e.g., invalid credentials), it raises an HTTPException with a 401 status code and the error message.
 @router.post("/parent/login")
 async def parent_login(
@@ -85,28 +84,4 @@ async def parent_login(
             status_code=401,
             detail=str(e)
         )
-
-
-@router.get("/ephemeral-token")
-async def get_ephemeral_token():
-    """Provides an ephemeral session token for Gemini Live API.
-
-    Ensures the permanent GEMINI_API_KEY remains safely on the backend server.
-    """
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="GEMINI_API_KEY is not configured on the PoshanEye backend server. Please set GEMINI_API_KEY in backend/.env"
-        )
-
-    # Return ephemeral token payload for Flutter client session
-    return {
-        "token": api_key,
-        "expires_in": 3600,
-        "status": "ok"
-    }
 

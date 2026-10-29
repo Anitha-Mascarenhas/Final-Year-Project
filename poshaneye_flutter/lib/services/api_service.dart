@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/prediction_result.dart';
 
@@ -28,7 +27,9 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) {
-      final url = _lanIp.isNotEmpty ? 'http://$_lanIp:8000' : 'http://10.128.40.32:8000';
+      final url = _lanIp.isNotEmpty
+          ? 'http://$_lanIp:8000'
+          : 'http://10.128.40.32:8000';
       debugPrint('[API] platform = web | base URL = $url');
       return url;
     } else if (defaultTargetPlatform == TargetPlatform.android) {
@@ -43,7 +44,7 @@ class ApiService {
     }
   }
 
-  static const Duration _timeout = Duration(seconds: 25);
+  static const Duration _timeout = Duration(seconds: 35);
 
   static Future<Map<String, dynamic>> _jsonRequest(String method, String path,
       {Object? body, String? token}) async {
@@ -99,6 +100,40 @@ class ApiService {
       _jsonRequest('POST',
           parent ? '/api/auth/parent/signup' : '/api/auth/health-worker/signup',
           body: body);
+
+  static Future<Map<String, dynamic>> askAssistant({
+    required String message,
+    required List<Map<String, String>> history,
+    required String language,
+    required String? token,
+    required String screen,
+    required String? childId,
+    required Map<String, String> nutritionRegion,
+  }) async {
+    final result = await _jsonRequest(
+      'POST',
+      '/api/assistant/chat',
+      body: {
+        'message': message,
+        'history': history,
+        'language': language,
+          'screen': screen,
+          if (childId != null) 'child_id': childId,
+          if (screen == 'nutrition' && nutritionRegion.isNotEmpty)
+            'nutrition_region': nutritionRegion,
+      },
+      token: token,
+    );
+    final response = result['response'];
+    if (response is! String || response.trim().isEmpty) {
+      throw ApiException(
+          'The assistant returned an empty response. Please try again.');
+    }
+    return {
+      'response': response.trim(),
+      'sources': result['sources'] is List ? result['sources'] : const [],
+    };
+  }
 
   static Future<List<Map<String, dynamic>>> getScreeningHistory(
       String childId, String token) async {
@@ -166,6 +201,8 @@ class ApiService {
   /// any field left null is safely imputed server-side (training-split medians).
   static Future<PredictionResult> predictImage(
     Uint8List imageBytes, {
+    required String childId,
+    required String token,
     String filename = 'child_image.jpg',
     Map<String, String> fields = const {},
   }) async {
@@ -174,8 +211,10 @@ class ApiService {
     }
 
     try {
-      final uri = Uri.parse('$baseUrl/predict');
-      final request = http.MultipartRequest('POST', uri);
+      final uri = Uri.parse(
+          '$baseUrl/api/screenings/preview/${Uri.encodeComponent(childId)}');
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token';
 
       final multipartFile = http.MultipartFile.fromBytes(
         'file',
@@ -186,16 +225,8 @@ class ApiService {
       request.files.add(multipartFile);
       request.fields.addAll(fields);
 
-      debugPrint('[TRACE] flutter_image_sha256=${sha256.convert(imageBytes)}');
-      debugPrint('[TRACE] flutter_image_bytes=${imageBytes.length} '
-          'fields=${request.fields} api_url=$uri');
-      debugPrint('[API] predict request sent -> $uri '
-          '(image ${imageBytes.length} bytes, fields: ${request.fields.keys.toList()})');
       final streamedResponse = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamedResponse);
-
-      debugPrint('[API] predict response status code: ${response.statusCode}');
-      debugPrint('[API] predict response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonBody = json.decode(response.body);
@@ -212,10 +243,9 @@ class ApiService {
       }
     } on ApiException {
       rethrow;
-    } catch (e, stackTrace) {
-      debugPrint('[API] Exception during predictImage ($baseUrl/predict): $e');
-      debugPrint('[API] StackTrace: $stackTrace');
-      throw ApiException('Unable to connect to server. Please check the backend and try again.');
+    } catch (_) {
+      throw ApiException(
+          'Unable to connect to server. Please check the backend and try again.');
     }
   }
 
@@ -229,16 +259,24 @@ class ApiService {
   }) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/api/screenings/predict/${Uri.encodeComponent(childId)}'),
+      Uri.parse(
+          '$baseUrl/api/screenings/predict/${Uri.encodeComponent(childId)}'),
     )..headers['Authorization'] = 'Bearer $token';
-    request.files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
+    request.files.add(
+        http.MultipartFile.fromBytes('file', imageBytes, filename: filename));
     request.fields.addAll(fields);
     try {
       final streamed = await request.send().timeout(_timeout);
       final response = await http.Response.fromStream(streamed);
-      final body = response.body.isEmpty ? <String, dynamic>{} : json.decode(response.body);
+      final body = response.body.isEmpty
+          ? <String, dynamic>{}
+          : json.decode(response.body);
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ApiException(body is Map ? '${body['detail'] ?? 'Screening failed'}' : 'Screening failed', response.statusCode);
+        throw ApiException(
+            body is Map
+                ? '${body['detail'] ?? 'Screening failed'}'
+                : 'Screening failed',
+            response.statusCode);
       }
       final saved = (body as Map).cast<String, dynamic>();
       final vitals = (saved['vitals'] as Map?)?.cast<String, dynamic>();
@@ -251,7 +289,8 @@ class ApiService {
         final submitted = double.tryParse(fields[field] ?? '');
         final persisted = vitals[field];
         if (submitted != null &&
-            (persisted is! num || (persisted.toDouble() - submitted).abs() > 0.01)) {
+            (persisted is! num ||
+                (persisted.toDouble() - submitted).abs() > 0.01)) {
           throw ApiException(
               'The backend did not confirm the saved $field value. Restart the updated backend and retry this scan.');
         }

@@ -56,7 +56,8 @@ class VoiceAssistantService {
       if (!kIsWeb) {
         final micStatus = await Permission.microphone.request();
         if (micStatus.isDenied || micStatus.isPermanentlyDenied) {
-          onError?.call('Microphone permission is required for voice recognition.');
+          onError?.call(
+              'Microphone permission is required for voice recognition.');
           _isSpeechAvailable = false;
           _isSpeechInitialized = true;
           return false;
@@ -131,6 +132,7 @@ class VoiceAssistantService {
   /// Start listening for English voice input.
   Future<void> startListening({
     required Function(String words, bool isFinal) onResult,
+    String localeId = 'en_US',
     Function(String error)? onError,
   }) async {
     // Always stop any ongoing TTS when starting speech interaction
@@ -139,7 +141,8 @@ class VoiceAssistantService {
     if (!_isSpeechInitialized) {
       final ok = await initSpeech(onError: onError);
       if (!ok) {
-        onError?.call('Speech recognition is not available or microphone permission was denied.');
+        onError?.call(
+            'Speech recognition is not available or microphone permission was denied.');
         return;
       }
     }
@@ -156,7 +159,7 @@ class VoiceAssistantService {
         },
         listenFor: const Duration(seconds: 25),
         pauseFor: const Duration(seconds: 3),
-        localeId: 'en_US',
+        localeId: localeId,
         cancelOnError: true,
         partialResults: true,
       );
@@ -185,6 +188,15 @@ class VoiceAssistantService {
       if (!_isTtsInitialized) {
         await initTts();
       }
+      final speechLanguage =
+          RegExp(r'[\u0C80-\u0CFF]').hasMatch(text) ? 'kn-IN' : 'en-US';
+      try {
+        await _flutterTts.setLanguage(speechLanguage);
+      } catch (_) {
+        if (speechLanguage != 'en-US') {
+          await _flutterTts.setLanguage('en-US');
+        }
+      }
       await _flutterTts.stop();
       await _flutterTts.speak(text);
     } catch (e) {
@@ -204,7 +216,9 @@ class VoiceAssistantService {
   /// Rule-based query interpreter for PoshanEye navigation and child nutrition questions.
   VoiceQueryResult processQuery(String rawInput, AssistantTools? tools) {
     final query = rawInput.toLowerCase().trim();
-    final clean = query.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(RegExp(r'\s+'), ' ');
+    final clean = query
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ');
 
     if (clean.isEmpty) {
       return const VoiceQueryResult(
@@ -326,7 +340,8 @@ class VoiceAssistantService {
     }
 
     // Friendly greetings & help
-    if (_matches(clean, ['hello', 'hi', 'hey', 'good morning', 'good afternoon'])) {
+    if (_matches(
+        clean, ['hello', 'hi', 'hey', 'good morning', 'good afternoon'])) {
       return const VoiceQueryResult(
         textResponse:
             'Hello! I am your PoshanEye assistant. You can ask me questions about child nutrition or tell me where to navigate.',
@@ -492,8 +507,42 @@ class VoiceAssistantService {
     // If the assistant does not understand a question, respond:
     // "Sorry, I didn't understand that. Could you please try again?"
     return const VoiceQueryResult(
-      textResponse: "Sorry, I didn't understand that. Could you please try again?",
+      textResponse:
+          "Sorry, I didn't understand that. Could you please try again?",
     );
+  }
+
+  /// Execute recognized in-app navigation locally; all other speech is eligible
+  /// for the conversational backend instead of the old fixed-question fallback.
+  VoiceQueryResult? processAction(String rawInput, AssistantTools? tools) {
+    if (rawInput.trim().isEmpty) return processQuery(rawInput, tools);
+    final clean = rawInput
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .replaceFirst(RegExp(r'^(please )?(can|could|would) you '), '');
+    const bareCommands = {
+      'home',
+      'dashboard',
+      'screening',
+      'scan',
+      'history',
+      'growth',
+      'tracking',
+      'nutrition plan',
+      'diet plan',
+      'profile',
+      'account',
+      'back',
+    };
+    final explicitCommand = bareCommands.contains(clean) ||
+        RegExp(r'^(open|go to|navigate to|take me to|show|view|start|screen child|take scan|go back|back|previous screen)(\s|$)')
+            .hasMatch(clean);
+    if (!explicitCommand) return null;
+
+    final result = processQuery(clean, tools);
+    return result.isNavigation || result.isError ? result : null;
   }
 
   /// Helper to check if input matches any of the candidate phrases with word boundary safety.
@@ -509,8 +558,16 @@ class VoiceAssistantService {
 
   /// Detects navigation intents directed at screens not present in PoshanEye.
   bool _isNonExistentScreenRequest(String clean) {
-    final navTriggers = ['open', 'go to', 'show', 'view', 'navigate to', 'take me to'];
-    final bool hasNavIntent = navTriggers.any((t) => clean.startsWith(t) || clean.contains(t));
+    final navTriggers = [
+      'open',
+      'go to',
+      'show',
+      'view',
+      'navigate to',
+      'take me to'
+    ];
+    final bool hasNavIntent =
+        navTriggers.any((t) => clean.startsWith(t) || clean.contains(t));
 
     if (!hasNavIntent) return false;
 
@@ -530,7 +587,8 @@ class VoiceAssistantService {
       'back',
     ];
 
-    final bool referencesKnownTarget = knownTargets.any((k) => clean.contains(k));
+    final bool referencesKnownTarget =
+        knownTargets.any((k) => clean.contains(k));
     return !referencesKnownTarget;
   }
 

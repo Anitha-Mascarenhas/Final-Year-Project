@@ -616,8 +616,15 @@ class _AiScanScreenState extends ConsumerState<AiScanScreen>
     _scanPulseController.repeat(reverse: true);
 
     try {
+      final session = ref.read(sessionProvider);
+      final childId = widget.childId ?? session.childId;
+      if (childId == null || session.accessToken == null) {
+        throw ApiException('Sign in and select a child before scanning.');
+      }
       final result = await ApiService.predictImage(
         bytes,
+        childId: childId,
+        token: session.accessToken!,
         filename: 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
         fields: _anthropometricFields(),
       );

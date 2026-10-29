@@ -147,15 +147,9 @@ def _softmax_confidences(class_scores_raw: dict[str, float], temperature: float 
 
 def run_hybrid_prediction(image_bytes: bytes, anthropometrics: dict[str, float]) -> dict[str, Any]:
     """Run the full hybrid pipeline and shape the response for the Flutter client."""
-    # Temporary data-flow trace (remove after verification)
-    print(f"[HYBRID] anthropometrics in: {anthropometrics}", flush=True)
-
     with _predict_use_lock:  # MediaPipe/TFLite runtime is not thread-safe
         predictor = _get_predictor()
         raw = predictor.predict_from_bgr_bytes(image_bytes, anthropometrics)
-
-    # Temporary data-flow trace (remove after verification)
-    print(f"[HYBRID] raw output: {raw}", flush=True)
 
     label = str(raw["prediction"])  # exact production label string
     status, risk, recommendation = _STATUS_MAP.get(

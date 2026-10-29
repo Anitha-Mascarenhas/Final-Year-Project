@@ -26,6 +26,7 @@ protobuf>=4.25.9
 # --- backend web layer -------------------------------------------------------
 fastapi
 uvicorn
+httpx
 python-multipart
 pydantic[email]
 

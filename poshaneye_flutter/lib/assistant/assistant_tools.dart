@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
-/// Function declarations and tool executor for the PoshanEye Voice Assistant.
+/// Allowlisted local action executor for the PoshanEye Voice Assistant.
 ///
 /// Only safe whitelisted navigation actions are permitted.
 class AssistantTools {
-  /// Gemini Function Declarations schema for Gemini Live WebSocket API.
+  /// Declarative allowlist for supported in-app navigation actions.
   static final List<Map<String, dynamic>> declarations = [
     {
       'name': 'navigate_home',
@@ -38,7 +38,8 @@ class AssistantTools {
     },
     {
       'name': 'repeat_current_page',
-      'description': 'Repeat or verbally explain the current page the parent is viewing.',
+      'description':
+          'Repeat or verbally explain the current page the parent is viewing.',
       'parameters': {'type': 'OBJECT', 'properties': {}},
     },
   ];
@@ -63,9 +64,8 @@ class AssistantTools {
     this.onNavigateHistory,
   });
 
-  /// Validates and executes a tool call requested by Gemini Live.
+  /// Validates and executes only supported local navigation actions.
   ///
-  /// Returns a result map to send back as a tool response to Gemini.
   Map<String, dynamic> executeTool(String name, Map<String, dynamic> args) {
     debugPrint('[AssistantTools] Executing tool: $name with args: $args');
 
@@ -76,11 +76,17 @@ class AssistantTools {
 
       case 'navigate_screening':
         onNavigateScreening();
-        return {'status': 'success', 'message': 'Navigated to AI Malnutrition Screening'};
+        return {
+          'status': 'success',
+          'message': 'Navigated to AI Malnutrition Screening'
+        };
 
       case 'navigate_results':
         onNavigateResults();
-        return {'status': 'success', 'message': 'Navigated to Child Growth and Results'};
+        return {
+          'status': 'success',
+          'message': 'Navigated to Child Growth and Results'
+        };
 
       case 'navigate_nutrition':
         onNavigateNutrition();
@@ -96,11 +102,17 @@ class AssistantTools {
 
       case 'repeat_current_page':
         onRepeatCurrentPage();
-        return {'status': 'success', 'message': 'Repeating current page information'};
+        return {
+          'status': 'success',
+          'message': 'Repeating current page information'
+        };
 
       default:
         debugPrint('[AssistantTools] Unknown tool call rejected: $name');
-        return {'status': 'error', 'message': 'Unknown or unauthorized tool call: $name'};
+        return {
+          'status': 'error',
+          'message': 'Unknown or unauthorized tool call: $name'
+        };
     }
   }
 }

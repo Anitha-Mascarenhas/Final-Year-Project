@@ -31,6 +31,57 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
+def _authorize_child(child_id: str, child: dict | None, current_user: dict) -> None:
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+    if current_user.get("role") == "parent":
+        if current_user.get("user_id") != child_id:
+            raise HTTPException(status_code=403, detail="Parents can only screen their own child")
+    elif current_user.get("role") != "health_worker":
+        raise HTTPException(status_code=403, detail="Invalid user role")
+
+
+@router.post("/preview/{child_id}")
+async def preview_for_child(
+    child_id: str,
+    file: UploadFile = File(...),
+    age_years: Optional[int] = Form(default=None),
+    age_months: Optional[int] = Form(default=None),
+    gender: Optional[str] = Form(default=None),
+    height_cm: Optional[float] = Form(default=None),
+    weight_kg: Optional[float] = Form(default=None),
+    head_circumference_cm: Optional[float] = Form(default=None),
+    waist_cm: Optional[float] = Form(default=None),
+    muac_cm: Optional[float] = Form(default=None),
+    current_user: dict = Depends(get_current_user),
+):
+    """Authenticated, non-persisting prediction preview for the selected child."""
+    child = await get_child_by_id(child_id)
+    _authorize_child(child_id, child, current_user)
+
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        suffix = ".upload"
+    image_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
+    raw_vitals = {
+        "age_years": age_years if age_years is not None else child.get("age"),
+        "age_months": age_months,
+        "gender": gender if gender is not None else child.get("gender"),
+        "height_cm": height_cm,
+        "weight_kg": weight_kg,
+        "head_circumference_cm": head_circumference_cm,
+        "waist_cm": waist_cm,
+        "muac_cm": muac_cm,
+    }
+    try:
+        with image_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return run_hybrid_prediction(image_path.read_bytes(), extract_anthropometrics(raw_vitals))
+    finally:
+        if image_path.exists():
+            image_path.unlink()
+
+
 class VitalsInput(BaseModel):
     age_years: int = Field(ge=0)
     age_months: int = Field(ge=0, le=11)
@@ -62,32 +113,8 @@ async def predict_for_child(
     muac_cm: Optional[float] = Form(default=None),
     current_user: dict = Depends(get_current_user)
 ):
-    # 1. Verify that the child exists
     child = await get_child_by_id(child_id)
-
-    if not child:
-        raise HTTPException(
-            status_code=404,
-            detail="Child not found"
-        )
-
-    # 2. Parent can only screen their own child
-    if current_user["role"] == "parent":
-        if current_user["user_id"] != child_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Parents can only screen their own child"
-            )
-
-    # 3. Health worker can screen selected children
-    elif current_user["role"] == "health_worker":
-        pass
-
-    else:
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid user role"
-        )
+    _authorize_child(child_id, child, current_user)
 
     # 4. Generate unique filename
     file_extension = Path(file.filename).suffix

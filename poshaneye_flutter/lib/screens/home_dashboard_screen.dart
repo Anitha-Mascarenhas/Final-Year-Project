@@ -473,6 +473,8 @@ class _HomeDashboardScreenBodyState
                 const SizedBox(height: 12),
                 Text(
                   'Personalized nutrition plan',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
@@ -484,6 +486,8 @@ class _HomeDashboardScreenBodyState
                 Text(
                   nutritionPlan?['summary']?.toString() ??
                       'Open the plan to generate guidance from the latest screening history.',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.35,

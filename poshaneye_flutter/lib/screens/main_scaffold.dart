@@ -4,6 +4,7 @@ import '../assistant/assistant_context.dart';
 import '../assistant/assistant_tools.dart';
 import '../assistant/voice_assistant_controller.dart';
 import '../state/session_provider.dart';
+import '../state/locale_provider.dart';
 import '../state/nutrition_provider.dart';
 import '../widgets/interactive_bottom_nav.dart';
 import '../widgets/voice_assistant_button.dart';
@@ -43,10 +44,14 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       context: AssistantContext(
         currentScreen: _getScreenName(_currentIndex),
         childName: widget.childName,
+        childId: _contextChildId(_currentIndex),
+        language: ref.read(localeProvider).languageCode,
       ),
+      accessToken: ref.read(sessionProvider).accessToken,
     );
     _setupAssistantTools();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadNutritionRecommendation());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _loadNutritionRecommendation());
   }
 
   Future<void> _loadNutritionRecommendation() async {
@@ -61,6 +66,16 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         // Home keeps its neutral prompt until the backend plan is available.
       }
     }
+  }
+
+  Map<String, String> _nutritionRegionFor(String? childId,
+      [Map<String, dynamic>? recommendation]) {
+    if (childId == null) return const {};
+    final data = recommendation ?? ref.read(nutritionRecommendationProvider);
+    if (data?['child_id']?.toString() != childId) return const {};
+    final rawRegion = data?['region'];
+    if (rawRegion is! Map) return const {};
+    return rawRegion.map((key, value) => MapEntry('$key', '$value'));
   }
 
   void _setupAssistantTools() {
@@ -80,7 +95,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           }
         },
         onRepeatCurrentPage: () {
-          debugPrint('[MainScaffold] Repeat page requested for tab $_currentIndex');
+          debugPrint(
+              '[MainScaffold] Repeat page requested for tab $_currentIndex');
         },
       ),
     );
@@ -101,6 +117,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     }
   }
 
+  String? _contextChildId(int index) {
+    if (index != 1 && index != 3) return null;
+    return ref.read(sessionProvider).childId;
+  }
+
   void _onTabSelected(int idx) {
     if (idx == 2) return; // Scan is handled by onScanPressed
     setState(() {
@@ -110,6 +131,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       AssistantContext(
         currentScreen: _getScreenName(idx),
         childName: widget.childName,
+        childId: _contextChildId(idx),
+        nutritionRegion: idx == 3
+            ? _nutritionRegionFor(ref.read(sessionProvider).childId)
+            : null,
+        language: ref.read(localeProvider).languageCode,
       ),
     );
   }
@@ -119,6 +145,8 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
       AssistantContext(
         currentScreen: 'screening',
         childName: widget.childName,
+        childId: ref.read(sessionProvider).childId,
+        language: ref.read(localeProvider).languageCode,
       ),
     );
     Navigator.push(
@@ -170,6 +198,18 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<Map<String, dynamic>?>(nutritionRecommendationProvider,
+        (previous, next) {
+      if (_currentIndex != 3) return;
+      final session = ref.read(sessionProvider);
+      _assistantController.updateContext(AssistantContext(
+        currentScreen: 'nutrition',
+        childName: widget.childName,
+        childId: session.childId,
+        nutritionRegion: _nutritionRegionFor(session.childId, next),
+        language: ref.read(localeProvider).languageCode,
+      ));
+    });
     final bool screenOwnsLayout = _currentIndex == 3 || _currentIndex == 4;
 
     final Widget assistantButton = Positioned(
@@ -222,4 +262,3 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     );
   }
 }
-
