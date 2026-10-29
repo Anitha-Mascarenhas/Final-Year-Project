@@ -1,49 +1,47 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:record/record.dart';
-import 'package:audioplayers/audioplayers.dart';
 
-import '../services/ephemeral_token_service.dart';
 import 'assistant_context.dart';
 import 'assistant_state.dart';
 import 'assistant_tools.dart';
-import 'gemini_live_service.dart';
+import 'voice_assistant_service.dart';
 
-/// Central ChangeNotifier controller for the PoshanEye Gemini Live Voice Assistant.
+/// Central ChangeNotifier controller for the PoshanEye Voice Assistant.
 ///
-/// Cleanly isolates Flutter UI components from Gemini Live WebSocket networking
-/// and underlying audio device hardware.
+/// Encapsulates speech recognition (STT), speech synthesis (TTS),
+/// and rule-based query handling while providing reactive state for Flutter UI.
 class VoiceAssistantController extends ChangeNotifier {
-  final GeminiLiveService _liveService;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioRecorder _recorder = AudioRecorder();
+  final VoiceAssistantService _service;
 
   VoiceAssistantState _state = VoiceAssistantState.idle;
   AssistantContext _context;
   AssistantTools? _tools;
 
   String? _errorMessage;
-  String _lastSpokenText = '';
-  StreamSubscription? _audioRecordSubscription;
+  String _recognizedText = '';
+  String _lastResponse = '';
+  bool _isMuted = false;
 
   VoiceAssistantController({
     AssistantContext context = const AssistantContext(currentScreen: 'home'),
-    String? modelName,
+    VoiceAssistantService? service,
   })  : _context = context,
-        _liveService = GeminiLiveService(
-          activeModel: modelName ?? GeminiLiveService.defaultModelName,
-        ) {
-    _setupServiceCallbacks();
+        _service = service ?? VoiceAssistantService() {
+    _initTtsCallbacks();
   }
-
 
   // --- Public Getters ---
   VoiceAssistantState get state => _state;
   AssistantContext get context => _context;
   String? get errorMessage => _errorMessage;
-  String get lastSpokenText => _lastSpokenText;
+  String get recognizedText => _recognizedText;
+  String get lastResponse => _lastResponse;
+  String get lastSpokenText => _lastResponse; // for backwards compatibility
+  bool get isMuted => _isMuted;
+  bool get isListening => _state == VoiceAssistantState.listening;
+  bool get isSpeaking => _state == VoiceAssistantState.speaking;
   bool get isActive => _state != VoiceAssistantState.idle && _state != VoiceAssistantState.error;
+  bool get isAvailable => _service.isSpeechAvailable;
 
   /// Attaches navigation tools execution handler from the UI (MainScaffold)
   void attachTools(AssistantTools tools) {
@@ -56,151 +54,125 @@ class VoiceAssistantController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Binds Gemini Live service callbacks to controller state updates
-  void _setupServiceCallbacks() {
-    _liveService.onStateChanged = (status) {
-      switch (status) {
-        case 'connecting':
-          _setState(VoiceAssistantState.connecting);
-          break;
-        case 'listening':
-          _setState(VoiceAssistantState.listening);
-          break;
-        case 'processing':
-          _setState(VoiceAssistantState.processing);
-          break;
-        case 'connected':
-          _setState(VoiceAssistantState.listening);
-          _startMicrophoneStream();
-          break;
-        case 'idle':
-          _stopMicrophoneStream();
+  void _initTtsCallbacks() {
+    _service.initTts(
+      onStart: () {
+        if (_state != VoiceAssistantState.listening) {
+          _setState(VoiceAssistantState.speaking);
+        }
+      },
+      onDone: () {
+        if (_state == VoiceAssistantState.speaking) {
           _setState(VoiceAssistantState.idle);
-          break;
-      }
-    };
-
-    _liveService.onTextResponseReceived = (text) {
-      debugPrint('[VoiceAssistantController] Assistant text: $text');
-      _lastSpokenText = text;
-      _setState(VoiceAssistantState.speaking);
-      notifyListeners();
-    };
-
-    _liveService.onAudioDataReceived = (audioBytes) async {
-      _setState(VoiceAssistantState.speaking);
-      try {
-        // Play audio chunk received from Gemini
-        await _audioPlayer.play(BytesSource(audioBytes));
-      } catch (e) {
-        debugPrint('[VoiceAssistantController] Audio playback error: $e');
-      }
-    };
-
-    _liveService.onToolCallReceived = (toolName, args) async {
-      _setState(VoiceAssistantState.processing);
-      if (_tools != null) {
-        final result = _tools!.executeTool(toolName, args);
-        return result;
-      }
-      return {'status': 'error', 'message': 'Navigation tools not attached'};
-    };
-
-    _liveService.onErrorOccurred = (error) {
-      _setError(error);
-    };
-
-    _audioPlayer.onPlayerComplete.listen((_) {
-      if (_state == VoiceAssistantState.speaking) {
-        _setState(VoiceAssistantState.listening);
-      }
-    });
+        }
+      },
+      onError: (err) {
+        debugPrint('[VoiceAssistantController] TTS error: $err');
+        if (_state == VoiceAssistantState.speaking) {
+          _setState(VoiceAssistantState.idle);
+        }
+      },
+    );
   }
 
-  /// Toggles the Voice Assistant session on/off
-  Future<void> toggleSession() async {
-    if (isActive) {
-      await stopSession();
-    } else {
-      await startSession();
+  /// Toggles mute for voice responses
+  void toggleMute() {
+    _isMuted = !_isMuted;
+    _service.setMuted(_isMuted);
+    if (_isMuted && _state == VoiceAssistantState.speaking) {
+      _setState(VoiceAssistantState.idle);
     }
+    notifyListeners();
   }
 
-  /// Starts Gemini Live session: requests permission, gets token, connects WS
-  Future<void> startSession() async {
+  /// Starts listening for voice input.
+  /// Stops any active speech, requests permissions if needed, and streams recognized text.
+  Future<void> startListening() async {
     _errorMessage = null;
-    _setState(VoiceAssistantState.connecting);
+    await stopSpeaking();
 
-    // 1. Check & Request Microphone Permission
-    if (!kIsWeb) {
-      final status = await Permission.microphone.request();
-      if (status.isDenied || status.isPermanentlyDenied) {
-        _setError('Microphone permission is required to use Voice Assistant.');
-        return;
+    _setState(VoiceAssistantState.listening);
+
+    await _service.startListening(
+      onResult: (words, isFinal) {
+        _recognizedText = words;
+        notifyListeners();
+
+        if (isFinal && words.trim().isNotEmpty) {
+          processVoiceInput(words);
+        }
+      },
+      onError: (err) {
+        debugPrint('[VoiceAssistantController] STT error: $err');
+        _errorMessage = err;
+        _setState(VoiceAssistantState.error);
+      },
+    );
+  }
+
+  /// Stops listening and immediately processes whatever was captured.
+  Future<void> stopListening() async {
+    await _service.stopListening();
+    if (_state == VoiceAssistantState.listening) {
+      if (_recognizedText.trim().isNotEmpty) {
+        await processVoiceInput(_recognizedText);
+      } else {
+        _setState(VoiceAssistantState.idle);
       }
-    }
-
-    try {
-      // 2. Fetch Ephemeral Token from backend (Never hardcode permanent keys)
-      final String token = await EphemeralTokenService.getEphemeralToken();
-
-      if (token.isEmpty) {
-        _setError('Gemini API key is not configured on the backend server.');
-        return;
-      }
-
-      // 3. Connect to Gemini Live Service WebSocket
-      await _liveService.connect(
-        ephemeralToken: token,
-        context: _context,
-      );
-    } catch (e) {
-      debugPrint('[VoiceAssistantController] Start session error: $e');
-      _setError('Could not start voice session: $e');
     }
   }
 
-  /// Begins streaming PCM microphone audio to Gemini Live WebSocket
-  Future<void> _startMicrophoneStream() async {
-    try {
-      if (await _recorder.hasPermission()) {
-        final stream = await _recorder.startStream(
-          const RecordConfig(
-            encoder: AudioEncoder.pcm16bits,
-            sampleRate: 16000,
-            numChannels: 1,
-          ),
-        );
-
-        _audioRecordSubscription = stream.listen((chunk) {
-          if (_liveService.isConnected && _state == VoiceAssistantState.listening) {
-            _liveService.sendAudioChunk(chunk);
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint('[VoiceAssistantController] Failed to start microphone stream: $e');
+  /// Toggles the microphone listening on and off
+  Future<void> toggleListening() async {
+    if (isListening) {
+      await stopListening();
+    } else {
+      await startListening();
     }
   }
 
-  /// Stops streaming microphone audio
-  Future<void> _stopMicrophoneStream() async {
-    await _audioRecordSubscription?.cancel();
-    _audioRecordSubscription = null;
-    try {
-      if (await _recorder.isRecording()) {
-        await _recorder.stop();
-      }
-    } catch (e) {
-      debugPrint('[VoiceAssistantController] Stop recorder error: $e');
+  /// Stops TTS voice playback
+  Future<void> stopSpeaking() async {
+    await _service.stopSpeaking();
+    if (_state == VoiceAssistantState.speaking) {
+      _setState(VoiceAssistantState.idle);
     }
   }
 
-  /// Stops current voice assistant session completely
-  Future<void> stopSession() async {
-    await _stopMicrophoneStream();
-    await _audioPlayer.stop();
-    _liveService.disconnect();
+  /// Processes text input against PoshanEye navigation and basic nutrition questions.
+  Future<void> processVoiceInput(String text) async {
+    final queryText = text.trim();
+    if (queryText.isEmpty) {
+      _setState(VoiceAssistantState.idle);
+      return;
+    }
+
+    _recognizedText = queryText;
+    _setState(VoiceAssistantState.processing);
+
+    // Rule-based query resolution
+    final result = _service.processQuery(queryText, _tools);
+    _lastResponse = result.textResponse;
+
+    if (result.isError) {
+      _errorMessage = result.textResponse;
+    } else {
+      _errorMessage = null;
+    }
+
+    if (!_isMuted) {
+      _setState(VoiceAssistantState.speaking);
+      await _service.speak(result.textResponse);
+    } else {
+      _setState(VoiceAssistantState.idle);
+    }
+  }
+
+  /// Resets assistant dialog texts
+  void reset() {
+    _recognizedText = '';
+    _lastResponse = '';
+    _errorMessage = null;
     _setState(VoiceAssistantState.idle);
   }
 
@@ -211,17 +183,20 @@ class VoiceAssistantController extends ChangeNotifier {
     }
   }
 
-  void _setError(String message) {
-    _errorMessage = message;
-    _setState(VoiceAssistantState.error);
-    notifyListeners();
+  // Backwards compatibility for existing button toggle calls
+  Future<void> toggleSession() async {
+    await toggleListening();
+  }
+
+  Future<void> stopSession() async {
+    await stopListening();
+    await stopSpeaking();
+    _setState(VoiceAssistantState.idle);
   }
 
   @override
   void dispose() {
-    stopSession();
-    _recorder.dispose();
-    _audioPlayer.dispose();
+    _service.dispose();
     super.dispose();
   }
 }

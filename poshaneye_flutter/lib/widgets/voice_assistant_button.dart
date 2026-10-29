@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../assistant/assistant_state.dart';
 import '../assistant/voice_assistant_controller.dart';
-
+import 'voice_assistant_modal.dart';
 
 /// Floating AI Voice Assistant Microphone Button for PoshanEye.
 ///
-/// Designed to blend seamlessly with PoshanEye's modern dark-emerald visual theme.
+/// Tapping opens the compact Voice Assistant interface modal.
+/// Shows live pulsing animation when active or listening.
 class VoiceAssistantButton extends StatefulWidget {
   final VoiceAssistantController controller;
 
@@ -63,12 +64,10 @@ class _VoiceAssistantButtonState extends State<VoiceAssistantButton>
     switch (state) {
       case VoiceAssistantState.idle:
         return const Color(0xFF2DE099); // Primary Emerald Green
-      case VoiceAssistantState.connecting:
-        return const Color(0xFFFFB800); // Warm Amber
       case VoiceAssistantState.listening:
         return const Color(0xFF2DE099); // Pulsing Emerald Green
       case VoiceAssistantState.processing:
-        return const Color(0xFF6C5CE7); // Deep Purple Thinking State
+        return const Color(0xFFFFB800); // Warm Amber Thinking State
       case VoiceAssistantState.speaking:
         return const Color(0xFF00CEC9); // Bright Cyan Sound State
       case VoiceAssistantState.error:
@@ -80,19 +79,10 @@ class _VoiceAssistantButtonState extends State<VoiceAssistantButton>
     switch (state) {
       case VoiceAssistantState.idle:
         return const Icon(Icons.mic_rounded, color: Color(0xFF0C2417), size: 26);
-      case VoiceAssistantState.connecting:
-        return const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0C2417)),
-          ),
-        );
       case VoiceAssistantState.listening:
         return const Icon(Icons.mic_rounded, color: Color(0xFF0C2417), size: 28);
       case VoiceAssistantState.processing:
-        return const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 26);
+        return const Icon(Icons.sync_rounded, color: Color(0xFF0C2417), size: 26);
       case VoiceAssistantState.speaking:
         return const Icon(Icons.volume_up_rounded, color: Color(0xFF0C2417), size: 26);
       case VoiceAssistantState.error:
@@ -100,6 +90,9 @@ class _VoiceAssistantButtonState extends State<VoiceAssistantButton>
     }
   }
 
+  void _openAssistant() {
+    VoiceAssistantModal.show(context, widget.controller);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +170,7 @@ class _VoiceAssistantButtonState extends State<VoiceAssistantButton>
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: widget.controller.toggleSession,
+              onTap: _openAssistant,
               borderRadius: BorderRadius.circular(30),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),

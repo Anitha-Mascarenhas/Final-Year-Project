@@ -1,7 +1,6 @@
-/// Represents the active state of the PoshanEye Gemini Live Voice Assistant.
+/// Represents the active state of the PoshanEye Voice Assistant.
 enum VoiceAssistantState {
   idle,
-  connecting,
   listening,
   processing,
   speaking,
@@ -10,7 +9,6 @@ enum VoiceAssistantState {
 
 extension VoiceAssistantStateX on VoiceAssistantState {
   bool get isIdle => this == VoiceAssistantState.idle;
-  bool get isConnecting => this == VoiceAssistantState.connecting;
   bool get isListening => this == VoiceAssistantState.listening;
   bool get isProcessing => this == VoiceAssistantState.processing;
   bool get isSpeaking => this == VoiceAssistantState.speaking;
@@ -19,13 +17,11 @@ extension VoiceAssistantStateX on VoiceAssistantState {
   String get label {
     switch (this) {
       case VoiceAssistantState.idle:
-        return 'Tap to speak';
-      case VoiceAssistantState.connecting:
-        return 'Connecting to Gemini...';
+        return 'Ready to listen';
       case VoiceAssistantState.listening:
-        return 'Listening...';
+        return 'Listening... Speak now';
       case VoiceAssistantState.processing:
-        return 'Thinking...';
+        return 'Processing...';
       case VoiceAssistantState.speaking:
         return 'Assistant speaking...';
       case VoiceAssistantState.error:
