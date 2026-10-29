@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poshaneye_flutter/state/vitals_provider.dart';
+import 'package:poshaneye_auth/state/vitals_provider.dart';
 
 void main() {
   test('parses persisted screening result, probabilities, and optional null vitals', () {

@@ -50,6 +50,7 @@ class AssistantTools {
   final VoidCallback onNavigateProfile;
   final VoidCallback onGoBack;
   final VoidCallback onRepeatCurrentPage;
+  final VoidCallback? onNavigateHistory;
 
   AssistantTools({
     required this.onNavigateHome,
@@ -59,6 +60,7 @@ class AssistantTools {
     required this.onNavigateProfile,
     required this.onGoBack,
     required this.onRepeatCurrentPage,
+    this.onNavigateHistory,
   });
 
   /// Validates and executes a tool call requested by Gemini Live.

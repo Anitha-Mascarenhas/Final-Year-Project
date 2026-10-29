@@ -69,6 +69,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         onNavigateHome: () => _onTabSelected(0),
         onNavigateScreening: _onScanPressed,
         onNavigateResults: () => _onTabSelected(1),
+        onNavigateHistory: () => _onTabSelected(1),
         onNavigateNutrition: () => _onTabSelected(3),
         onNavigateProfile: () => _onTabSelected(4),
         onGoBack: () {
